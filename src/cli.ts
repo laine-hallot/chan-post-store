@@ -1,9 +1,12 @@
+import { statSync } from "node:fs";
 import { parseArgs } from "node:util";
 import { openDb, getOrCreateSource } from "./db.ts";
 import { ingestJsonApi } from "./adapters/json-api.ts";
+import { ingestFuukaSql } from "./adapters/fuuka-sql.ts";
 
 const USAGE = `Usage:
   cli.ts ingest json-api --db <file> --root <dir> --source <name> [--link <url>] [--site 4chan] [--board <b> ...]
+  cli.ts ingest fuuka-sql --db <file> --file <tables.sql|-> --source <name> [--link <url>] [--site 4chan] [--board <b> ...]
   cli.ts count --db <file> --phrase <text> [--board <b>] [--site 4chan] [--from <date>] [--to <date>] [--by month|day|year|total]
 
 Dates are YYYY, YYYY-MM, or YYYY-MM-DD (UTC). --from/--to are both inclusive:
@@ -30,39 +33,63 @@ function parseBound(s: string, end: boolean): number {
   return Date.UTC(year, (month ?? 1) - 1, day ?? 1) / 1000;
 }
 
-function cmdIngest(argv: string[]) {
+async function cmdIngest(argv: string[]) {
   const adapter = argv[0];
-  if (adapter !== "json-api") fail(`unknown adapter: ${adapter ?? "(none)"}`);
+  if (adapter !== "json-api" && adapter !== "fuuka-sql") {
+    fail(`unknown adapter: ${adapter ?? "(none)"}`);
+  }
   const { values } = parseArgs({
     args: argv.slice(1),
     options: {
       db: { type: "string" },
       root: { type: "string" },
+      file: { type: "string" },
       source: { type: "string" },
       link: { type: "string" },
       site: { type: "string", default: "4chan" },
       board: { type: "string", multiple: true },
     },
   });
-  if (!values.db || !values.root || !values.source) {
-    fail("ingest requires --db, --root, and --source");
-  }
+  if (!values.db || !values.source) fail("ingest requires --db and --source");
 
   const db = openDb(values.db);
   try {
     const sourceId = getOrCreateSource(db, values.source, values.link);
     const t0 = Date.now();
-    const stats = ingestJsonApi(db, {
-      root: values.root,
-      sourceId,
-      site: values.site,
-      boards: values.board,
-    });
-    const secs = ((Date.now() - t0) / 1000).toFixed(1);
-    console.log(
-      `ingested ${stats.posts} posts from ${stats.threads} threads in ${secs}s` +
-        ` (${stats.skippedPosts} posts already present/skipped, ${stats.badFiles} unreadable files)`,
-    );
+
+    if (adapter === "json-api") {
+      if (!values.root) fail("json-api requires --root");
+      const stats = ingestJsonApi(db, {
+        root: values.root,
+        sourceId,
+        site: values.site,
+        boards: values.board,
+      });
+      const secs = ((Date.now() - t0) / 1000).toFixed(1);
+      console.log(
+        `ingested ${stats.posts} posts from ${stats.threads} threads in ${secs}s` +
+          ` (${stats.skippedPosts} posts already present/skipped, ${stats.badFiles} unreadable files)`,
+      );
+    } else {
+      if (!values.file) fail("fuuka-sql requires --file (path to tables.sql, or - for stdin)");
+      let fileSize: number | undefined;
+      if (values.file !== "-") {
+        fileSize = statSync(values.file).size;
+      }
+      const stats = await ingestFuukaSql(db, {
+        file: values.file,
+        sourceId,
+        site: values.site,
+        boards: values.board,
+        fileSize,
+      });
+      const secs = ((Date.now() - t0) / 1000).toFixed(1);
+      console.log(
+        `ingested ${stats.posts} posts from tables [${stats.tables.join(", ")}] in ${secs}s` +
+          ` (${stats.skippedDup} already present, ${stats.skippedGhost} ghost posts skipped,` +
+          ` ${stats.badLines} unparseable lines)`,
+      );
+    }
   } finally {
     db.close();
   }
@@ -147,7 +174,7 @@ function cmdCount(argv: string[]) {
 const [cmd, ...rest] = process.argv.slice(2);
 switch (cmd) {
   case "ingest":
-    cmdIngest(rest);
+    await cmdIngest(rest);
     break;
   case "count":
     cmdCount(rest);

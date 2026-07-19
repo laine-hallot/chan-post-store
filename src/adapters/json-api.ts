@@ -2,6 +2,7 @@ import { opendirSync, readFileSync } from "node:fs";
 import { join, basename } from "node:path";
 import type { DatabaseSync } from "node:sqlite";
 import { stripHtml } from "../html.ts";
+import { PostInserter } from "../ingest.ts";
 
 /**
  * Ingests thread dumps in the 4chan JSON read API format
@@ -68,17 +69,7 @@ export function ingestJsonApi(
   db: DatabaseSync,
   opts: { root: string; sourceId: number; site: string; boards?: string[] },
 ): IngestStats {
-  const insertPost = db.prepare(`
-    INSERT INTO posts (
-      source_id, site, board, thread_no, post_no, is_op, ts_utc,
-      name, tripcode, subject, body_text, media_filename, media_md5
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT (source_id, site, board, post_no) DO NOTHING
-    RETURNING id
-  `);
-  const insertFts = db.prepare(
-    "INSERT INTO posts_fts (rowid, subject, body_text) VALUES (?, ?, ?)",
-  );
+  const inserter = new PostInserter(db, opts.sourceId);
 
   const stats: IngestStats = { threads: 0, posts: 0, skippedPosts: 0, badFiles: 0 };
   const BATCH = 500;
@@ -105,29 +96,22 @@ export function ingestJsonApi(
             stats.skippedPosts++;
             continue;
           }
-          const subject = p.sub ? stripHtml(p.sub) : null;
-          const body = p.com ? stripHtml(p.com) : null;
-          const row = insertPost.get(
-            opts.sourceId,
-            opts.site,
+          const ok = inserter.insert({
+            site: opts.site,
             board,
             threadNo,
-            p.no,
-            p.resto === 0 || p.no === threadNo ? 1 : 0,
-            p.time ?? null,
-            p.name ?? null,
-            p.trip ?? null,
-            subject,
-            body,
-            p.filename != null ? `${p.filename}${p.ext ?? ""}` : null,
-            p.md5 ?? null,
-          ) as { id: number } | undefined;
-          if (row) {
-            insertFts.run(row.id, subject, body);
-            stats.posts++;
-          } else {
-            stats.skippedPosts++;
-          }
+            postNo: p.no,
+            isOp: p.resto === 0 || p.no === threadNo,
+            tsUtc: p.time ?? null,
+            name: p.name ?? null,
+            tripcode: p.trip ?? null,
+            subject: p.sub ? stripHtml(p.sub) : null,
+            bodyText: p.com ? stripHtml(p.com) : null,
+            mediaFilename: p.filename != null ? `${p.filename}${p.ext ?? ""}` : null,
+            mediaMd5: p.md5 ?? null,
+          });
+          if (ok) stats.posts++;
+          else stats.skippedPosts++;
         }
 
         stats.threads++;
