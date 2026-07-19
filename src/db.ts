@@ -28,6 +28,11 @@ CREATE TABLE IF NOT EXISTS posts (
 
 CREATE INDEX IF NOT EXISTS idx_posts_board_ts ON posts (site, board, ts_utc);
 
+-- covering index for the list/stats queries: distinct post/thread counts and
+-- date spans per board without touching the (body-text-heavy) table rows
+CREATE INDEX IF NOT EXISTS idx_posts_stats
+  ON posts (site, board, post_no, thread_no, ts_utc);
+
 CREATE VIRTUAL TABLE IF NOT EXISTS posts_fts USING fts5(
   subject, body_text,
   content='posts', content_rowid='id'

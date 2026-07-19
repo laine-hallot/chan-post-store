@@ -9,7 +9,7 @@ Runs on Node 24+ with no runtime dependencies — SQLite comes from the built-in
 
 ## Layout
 
-- `src/cli.ts` — CLI entry point (`ingest`, `count`)
+- `src/cli.ts` — CLI entry point (`ingest`, `count`, `search`, `list`)
 - `src/db.ts` — schema + connection (`sources`, `posts`, `posts_fts`)
 - `src/adapters/` — one ingester per source format:
   - `json-api` — 4chan read-API `{ posts: [...] }` thread dumps
@@ -43,6 +43,15 @@ node src/cli.ts ingest fuuka-sql \
 node src/cli.ts count --db data/posts.db \
   --phrase "install gentoo" --board g \
   --from 2017-05 --to 2018-09 --by month
+
+# same filters as count, but prints the matching posts (oldest first)
+node src/cli.ts search --db data/posts.db \
+  --phrase "install gentoo" --board g --from 2017-05 --limit 20
+
+# what's in the database: post/thread counts and date spans
+node src/cli.ts list boards --db data/posts.db   # per site+board
+node src/cli.ts list sites --db data/posts.db    # per site
+node src/cli.ts list sources --db data/posts.db  # per ingested archive
 ```
 
 Ingest is idempotent per source (`--source` name): re-running skips posts that
