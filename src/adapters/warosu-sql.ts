@@ -5,17 +5,18 @@ import { PostInserter } from "../ingest.ts";
 import { nyWallToUtc, parseTuples } from "../mysqldump.ts";
 
 /**
- * Ingests a mysqldump of a Fuuka/Asagi (FoolFuuka-schema) archive database,
- * e.g. the Laza 4chan archive. Streams the .sql file directly — no MySQL
- * server involved. Board tables are recognized by their columns; the
- * side tables Asagi keeps (`x_threads`, `x_images`, `x_daily`, `x_users`)
- * lack a `comment` column and are skipped.
- *
- * Asagi stores `timestamp` shifted to America/New_York wall time ("4chan
- * time"); values are converted back to true UTC on the way in.
+ * Ingests the warosu.org database backups: one mysqldump per board, in the
+ * original Perl-Fuuka schema (25 columns, a single table named after the
+ * board). Not the same layout as the Asagi-era `fuuka-sql` adapter:
+ *   - `parent` (0 for OPs) instead of `thread_num` + `op`
+ *   - the poster's original filename is in `media`; `media_filename` holds
+ *     the server's timestamp name
+ *   - one INSERT statement per row instead of extended inserts
+ * `timestamp` is New-York-shifted like all Fuuka descendants and is
+ * normalized to true UTC on ingest.
  */
 
-const REQUIRED_COLS = ["num", "subnum", "thread_num", "timestamp", "comment"];
+const REQUIRED_COLS = ["num", "subnum", "parent", "timestamp", "comment", "media"];
 
 interface IngestStats {
   posts: number;
@@ -25,9 +26,7 @@ interface IngestStats {
   tables: string[];
 }
 
-// ---- dump walking --------------------------------------------------------
-
-export async function ingestFuukaSql(
+export async function ingestWarosuSql(
   db: DatabaseSync,
   opts: {
     file: string;
@@ -58,13 +57,8 @@ export async function ingestFuukaSql(
 
   const tableCols = new Map<string, string[]>();
   let creating: string | null = null;
-  // column index map for the table whose INSERTs we are currently accepting
-  let accept: {
-    table: string;
-    board: string;
-    idx: Record<string, number>;
-  } | null = null;
-  let acceptFor = ""; // last table name we computed `accept` for
+  let accept: { board: string; idx: Record<string, number> } | null = null;
+  let acceptFor = "";
 
   const COMMIT_EVERY = 50_000;
   let sinceCommit = 0;
@@ -76,7 +70,7 @@ export async function ingestFuukaSql(
       ? ` (${((bytesRead / opts.fileSize) * 100).toFixed(1)}%)`
       : "";
     process.stderr.write(
-      `\r${mb}MB${pct} read, ${stats.posts} posts, tables: ${stats.tables.join(",") || "-"}   `,
+      `\r${mb}MB${pct} read, ${stats.posts} posts, boards: ${stats.tables.join(",") || "-"}   `,
     );
   };
 
@@ -107,14 +101,15 @@ export async function ingestFuukaSql(
         acceptFor = table;
         accept = null;
         const cols = tableCols.get(table);
-        if (cols && REQUIRED_COLS.every((c) => cols.includes(c))) {
-          const board = table.replace(/_deleted$/, "");
-          if (!opts.boards || opts.boards.includes(board)) {
-            const idx: Record<string, number> = {};
-            cols.forEach((c, i) => (idx[c] = i));
-            accept = { table, board, idx };
-            if (!stats.tables.includes(table)) stats.tables.push(table);
-          }
+        if (
+          cols &&
+          REQUIRED_COLS.every((c) => cols.includes(c)) &&
+          (!opts.boards || opts.boards.includes(table))
+        ) {
+          const idx: Record<string, number> = {};
+          cols.forEach((c, i) => (idx[c] = i));
+          accept = { board: table, idx };
+          if (!stats.tables.includes(table)) stats.tables.push(table);
         }
         progress();
       }
@@ -131,20 +126,20 @@ export async function ingestFuukaSql(
             continue;
           }
           const num = Number(vals[idx.num]);
-          const threadNo = Number(vals[idx.thread_num]);
+          const parent = Number(vals[idx.parent]);
           const ts = Number(vals[idx.timestamp]);
           const ok = inserter.insert({
             site: opts.site,
             board,
-            threadNo,
+            threadNo: parent === 0 ? num : parent,
             postNo: num,
-            isOp: idx.op !== undefined ? vals[idx.op] === "1" : num === threadNo,
+            isOp: parent === 0,
             tsUtc: ts > 0 ? nyWallToUtc(ts) : null,
             name: vals[idx.name] ?? null,
             tripcode: vals[idx.trip] ?? null,
             subject: vals[idx.title] ?? null,
             bodyText: vals[idx.comment] ?? null,
-            mediaFilename: vals[idx.media_filename] ?? null,
+            mediaFilename: vals[idx.media] ?? null,
             mediaMd5: vals[idx.media_hash] ?? null,
           });
           if (ok) stats.posts++;

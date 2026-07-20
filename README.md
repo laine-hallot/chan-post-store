@@ -15,6 +15,11 @@ Runs on Node 24+ with no runtime dependencies — SQLite comes from the built-in
   - `json-api` — 4chan read-API `{ posts: [...] }` thread dumps
   - `fuuka-sql` — mysqldumps of Fuuka/Asagi (FoolFuuka-schema) archive
     databases, streamed directly with no MySQL server
+  - `warosu-sql` — the warosu.org per-board mysqldumps (original
+    Perl-Fuuka 25-column schema: `parent` instead of `thread_num`/`op`,
+    original filename in `media`)
+- `src/mysqldump.ts` — shared mysqldump tuple parsing + Fuuka-family
+  New-York→UTC timestamp normalization
 - `Memetic Sociology/` — SFTP mount of the raw archives (slow; don't
   recursively list it). Each dataset has a `manifest.json` describing its
   origin and extract paths.
@@ -47,6 +52,13 @@ node src/cli.ts count --db data/posts.db \
 # same filters as count, but prints the matching posts (oldest first)
 node src/cli.ts search --db data/posts.db \
   --phrase "install gentoo" --board g --from 2017-05 --limit 20
+
+# warosu ships one dump per board; loop over them
+for f in "Memetic Sociology/Datasets/4chan/warosu-database-backup-2023-03-15/extracted/"*.sql; do
+  node src/cli.ts ingest warosu-sql --db data/posts.db --file "$f" \
+    --source warosu-2023-03-15 \
+    --link https://archive.org/details/warosu-database-backup-2023-03-15
+done
 
 # what's in the database: post/thread counts and date spans
 node src/cli.ts list boards --db data/posts.db   # per site+board

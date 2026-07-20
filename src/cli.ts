@@ -3,10 +3,12 @@ import { parseArgs } from "node:util";
 import { openDb, getOrCreateSource } from "./db.ts";
 import { ingestJsonApi } from "./adapters/json-api.ts";
 import { ingestFuukaSql } from "./adapters/fuuka-sql.ts";
+import { ingestWarosuSql } from "./adapters/warosu-sql.ts";
 
 const USAGE = `Usage:
   cli.ts ingest json-api --db <file> --root <dir> --source <name> [--link <url>] [--site 4chan] [--board <b> ...]
   cli.ts ingest fuuka-sql --db <file> --file <tables.sql|-> --source <name> [--link <url>] [--site 4chan] [--board <b> ...]
+  cli.ts ingest warosu-sql --db <file> --file <board.sql|-> --source <name> [--link <url>] [--site 4chan] [--board <b> ...]
   cli.ts count --db <file> --phrase <text> [--board <b>] [--site 4chan] [--from <date>] [--to <date>] [--by month|day|year|total]
   cli.ts search --db <file> --phrase <text> [--board <b>] [--site 4chan] [--from <date>] [--to <date>] [--limit 20]
   cli.ts list boards|sites|sources --db <file> [--site <s>]
@@ -37,7 +39,7 @@ function parseBound(s: string, end: boolean): number {
 
 async function cmdIngest(argv: string[]) {
   const adapter = argv[0];
-  if (adapter !== "json-api" && adapter !== "fuuka-sql") {
+  if (adapter !== "json-api" && adapter !== "fuuka-sql" && adapter !== "warosu-sql") {
     fail(`unknown adapter: ${adapter ?? "(none)"}`);
   }
   const { values } = parseArgs({
@@ -73,12 +75,13 @@ async function cmdIngest(argv: string[]) {
           ` (${stats.skippedPosts} posts already present/skipped, ${stats.badFiles} unreadable files)`,
       );
     } else {
-      if (!values.file) fail("fuuka-sql requires --file (path to tables.sql, or - for stdin)");
+      if (!values.file) fail(`${adapter} requires --file (path to the .sql dump, or - for stdin)`);
       let fileSize: number | undefined;
       if (values.file !== "-") {
         fileSize = statSync(values.file).size;
       }
-      const stats = await ingestFuukaSql(db, {
+      const ingest = adapter === "fuuka-sql" ? ingestFuukaSql : ingestWarosuSql;
+      const stats = await ingest(db, {
         file: values.file,
         sourceId,
         site: values.site,
