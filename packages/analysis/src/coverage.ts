@@ -88,12 +88,20 @@ const span =
     ? `${new Date(tot.minTs * 1000).toISOString().slice(0, 7)} to ${new Date(tot.maxTs * 1000).toISOString().slice(0, 7)}`
     : "unknown span";
 
+// Sum of what is actually charted, so the headline matches the bars; posts
+// with no timestamp can't be placed in a year and are called out separately.
+const charted = buckets.reduce((n, b) => n + b.posts, 0);
+const undated = tot.posts - charted;
+
 const data: ChartData = {
   years: allYears,
   series,
   values: grid,
   title: "Post coverage by year and archive",
-  subtitle: `${fmt(tot.posts)} posts across ${series.length} sources, ${span}. Archives overlap, so a post may appear more than once.`,
+  subtitle:
+    `${fmt(charted)} dated posts across ${series.length} sources, ${span}.` +
+    (undated > 0 ? ` ${fmt(undated)} undated posts are not shown.` : "") +
+    " Archives overlap, so a post may appear more than once.",
 };
 
 const svg = renderChart(data);
