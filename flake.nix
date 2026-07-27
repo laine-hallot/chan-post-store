@@ -20,6 +20,17 @@
             zstd
             # for poking at the post database by hand
             sqlite
+            # rasterizes the analysis charts (SVG -> PNG) without pulling a
+            # native npm dependency into the build
+            resvg
+            # resvg resolves font families through fontconfig; pinning the
+            # font here keeps chart text identical on any machine
+            dejavu_fonts
+            fontconfig
+
+            R
+            rstudio
+            rstudio-server
           ];
 
           shellHook = ''

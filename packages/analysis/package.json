@@ -1,0 +1,14 @@
+{
+  "name": "@chan-post-store/analysis",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "devDependencies": {},
+  "scripts": {
+    "coverage": "node src/coverage.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module"
+}
