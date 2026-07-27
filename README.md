@@ -9,20 +9,20 @@ Runs on Node 24+ with no runtime dependencies — SQLite comes from the built-in
 
 ## Layout
 
-- `src/cli.ts` — CLI entry point (`ingest`, `count`, `search`, `list`)
-- `src/db.ts` — schema + connection (`sources`, `posts`, `posts_fts`)
-- `src/adapters/` — one ingester per source format:
+- `packages/cli/src/cli.ts` — CLI entry point (`ingest`, `count`, `search`, `list`)
+- `packages/cli/src/db.ts` — schema + connection (`sources`, `posts`, `posts_fts`)
+- `packages/cli/src/adapters/` — one ingester per source format:
   - `json-api` — 4chan read-API `{ posts: [...] }` thread dumps
   - `fuuka-sql` — mysqldumps of Fuuka/Asagi (FoolFuuka-schema) archive
     databases, streamed directly with no MySQL server
   - `warosu-sql` — the warosu.org per-board mysqldumps (original
     Perl-Fuuka 25-column schema: `parent` instead of `thread_num`/`op`,
     original filename in `media`)
-- `src/mysqldump.ts` — shared mysqldump tuple parsing + Fuuka-family
+- `packages/cli/src/mysqldump.ts` — shared mysqldump tuple parsing + Fuuka-family
   New-York→UTC timestamp normalization
-- `src/manifest.ts` — reads `sources/*.json` and resolves ingest inputs
-- `src/runner.ts` — local vs. SSH command execution for staging steps
-- `src/archive-org.ts` — archive.org metadata API + item downloader
+- `packages/cli/src/manifest.ts` — reads `sources/*.json` and resolves ingest inputs
+- `packages/cli/src/runner.ts` — local vs. SSH command execution for staging steps
+- `packages/cli/src/archive-org.ts` — archive.org metadata API + item downloader
 - `sources/` — one committed manifest per archive: provenance plus the
   adapter and path needed to ingest it (see below)
 - `Memetic Sociology/` — SFTP mount of the raw archives (slow; don't
@@ -100,8 +100,9 @@ the current patterns avoid ~1.6TB of image data.
 A step prefixed with `local:` runs on this machine instead of the target,
 with the same variables. That is for steps needing Node — the NAS has none —
 such as `warc-extract`, which reads the WARC over SSH, decodes it here, and
-writes the pages back. Steps can use `$PROJECT` (this checkout), `$DIR` (the
-dataset directory as the target sees it), and `$TARGET` (the flags that
+writes the pages back. Steps can use `$PROJECT` (this checkout), `$CLI` (the
+absolute path to cli.ts), `$DIR` (the dataset directory as the target sees
+it), and `$TARGET` (the flags that
 reproduce the current runner).
 
 Because the archives live on the NAS, running these steps over the SMB mount
@@ -137,36 +138,36 @@ happen once per run rather than per command.
 # what's registered and how far each source has got through the pipeline.
 # The s/e/o column shows which of source/ extracted/ out/ are non-empty;
 # checks run through the runner, so they report on the NAS when configured.
-node src/cli.ts list manifests
+node packages/cli/src/cli.ts list manifests
 
 # stage an archive.org item into <dir>/source (md5-verified, resumable);
 # --dry-run lists what would be fetched, --all ignores download.exclude
-node src/cli.ts download perma_cc_x9pp-ycvx
-node src/cli.ts download rbt-asia --dry-run
+node packages/cli/src/cli.ts download perma_cc_x9pp-ycvx
+node packages/cli/src/cli.ts download rbt-asia --dry-run
 
 # run the source's prepare steps, producing <dir>/out
-node src/cli.ts prepare perma_cc_x9pp-ycvx
+node packages/cli/src/cli.ts prepare perma_cc_x9pp-ycvx
 
 # all metadata comes from sources/4chan-threads.json
-node src/cli.ts ingest 4chan-threads --db data/posts.db
+node packages/cli/src/cli.ts ingest 4chan-threads --db data/posts.db
 
 # --board still narrows which boards are read out of the input
-node src/cli.ts ingest warosu-database-backup-2023-03-15 \
+node packages/cli/src/cli.ts ingest warosu-database-backup-2023-03-15 \
   --db data/posts.db --board g --board sci
 
-node src/cli.ts count --db data/posts.db \
+node packages/cli/src/cli.ts count --db data/posts.db \
   --phrase "install gentoo" --board g \
   --from 2017-05 --to 2018-09 --by month
 
 # same filters as count, but prints the matching posts (oldest first)
-node src/cli.ts search --db data/posts.db \
+node packages/cli/src/cli.ts search --db data/posts.db \
   --phrase "install gentoo" --board g --from 2017-05 --limit 20
 
 # what's in the database: post/thread counts and date spans, with a
 # TOTAL row (summed counts, combined date range) when there's >1 row
-node src/cli.ts list boards --db data/posts.db   # per site+board
-node src/cli.ts list sites --db data/posts.db    # per site
-node src/cli.ts list sources --db data/posts.db  # per ingested archive
+node packages/cli/src/cli.ts list boards --db data/posts.db   # per site+board
+node packages/cli/src/cli.ts list sites --db data/posts.db    # per site
+node packages/cli/src/cli.ts list sources --db data/posts.db  # per ingested archive
 ```
 
 Ingesting straight off the SFTP mount works but pays a round-trip per thread

@@ -1,5 +1,5 @@
-import { mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { gunzipSync } from "node:zlib";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
@@ -26,8 +26,26 @@ import { makeRunner, shQuote } from "./runner.ts";
 import { runPrepare } from "./prepare.ts";
 import { htmlPages, uriToFilename } from "./warc.ts";
 
-/** Repo root; manifest ingest paths are resolved against it. */
-const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+/**
+ * Repo root; manifest ingest paths are resolved against it.
+ *
+ * Found by walking up to the directory holding `sources/` rather than by a
+ * fixed number of `..` hops, so moving this package within the workspace
+ * doesn't silently resolve archive paths somewhere wrong.
+ */
+function findProjectRoot(): string {
+  let dir = dirname(fileURLToPath(import.meta.url));
+  for (;;) {
+    if (existsSync(join(dir, SOURCES_DIR))) return dir;
+    const up = dirname(dir);
+    if (up === dir) {
+      throw new Error(`could not locate the repo root (no ${SOURCES_DIR}/ above ${import.meta.url})`);
+    }
+    dir = up;
+  }
+}
+
+const PROJECT_ROOT = findProjectRoot();
 
 const USAGE = `Usage:
   cli.ts download <source> [--remote <host>] [--local] [--dry-run] [--force]
@@ -212,6 +230,9 @@ async function cmdPrepare(argv: string[]) {
       force: values.force,
       vars: {
         PROJECT: PROJECT_ROOT,
+        // Absolute path to this entry point, so manifests don't hard-code
+        // where the CLI package sits in the workspace.
+        CLI: fileURLToPath(import.meta.url),
         DIR: dir,
         TARGET: targetFlags,
       },

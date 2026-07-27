@@ -1,15 +1,11 @@
 {
-  "compilerOptions": {
-    "target": "es2023",
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
-    "strict": true,
-    "noEmit": true,
-    "allowImportingTsExtensions": true,
-    "verbatimModuleSyntax": true,
-    "erasableSyntaxOnly": true,
-    "skipLibCheck": true,
-    "types": ["node"]
-  },
-  "include": ["src"]
+  // Solution-style root: it owns no sources itself, it just points at the
+  // workspace packages. Without an empty "files", tsc globs the whole tree
+  // and reports TS6305 against the referenced project's own sources.
+  "files": [],
+  "references": [
+    {
+      "path": "packages/cli"
+    }
+  ]
 }

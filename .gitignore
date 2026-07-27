@@ -2,6 +2,7 @@ node_modules/
 Memetic Sociology
 data/
 .env
+*.tsbuildinfo
 *.db
 *.db-shm
 *.db-wal

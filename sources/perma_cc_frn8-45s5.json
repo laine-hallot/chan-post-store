@@ -10,7 +10,7 @@
   "prepare": [
     {
       "name": "extract captured HTML from the WARC",
-      "run": "local: node \"$PROJECT/src/cli.ts\" warc-extract $TARGET --warc \"$DIR/source/FRN8-45S5.warc.gz\" --out \"$DIR/out\""
+      "run": "local: node \"$CLI\" warc-extract $TARGET --warc \"$DIR/source/FRN8-45S5.warc.gz\" --out \"$DIR/out\""
     }
   ],
   "ingest": {

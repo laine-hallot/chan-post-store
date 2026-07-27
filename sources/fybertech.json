@@ -19,7 +19,7 @@
     },
     {
       "name": "extract captured HTML from the WARCs",
-      "run": "local: node \"$PROJECT/src/cli.ts\" warc-extract $TARGET --warc \"$DIR/extracted\" --out \"$DIR/out\""
+      "run": "local: node \"$CLI\" warc-extract $TARGET --warc \"$DIR/extracted\" --out \"$DIR/out\""
     }
   ],
   "ingest": {

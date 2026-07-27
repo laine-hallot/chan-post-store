@@ -9,11 +9,20 @@ every command needs `nix develop --command` (or an already-entered shell):
 
 ```sh
 nix develop --command npm run typecheck    # tsc, the only build/lint gate
-nix develop --command node src/cli.ts <command> [...]
+nix develop --command node packages/cli/src/cli.ts <command> [...]
 ```
 
 There is no test suite. `typecheck` is the only automated check; verify
 behaviour by running CLI commands against real sources (`--dry-run` first).
+
+An npm workspace: code lives in `packages/*`, while `sources/` (the manifest
+registry) and `data/` (the SQLite database) stay at the repo root and are
+shared. tsconfig uses project references, so typechecking needs `tsc -b` and
+the root config is solution-style (`"files": []`) — without that tsc globs the
+whole tree and reports TS6305 against the referenced project's sources.
+
+The CLI locates the repo root by walking up to the directory containing
+`sources/`, so it keeps working if the package moves.
 
 `.ts` files run directly under Node 24 type stripping. That means **no
 TypeScript syntax that emits code**: no enums, no namespaces, and no
@@ -27,7 +36,7 @@ with FTS5 search. Everything is driven by committed per-source manifests.
 
 ### The manifest registry
 
-`sources/<id>.json` is the unit of configuration; `src/manifest.ts` parses it.
+`sources/<id>.json` is the unit of configuration; `packages/cli/src/manifest.ts` parses it.
 Manifests are committed, the archives they describe are not, so the registry
 of what the corpus contains travels with the repo. Each manifest carries
 provenance (`source`), download filtering (`download.exclude`), staging steps
@@ -57,7 +66,7 @@ rather than derived.
 ### The runner abstraction
 
 The archives live on a NAS. Running staging over the SMB mount pays a network
-round-trip per file operation, so `src/runner.ts` routes commands either
+round-trip per file operation, so `packages/cli/src/runner.ts` routes commands either
 locally (`bash -c`) or over SSH, behind one interface. `download`, `prepare`,
 `warc-extract` and `list manifests` all take `--remote`/`--local`/`--key` and
 default to `.env` (`NAS_HOST`, `NAS_ROOT`, `NAS_KEY`).
@@ -82,11 +91,11 @@ Things that will bite you here:
 
 ### Adapters
 
-One per archive format in `src/adapters/`, sharing only low-level helpers
-(`src/ingest.ts` `PostInserter`, `src/mysqldump.ts` tuple parsing). Keep them
+One per archive format in `packages/cli/src/adapters/`, sharing only low-level helpers
+(`packages/cli/src/ingest.ts` `PostInserter`, `packages/cli/src/mysqldump.ts` tuple parsing). Keep them
 separate even when formats look similar.
 
-`src/mysqldump.ts` also holds the Fuuka-family timestamp fix: Asagi/Fuuka
+`packages/cli/src/mysqldump.ts` also holds the Fuuka-family timestamp fix: Asagi/Fuuka
 store `timestamp` as America/New_York wall time, not UTC, so it is converted
 back on ingest.
 
@@ -117,7 +126,7 @@ them:
 Also: `source: original` vs `derivative` does not cleanly separate payload
 from bookkeeping (`_files.xml` is marked `original`), and IA reports a stale
 md5 and size 0 for `<id>_files.xml` because it cannot contain its own
-checksum — it is excluded from verification in `src/archive-org.ts`.
+checksum — it is excluded from verification in `packages/cli/src/archive-org.ts`.
 
 ## Conventions
 
@@ -126,8 +135,10 @@ checksum — it is excluded from verification in `src/archive-org.ts`.
   copy) for staging rather than symlinks: `ingestInputs` globs real files, and
   symlinks break when the tree is read over a different mount.
 - A step prefixed `local:` runs on this machine rather than the target, for
-  work needing Node (the NAS has none). It gets `$PROJECT`, `$DIR` and
-  `$TARGET`.
+  work needing Node (the NAS has none). It gets `$PROJECT` (repo root), `$CLI`
+  (absolute path to cli.ts), `$DIR` (dataset dir as the target sees it) and
+  `$TARGET` (flags reproducing the current runner). Use `$CLI` rather than
+  spelling out the package path, so manifests survive the code moving.
 - `list manifests` `s/e/o` column shows which stage dirs are non-empty — the
   quickest way to see where a source actually is.
 - Record non-obvious facts about a source in `source.capture` (free text, not

@@ -6,11 +6,14 @@
     "node": ">=24"
   },
   "scripts": {
-    "typecheck": "tsc",
-    "cli": "node src/cli.ts"
+    "typecheck": "tsc -b",
+    "cli": "node packages/cli/src/cli.ts"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
     "typescript": "^5.8.0"
-  }
+  },
+  "workspaces": [
+    "packages/cli"
+  ]
 }
