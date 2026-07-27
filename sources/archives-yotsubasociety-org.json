@@ -1,0 +1,35 @@
+{
+  "dir": "Memetic Sociology/Datasets/4chan/archives-yotsubasociety-org",
+  "source": {
+    "type": "internet-archive",
+    "name": "archives.yotsubasociety.org (4chan Archived Threads)",
+    "link": "https://archive.org/details/yotsubasocietyarchives",
+    "short-desc": "The Yotsuba Society Archives, which held publicly viewable 4chan thread archives, handmade by Jkid. Includes the Moot Video Archive as a bonus. This was obtained from RebeccaBlackTech from an unknown source, possibly direct web scrape. "
+  },
+  "prepare": [
+    {
+      "name": "untar the mirrored site (17GB, slow)",
+      "run": "mkdir -p extracted && tar xzf source/archives.yotsubasociety.org.tar.gz -C extracted"
+    },
+    {
+      "name": "stage the HTML tree for ingest",
+      "run": "rm -rf out && (cp -al extracted/archives.yotsubasociety.org out 2>/dev/null || cp -a extracted/archives.yotsubasociety.org out)"
+    }
+  ],
+  "ingest": {
+    "adapter": null,
+    "path": "Memetic Sociology/Datasets/4chan/archives-yotsubasociety-org/out",
+    "site": "4chan"
+  },
+  "files": {
+    "source": "./archives.yotsubasociety.org.tar.gz",
+    "extract": {
+      "path": "./archives.yotsubasociety.org",
+      "script": ""
+    },
+    "out": {
+      "path": "./out",
+      "script": ""
+    }
+  }
+}

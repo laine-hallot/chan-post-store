@@ -1,0 +1,41 @@
+{
+  "dir": "Memetic Sociology/Datasets/4chan/laza-4chan-archive",
+  "source": {
+    "type": "internet-archive",
+    "name": "Laza 4chan Fuuka Archive",
+    "link": "https://archive.org/details/laza-4chan-archive",
+    "short-desc": "This data was donated to the Bibliotheca Anonoma, which uploaded it to the Internet Archive for safekeeping on December 23th, 2015."
+  },
+  "download": {
+    "exclude": [
+      "^thumbs",
+      "thumbs-.*\\.tar\\.xz"
+    ]
+  },
+  "prepare": [
+    {
+      "name": "unpack any archived dump",
+      "run": "mkdir -p extracted && for f in source/*.xz source/*.7z source/*.zip; do [ -e \"$f\" ] || continue; case \"$f\" in *.tar.xz) tar xJf \"$f\" -C extracted;; *.xz) cp -a \"$f\" extracted/ && (cd extracted && unxz -f \"$(basename \"$f\")\");; *) 7z x -aos -o./extracted \"$f\";; esac; done; true"
+    },
+    {
+      "name": "stage the Fuuka mysqldump for ingest",
+      "run": "mkdir -p out && f=$(find source extracted -maxdepth 3 -name 'tables.sql' 2>/dev/null | head -1) && [ -n \"$f\" ] && (cp -al \"$f\" out/ 2>/dev/null || cp -a \"$f\" out/)"
+    }
+  ],
+  "ingest": {
+    "adapter": "fuuka-sql",
+    "path": "Memetic Sociology/Datasets/4chan/laza-4chan-archive/out",
+    "site": "4chan"
+  },
+  "files": {
+    "source": "./laza-4chan-archive",
+    "extract": {
+      "path": "./extracted",
+      "script": ""
+    },
+    "out": {
+      "path": "./out",
+      "script": ""
+    }
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "dir": "Memetic Sociology/Datasets/4chan/warosu-database-backup-2023-03-15",
+  "source": {
+    "type": "internet-archive",
+    "name": "Warosu Database Backup 2023-03-15",
+    "link": "https://archive.org/details/warosu-database-backup-2023-03-15",
+    "short-desc": "Database backup of warosu.org on 2023-03-15 in mysqldump (SQL statements) format"
+  },
+  "prepare": [
+    {
+      "name": "unzip the per-board mysqldumps",
+      "run": "mkdir -p extracted && 7z x -aos -o./extracted source/warosu-database-backup-2023-03-15.zip"
+    },
+    {
+      "name": "stage the .sql dumps for ingest",
+      "run": "mkdir -p out && find extracted -name '*.sql' -exec sh -c 'cp -al \"$1\" out/ 2>/dev/null || cp -a \"$1\" out/' _ {} ';'"
+    }
+  ],
+  "ingest": {
+    "adapter": "warosu-sql",
+    "path": "Memetic Sociology/Datasets/4chan/warosu-database-backup-2023-03-15/out",
+    "site": "4chan"
+  },
+  "files": {
+    "source": "./warosu-database-backup-2023-03-15.zip",
+    "extract": {
+      "path": "./extracted",
+      "script": ""
+    },
+    "out": {
+      "path": "./out",
+      "script": ""
+    }
+  }
+}

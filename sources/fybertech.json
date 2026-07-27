@@ -1,0 +1,41 @@
+{
+  "dir": "Memetic Sociology/Datasets/4chan/fybertech",
+  "source": {
+    "type": "internet-archive",
+    "name": "Fybertech 4chan Archive",
+    "link": "https://archive.org/details/fybertech",
+    "short-desc": "Fybertech has one of the largest collections of 2008-2014 4chan threads, outside of the fallen Chanarchive and the modern 4archive",
+    "capture": "WARC crawl of 631 individual thread pages (2008-2014). The item ships the same crawl twice: loose WARCs under 2015-02-16-WARC/, and fybertech-2015-02-16.7z containing them. Only the loose set is used."
+  },
+  "download": {
+    "exclude": [
+      "^fybertech-2015-02-16\\.7z$"
+    ]
+  },
+  "prepare": [
+    {
+      "name": "stage the loose WARCs (skips the redundant .7z of the same data)",
+      "run": "mkdir -p extracted && if [ -d source/fybertech/2015-02-16-WARC ]; then (cp -al source/fybertech/2015-02-16-WARC/*.warc.gz extracted/ 2>/dev/null || cp -a source/fybertech/2015-02-16-WARC/*.warc.gz extracted/); elif ! ls extracted/*.warc.gz >/dev/null 2>&1; then 7z x -aos -o./extracted source/fybertech/fybertech-2015-02-16.7z; fi"
+    },
+    {
+      "name": "extract captured HTML from the WARCs",
+      "run": "local: node \"$PROJECT/src/cli.ts\" warc-extract $TARGET --warc \"$DIR/extracted\" --out \"$DIR/out\""
+    }
+  ],
+  "ingest": {
+    "adapter": null,
+    "path": "Memetic Sociology/Datasets/4chan/fybertech/out",
+    "site": "4chan"
+  },
+  "files": {
+    "source": "./fybertech",
+    "extract": {
+      "path": "./extracted",
+      "script": ""
+    },
+    "out": {
+      "path": "./out",
+      "script": ""
+    }
+  }
+}

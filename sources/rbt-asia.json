@@ -1,0 +1,42 @@
+{
+  "dir": "Memetic Sociology/Datasets/4chan/rbt-asia",
+  "source": {
+    "type": "internet-archive",
+    "name": "RebeccaBlackTech 4chan Archiver Backups",
+    "link": "https://archive.org/details/rbt-asia",
+    "short-desc": "RebeccaBlackTech's Archive of /soc/, database."
+  },
+  "download": {
+    "exclude": [
+      "-images?-",
+      "-img-",
+      "-thumbs?-"
+    ]
+  },
+  "prepare": [
+    {
+      "name": "unzip the archive",
+      "run": "mkdir -p extracted && 7z x -aos -o./extracted source/rbt-asia.zip"
+    },
+    {
+      "name": "stage the .sql dumps for ingest",
+      "run": "mkdir -p out && find extracted -name '*.sql' -exec sh -c 'cp -al \"$1\" out/ 2>/dev/null || cp -a \"$1\" out/' _ {} ';'"
+    }
+  ],
+  "ingest": {
+    "adapter": "fuuka-sql",
+    "path": "Memetic Sociology/Datasets/4chan/rbt-asia/out",
+    "site": "4chan"
+  },
+  "files": {
+    "source": "./rbt-asia.zip",
+    "extract": {
+      "path": "./extracted",
+      "script": ""
+    },
+    "out": {
+      "path": "./out",
+      "script": ""
+    }
+  }
+}

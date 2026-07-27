@@ -1,0 +1,32 @@
+{
+  "dir": "Memetic Sociology/Datasets/4chan/perma_cc_FRN8-45S5",
+  "source": {
+    "type": "internet-archive",
+    "name": "FRN8-45S5: /a/ - Re:Zero - Anime & Manga - 4chan",
+    "link": "https://archive.org/details/perma_cc_FRN8-45S5",
+    "short-desc": "Perma.cc archive of https://boards.4channel.org/a/thread/231722770 created on 2021-12-15 23:45:35+00:00.",
+    "capture": "thread-page: one complete thread (161 posts, no omitted replies)"
+  },
+  "prepare": [
+    {
+      "name": "extract captured HTML from the WARC",
+      "run": "local: node \"$PROJECT/src/cli.ts\" warc-extract $TARGET --warc \"$DIR/source/FRN8-45S5.warc.gz\" --out \"$DIR/out\""
+    }
+  ],
+  "ingest": {
+    "adapter": null,
+    "path": "Memetic Sociology/Datasets/4chan/perma_cc_FRN8-45S5/out",
+    "site": "4chan"
+  },
+  "files": {
+    "source": "perma_cc_FRN8-45S5.zip",
+    "extract": {
+      "path": "./extracted",
+      "script": ""
+    },
+    "out": {
+      "path": "./out",
+      "script": ""
+    }
+  }
+}

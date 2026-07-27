@@ -1,0 +1,35 @@
+{
+  "dir": "Memetic Sociology/Datasets/4chan/4chan-data-20181015",
+  "source": {
+    "type": "internet-archive",
+    "name": "4chan-data-20181015",
+    "link": "https://archive.org/details/4chan-data-20181015",
+    "short-desc": "4chan-data-20181015"
+  },
+  "prepare": [
+    {
+      "name": "extract the multi-volume 7z sets",
+      "run": "mkdir -p extracted && for part in data index post; do d=source/4chan-data-20181015/$part; [ -d \"$d\" ] || continue; mkdir -p \"extracted/$part\"; for v in \"$d\"/*.7z.001 \"$d\"/*.7z; do [ -e \"$v\" ] || continue; 7z x -aos -o\"./extracted/$part\" \"$v\"; done; done"
+    },
+    {
+      "name": "stage for ingest",
+      "run": "rm -rf out && (cp -al extracted out 2>/dev/null || cp -a extracted out)"
+    }
+  ],
+  "ingest": {
+    "adapter": null,
+    "path": "Memetic Sociology/Datasets/4chan/4chan-data-20181015/out",
+    "site": "4chan"
+  },
+  "files": {
+    "source": "4chan-data-20181015_archive",
+    "extract": {
+      "path": "./extracted",
+      "script": ""
+    },
+    "out": {
+      "path": "./out",
+      "script": ""
+    }
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "dir": "Memetic Sociology/Datasets/4chan/4chan-vp-2015-threads",
+  "source": {
+    "type": "internet-archive",
+    "name": "4chan-vp-2015-threads",
+    "link": "https://archive.org/details/4chan-vp-2015-threads",
+    "short-desc": ""
+  },
+  "prepare": [
+    {
+      "name": "unzip the item",
+      "run": "mkdir -p extracted && 7z x -aos -o./extracted source/4chan-vp-2015-threads.zip"
+    },
+    {
+      "name": "extract the per-month 7z volumes into a board tree",
+      "run": "mkdir -p out/vp && for f in extracted/vp_*.7z; do [ -e \"$f\" ] || continue; 7z x -aos -o./out/vp \"$f\"; done"
+    }
+  ],
+  "ingest": {
+    "adapter": null,
+    "path": "Memetic Sociology/Datasets/4chan/4chan-vp-2015-threads/out",
+    "site": "4chan"
+  },
+  "files": {
+    "source": "./4chan-vp-2015-threads.zip",
+    "extract": {
+      "path": "./extracted",
+      "script": ""
+    },
+    "out": {
+      "path": "./out",
+      "script": ""
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "dir": "Memetic Sociology/Datasets/4chan/perma_cc_X9PP-YCVX",
+  "source": {
+    "type": "internet-archive",
+    "name": "X9PP-YCVX: /pol/ - Politically Incorrect - 4chan",
+    "link": "https://archive.org/details/perma_cc_X9PP-YCVX",
+    "short-desc": "Perma.cc archive of https://boards.4chan.org/pol/ created on 2022-05-25 17:59:14.828276+00:00.",
+    "capture": "board-index: 20 threads truncated to previews (103 of ~1250 posts)"
+  },
+  "prepare": [
+    {
+      "name": "extract captured HTML from the WARC",
+      "run": "local: node \"$PROJECT/src/cli.ts\" warc-extract $TARGET --warc \"$DIR/source/X9PP-YCVX.warc.gz\" --out \"$DIR/out\""
+    }
+  ],
+  "ingest": {
+    "adapter": null,
+    "path": "Memetic Sociology/Datasets/4chan/perma_cc_X9PP-YCVX/out",
+    "site": "4chan"
+  },
+  "files": {
+    "source": "perma_cc_X9PP-YCVX.zip",
+    "extract": {
+      "path": "./extracted",
+      "script": ""
+    },
+    "out": {
+      "path": "./out",
+      "script": ""
+    }
+  }
+}

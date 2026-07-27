@@ -1,0 +1,39 @@
+{
+  "dir": "Memetic Sociology/Datasets/4chan/4chan threads",
+  "source": {
+    "type": "internet-archive",
+    "name": "4chan threads collection (470,000+) downloaded from site's JSON API",
+    "link": "https://archive.org/details/4chanThreads_201809",
+    "short-desc": "Threads were scraped at various times between May 2017 and September 2018. This archive is by no means exhaustive of all threads created during that time period."
+  },
+  "prepare": [
+    {
+      "name": "extract the 7z of thread dumps",
+      "run": "mkdir -p extracted && 7z x -aos -o./extracted 'source/4chan threads.7z'"
+    },
+    {
+      "name": "rename .txt thread dumps to .json",
+      "run": "find extracted -name '*.txt' -exec sh -c 'mv -- \"$1\" \"${1%.txt}.json\"' _ {} ';'"
+    },
+    {
+      "name": "stage for ingest",
+      "run": "rm -rf out && (cp -al extracted out 2>/dev/null || cp -a extracted out)"
+    }
+  ],
+  "ingest": {
+    "adapter": "json-api",
+    "path": "Memetic Sociology/Datasets/4chan/4chan threads/4chan threads",
+    "site": "4chan"
+  },
+  "files": {
+    "source": "./4chan threads.7z",
+    "extract": {
+      "path": "./4chan threads",
+      "script": "7z x -o./4chan threads ./4chan threads.7z"
+    },
+    "out": {
+      "path": "./4chan threads",
+      "script": "find . -type f -name '*.txt' -exec mv {} {}.json \\;"
+    }
+  }
+}
