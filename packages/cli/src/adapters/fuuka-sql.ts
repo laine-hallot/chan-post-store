@@ -166,5 +166,7 @@ export async function ingestFuukaSql(
     throw err;
   }
   process.stderr.write("\n");
+  // Fold this run's tallies into post_stats before reporting.
+  inserter.finish();
   return stats;
 }

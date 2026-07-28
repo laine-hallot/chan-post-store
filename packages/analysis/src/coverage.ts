@@ -4,6 +4,9 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import {
+  bucketsFromStats,
+  hasPostStats,
+  totalsFromStats,
   hasSourceTimeIndex,
   openReadOnly,
   postsByYearAndSource,
@@ -52,27 +55,38 @@ if (!existsSync(dbPath)) {
 }
 
 const db = openReadOnly(dbPath);
-if (!hasSourceTimeIndex(db)) {
-  console.error(
-    "warning: idx_posts_src_ts is missing — this query will fall back to a\n" +
-      "full scan of the posts table and may take several minutes. Create it with:\n" +
-      "  CREATE INDEX idx_posts_src_ts ON posts (source_id, ts_utc);",
-  );
-}
 
 console.log(`reading ${dbPath} ...`);
 const t0 = Date.now();
 
-// Scoping to a board drops the source split: no index leads with both
-// source and board, so keeping the split there costs ~130s per bar. The
-// board question ("when is this board's data from") doesn't need it.
-const buckets = values.board
-  ? postsByYearForBoard(db, values.site, values.board).map((r) => ({
-      ...r,
-      source: `/${values.board}/`,
-    }))
-  : postsByYearAndSource(db);
-const tot = values.board ? null : totals(db);
+// post_stats holds pre-rolled (source, board, year) counts, so when it is
+// populated everything is a scan of a few hundred rows — including the
+// board+source split, which no index on `posts` can serve.
+const cached = hasPostStats(db);
+if (!cached) {
+  console.error(
+    "note: post_stats is empty, falling back to counting rows directly.\n" +
+      "      Populate it once with: node packages/cli/src/cli.ts refresh-stats --db <file>",
+  );
+  // Only relevant on the fallback path; with the summary table this index
+  // is not consulted at all.
+  if (!hasSourceTimeIndex(db)) {
+    console.error(
+      "warning: idx_posts_src_ts is missing too — the fallback will scan the\n" +
+        "         whole posts table and may take several minutes.",
+    );
+  }
+}
+
+const buckets = cached
+  ? bucketsFromStats(db, values.board ? { site: values.site, board: values.board } : undefined)
+  : values.board
+    ? postsByYearForBoard(db, values.site, values.board).map((r) => ({
+        ...r,
+        source: `/${values.board}/`,
+      }))
+    : postsByYearAndSource(db);
+const tot = cached ? totalsFromStats(db) : values.board ? null : totals(db);
 db.close();
 console.log(`aggregated ${buckets.length} buckets in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
 
@@ -111,11 +125,12 @@ const charted = buckets.reduce((n, b) => n + b.posts, 0);
 let title: string;
 let subtitle: string;
 if (values.board) {
-  const active = buckets.filter((b) => b.posts > 0).map((b) => b.year);
+  const active = buckets.filter((b) => b.posts > 0).map((b) => b.year).sort();
   title = `/${values.board}/ — posts by year`;
   subtitle =
-    `${fmt(charted)} posts, ${active[0]} to ${active[active.length - 1]}.` +
-    " Counts combine every archive, so posts held by more than one are counted once per archive.";
+    `${fmt(charted)} posts, ${active[0]} to ${active[active.length - 1]}` +
+    (series.length > 1 ? `, across ${series.length} archives` : "") +
+    ". Archives overlap, so a post held by more than one is counted once per archive.";
 } else {
   const span =
     tot!.minTs && tot!.maxTs

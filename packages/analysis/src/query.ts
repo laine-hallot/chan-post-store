@@ -21,6 +21,54 @@ export function openReadOnly(path: string): DatabaseSync {
   return new DatabaseSync(path, { readOnly: true });
 }
 
+/** True when the post_stats summary table exists and is populated. */
+export function hasPostStats(db: DatabaseSync): boolean {
+  const t = db
+    .prepare("SELECT 1 AS ok FROM sqlite_master WHERE type='table' AND name='post_stats'")
+    .get() as { ok?: number } | undefined;
+  if (t?.ok !== 1) return false;
+  const n = db.prepare("SELECT COUNT(*) AS n FROM post_stats").get() as { n: number };
+  return n.n > 0;
+}
+
+/**
+ * Year/source grid straight out of post_stats.
+ *
+ * The summary table makes this a scan of a few hundred rows rather than the
+ * ~17s of index range counts, and it is the only way to get a board+source
+ * split at all — no index on `posts` serves that combination.
+ */
+export function bucketsFromStats(
+  db: DatabaseSync,
+  filter?: { site: string; board: string },
+): YearBucket[] {
+  const where = filter ? "WHERE ps.site = ? AND ps.board = ? AND ps.year IS NOT NULL" : "WHERE ps.year IS NOT NULL";
+  const args = filter ? [filter.site, filter.board] : [];
+  return db
+    .prepare(
+      `SELECT s.name AS source, CAST(ps.year AS TEXT) AS year, SUM(ps.posts) AS posts
+         FROM post_stats ps
+         JOIN sources s ON s.id = ps.source_id
+        ${where}
+        GROUP BY s.name, ps.year
+        ORDER BY ps.year, s.name`,
+    )
+    .all(...args) as unknown as YearBucket[];
+}
+
+/** Corpus totals from post_stats: a few hundred rows, not 288M. */
+export function totalsFromStats(db: DatabaseSync): Totals {
+  const r = db
+    .prepare(
+      `SELECT SUM(posts) AS posts,
+              MIN(min_ts) AS lo,
+              MAX(max_ts) AS hi
+         FROM post_stats`,
+    )
+    .get() as { posts: number | null; lo: number | null; hi: number | null };
+  return { posts: r.posts ?? 0, minTs: r.lo, maxTs: r.hi };
+}
+
 /** True when the covering index for source+time grouping is present. */
 export function hasSourceTimeIndex(db: DatabaseSync): boolean {
   const row = db

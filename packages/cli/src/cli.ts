@@ -4,6 +4,7 @@ import { gunzipSync } from "node:zlib";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { openDb, getOrCreateSource } from "./db.ts";
+import { boardList, hasStats, refreshPostStats } from "./stats.ts";
 import { ingestJsonApi } from "./adapters/json-api.ts";
 import { ingestFuukaSql } from "./adapters/fuuka-sql.ts";
 import { ingestWarosuSql } from "./adapters/warosu-sql.ts";
@@ -52,6 +53,8 @@ const USAGE = `Usage:
   cli.ts prepare <source> [--remote <host>] [--local] [--dry-run] [--force]
   cli.ts warc-extract --warc <file.warc[.gz]> --out <dir> [--host <regex>]
   cli.ts ingest <source> --db <file> [--board <b> ...]
+  cli.ts boards --db <file>
+  cli.ts refresh-stats --db <file>
   cli.ts count --db <file> --phrase <text> [--board <b>] [--site 4chan] [--from <date>] [--to <date>] [--by month|day|year|total]
   cli.ts search --db <file> --phrase <text> [--board <b>] [--site 4chan] [--from <date>] [--to <date>] [--limit 20]
   cli.ts list boards|sites|sources|manifests --db <file> [--site <s>]
@@ -459,6 +462,69 @@ async function cmdListManifests(argv: string[]) {
   }
 }
 
+/**
+ * Rebuilds the post_stats summary table.
+ *
+ * Ingest keeps it current, so this is for backfilling a store that predates
+ * the table. One full pass over `posts`.
+ */
+/**
+ * Board list from the summary table.
+ *
+ * Distinct from `list boards`, which dedupes post/thread numbers across
+ * overlapping archives by scanning `posts` — accurate but minutes-long on a
+ * large store. This reads pre-rolled counts instead, so it answers "which
+ * boards exist and when is their data from" immediately; the counts are raw
+ * per-archive contributions and can double-count a post held twice.
+ */
+function cmdBoards(argv: string[]) {
+  const { values } = parseArgs({ args: argv, options: { db: { type: "string" } } });
+  if (!values.db) fail("boards requires --db");
+  const db = openDb(values.db);
+  try {
+    if (!hasStats(db)) {
+      fail("post_stats is empty — run: cli.ts refresh-stats --db <file>");
+    }
+    const rows = boardList(db);
+    if (rows.length === 0) {
+      console.log("no boards recorded");
+      return;
+    }
+    // Years are rendered as strings: printTable group-separates numbers,
+    // which would print 2015 as "2,015".
+    const body = rows.map((r) => [
+      r.site,
+      r.board,
+      r.posts,
+      r.firstYear == null ? null : String(r.firstYear),
+      r.lastYear == null ? null : String(r.lastYear),
+    ]);
+    printTable(
+      ["site", "board", "posts", "first", "last"],
+      body,
+      body.length > 1
+        ? totalsRow(["label", "blank", "sum", "min", "max"], body)
+        : undefined,
+    );
+  } finally {
+    db.close();
+  }
+}
+
+function cmdRefreshStats(argv: string[]) {
+  const { values } = parseArgs({ args: argv, options: { db: { type: "string" } } });
+  if (!values.db) fail("refresh-stats requires --db");
+  const db = openDb(values.db);
+  try {
+    console.log("rebuilding post_stats (one full pass over posts) ...");
+    const t0 = Date.now();
+    const rows = refreshPostStats(db);
+    console.log(`wrote ${rows} rows in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
+  } finally {
+    db.close();
+  }
+}
+
 const FILTER_OPTIONS = {
   db: { type: "string" },
   phrase: { type: "string" },
@@ -794,6 +860,12 @@ switch (cmd) {
     break;
   case "ingest":
     await cmdIngest(rest);
+    break;
+  case "boards":
+    cmdBoards(rest);
+    break;
+  case "refresh-stats":
+    cmdRefreshStats(rest);
     break;
   case "count":
     cmdCount(rest);

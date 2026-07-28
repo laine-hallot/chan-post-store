@@ -163,12 +163,27 @@ node packages/cli/src/cli.ts count --db data/posts.db \
 node packages/cli/src/cli.ts search --db data/posts.db \
   --phrase "install gentoo" --board g --from 2017-05 --limit 20
 
+# which boards exist and when their data is from, from the summary table
+# (immediate); `list boards` below is the deduped-but-slow equivalent
+node packages/cli/src/cli.ts boards --db data/posts.db
+
+# rebuild that summary table — only needed for a store that predates it,
+# since ingest keeps it current
+node packages/cli/src/cli.ts refresh-stats --db data/posts.db
+
 # what's in the database: post/thread counts and date spans, with a
 # TOTAL row (summed counts, combined date range) when there's >1 row
 node packages/cli/src/cli.ts list boards --db data/posts.db   # per site+board
 node packages/cli/src/cli.ts list sites --db data/posts.db    # per site
 node packages/cli/src/cli.ts list sources --db data/posts.db  # per ingested archive
 ```
+
+`post_stats` caches per-(archive, board, year) counts so the questions that
+would otherwise scan hundreds of millions of rows are immediate. Ingest
+maintains it, so it only needs rebuilding for data loaded before it existed.
+Its counts are raw per-archive contributions — `boards` can therefore
+double-count a post held by two archives, where `list boards` dedupes by
+scanning.
 
 Ingesting straight off the SFTP mount works but pays a round-trip per thread
 file; for the json-api sources it's much faster to stage the extracted data on

@@ -161,5 +161,7 @@ export async function ingestWarosuSql(
     throw err;
   }
   process.stderr.write("\n");
+  // Fold this run's tallies into post_stats before reporting.
+  inserter.finish();
   return stats;
 }

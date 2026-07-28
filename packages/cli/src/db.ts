@@ -37,6 +37,30 @@ CREATE VIRTUAL TABLE IF NOT EXISTS posts_fts USING fts5(
   subject, body_text,
   content='posts', content_rowid='id'
 );
+
+-- Rolled-up post counts, maintained during ingest.
+--
+-- Deriving these from the posts table means walking the index for every
+-- board: a plain "which boards exist" GROUP BY costs ~215s on a 288M-row
+-- store, and a per-board year grid tens of seconds. Keyed by year as well
+-- as board so one table answers both the board list and the coverage
+-- charts.
+--
+-- year is the UTC calendar year; posts with no timestamp are counted under
+-- year IS NULL so the totals still reconcile with the posts table.
+CREATE TABLE IF NOT EXISTS post_stats (
+  source_id INTEGER NOT NULL REFERENCES sources(id),
+  site      TEXT NOT NULL,
+  board     TEXT NOT NULL,
+  year      INTEGER,
+  posts     INTEGER NOT NULL DEFAULT 0,
+  min_ts    INTEGER,
+  max_ts    INTEGER,
+  PRIMARY KEY (source_id, site, board, year)
+);
+
+CREATE INDEX IF NOT EXISTS idx_post_stats_board
+  ON post_stats (site, board, year);
 `;
 
 export function openDb(path: string): DatabaseSync {

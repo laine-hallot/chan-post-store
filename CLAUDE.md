@@ -89,6 +89,25 @@ Things that will bite you here:
   gvfs mount drops periodically ("Transport endpoint is not connected"); stage
   checks go through `runner.exec` for this reason.
 
+### post_stats, the summary table
+
+Aggregates over `posts` are expensive at this scale — a plain "which boards
+exist" `GROUP BY` costs ~215s on 288M rows, and anything filtering by board
+*and* source has no usable index at all (~130s for a single count). So
+`post_stats` holds pre-rolled counts keyed `(source_id, site, board, year)`,
+with `min_ts`/`max_ts`.
+
+`PostInserter` tallies in memory during ingest and folds the run into the
+table in `finish()` — which every adapter must call before returning, or the
+table silently drifts. `refresh-stats` rebuilds it from scratch and is only
+needed to backfill a store that predates it.
+
+Undated posts are counted under `year IS NULL`, so `SUM(posts)` always
+reconciles with `COUNT(*) FROM posts`. Counts are raw per-archive
+contributions and can double-count a post held by two archives — `list
+boards` still scans `posts` when you need the deduped figures, which is why
+both commands exist.
+
 ### Adapters
 
 One per archive format in `packages/cli/src/adapters/`, sharing only low-level helpers

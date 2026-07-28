@@ -147,5 +147,7 @@ export function ingestJsonApi(
       `\r/${board}/ threads=${stats.threads} posts=${stats.posts}\n`,
     );
   }
+  // Fold this run's tallies into post_stats before reporting.
+  inserter.finish();
   return stats;
 }
