@@ -117,10 +117,9 @@ table silently drifts. `refresh-stats` rebuilds it from scratch and is only
 needed to backfill a store that predates it.
 
 Undated posts are counted under `year IS NULL`, so `SUM(posts)` always
-reconciles with `COUNT(*) FROM posts`. Counts are raw per-archive
-contributions and can double-count a post held by two archives — `list
-boards` still scans `posts` when you need the deduped figures, which is why
-both commands exist.
+reconciles with `COUNT(*) FROM posts`. Since `posts` holds one row per post,
+these counts do not double-count across archives; `source_id` attributes each
+post to whichever archive supplied it first.
 
 ### Adapters
 
@@ -132,9 +131,20 @@ separate even when formats look similar.
 store `timestamp` as America/New_York wall time, not UTC, so it is converted
 back on ingest.
 
-Ingest is idempotent per source name (`UNIQUE (source_id, site, board,
-post_no)`), and `count`/`search` dedupe across overlapping archives by
-`(board, post_no)`.
+`posts` is keyed `UNIQUE (site, board, post_no)` — one row per post, not one
+per (post, archive). Ingest is therefore idempotent both ways: re-running a
+source skips what it already contributed, and a source holding a post another
+archive already supplied adds nothing. `source_id` records which archive got
+there first.
+
+This means **queries need no dedup logic** — a plain `COUNT(*)` is correct.
+The store previously kept a copy per archive, and on the current corpus 34.8%
+of rows (197M of 566M) were such copies, silently multiplying every
+aggregate. `dedupe` migrates a store built under the old constraint.
+
+The cost is that archive overlap is no longer answerable from the database.
+That is deliberate: infer it by diffing the source datasets, which reflects
+what each archive actually contains rather than ingest order.
 
 ## Working with archive.org sources
 

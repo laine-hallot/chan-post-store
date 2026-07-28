@@ -644,15 +644,16 @@ function cmdCount(argv: string[]) {
 
   const { where, params } = phraseFilters(values);
 
-  // COUNT(DISTINCT ...) dedupes posts that appear in more than one archive
-  // source; post numbers are unique within a board.
+  // A plain COUNT(*) is correct because posts holds one row per post: the
+  // UNIQUE (site, board, post_no) constraint means an archive that also had
+  // the post contributed no second row to count.
   const bucketExpr =
     values.by === "total"
       ? "'total'"
       : `strftime('${BUCKET_FORMATS[values.by]}', p.ts_utc, 'unixepoch')`;
   const sql = `
     SELECT ${bucketExpr} AS bucket,
-           COUNT(DISTINCT p.board || ':' || p.post_no) AS posts
+           COUNT(*) AS posts
     FROM posts_fts
     JOIN posts p ON p.id = posts_fts.rowid
     WHERE ${where}
@@ -688,19 +689,21 @@ function cmdSearch(argv: string[]) {
   if (!Number.isInteger(limit) || limit < 1) fail(`invalid --limit: ${values.limit}`);
 
   const { where, params } = phraseFilters(values);
-  // GROUP BY collapses copies of the same post held by different sources
+  // No GROUP BY: posts holds one row per post, so there are no copies to
+  // collapse. Dropping it also lets the LIMIT short-circuit -- grouping
+  // forced every match to be materialized and sorted before the first row
+  // could be returned.
   const sql = `
     SELECT p.board, p.thread_no, p.post_no, p.is_op, p.ts_utc,
            p.name, p.tripcode, p.subject, p.body_text
     FROM posts_fts
     JOIN posts p ON p.id = posts_fts.rowid
     WHERE ${where}
-    GROUP BY p.site, p.board, p.post_no
     ORDER BY p.ts_utc, p.post_no
     LIMIT ?
   `;
   const totalSql = `
-    SELECT COUNT(DISTINCT p.site || ':' || p.board || ':' || p.post_no) AS n
+    SELECT COUNT(*) AS n
     FROM posts_fts
     JOIN posts p ON p.id = posts_fts.rowid
     WHERE ${where}
@@ -819,7 +822,7 @@ const LIST_QUERIES: Record<
     totals: ["label", "blank", "sum", "sum", "min", "max"],
     sql: `
       SELECT p.site, p.board,
-             COUNT(DISTINCT p.post_no) AS posts,
+             COUNT(*) AS posts,
              COUNT(DISTINCT p.thread_no) AS threads,
              date(MIN(p.ts_utc), 'unixepoch') AS first,
              date(MAX(p.ts_utc), 'unixepoch') AS last
@@ -833,7 +836,7 @@ const LIST_QUERIES: Record<
     sql: `
       SELECT p.site,
              COUNT(DISTINCT p.board) AS boards,
-             COUNT(DISTINCT p.board || ':' || p.post_no) AS posts,
+             COUNT(*) AS posts,
              date(MIN(p.ts_utc), 'unixepoch') AS first,
              date(MAX(p.ts_utc), 'unixepoch') AS last
       FROM posts p {WHERE}
@@ -842,8 +845,8 @@ const LIST_QUERIES: Record<
   },
   sources: {
     headers: ["source", "posts", "boards", "first", "last", "link"],
-    // posts are raw per-source contributions and may overlap across sources,
-    // so the summed total can exceed the deduped site total by design
+    // Each post belongs to exactly one source -- whichever archive supplied
+    // it first -- so these sum cleanly and reconcile with the site totals.
     totals: ["label", "sum", "sum", "min", "max", "blank"],
     sql: `
       SELECT s.name,
