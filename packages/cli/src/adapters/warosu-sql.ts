@@ -145,6 +145,11 @@ export async function ingestWarosuSql(
           if (ok) stats.posts++;
           else stats.skippedDup++;
           if (++sinceCommit >= COMMIT_EVERY) {
+            // Flush the stats tallies inside the same transaction as the
+            // posts they describe, so an interrupted run leaves post_stats
+            // consistent with what actually landed rather than losing every
+            // tally accumulated since the run began.
+            inserter.finish();
             db.exec("COMMIT");
             db.exec("BEGIN");
             sinceCommit = 0;

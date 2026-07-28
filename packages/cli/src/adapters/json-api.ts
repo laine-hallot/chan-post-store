@@ -130,6 +130,10 @@ export function ingestJsonApi(
 
         stats.threads++;
         if (++inTx >= BATCH) {
+          // Flush the stats tallies alongside the posts they describe, so an
+          // interrupted run leaves post_stats consistent with what landed
+          // instead of losing every tally since the run began.
+          inserter.finish();
           db.exec("COMMIT");
           db.exec("BEGIN");
           inTx = 0;

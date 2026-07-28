@@ -89,11 +89,13 @@ export class PostInserter {
   }
 
   /**
-   * Folds this run's tallies into `post_stats`.
+   * Folds the tallies accumulated so far into `post_stats`.
    *
-   * Must be called once ingestion finishes; counts are added to whatever is
-   * already stored, so re-ingesting a source that was partially loaded stays
-   * consistent (posts already present are skipped and never tallied).
+   * Counts are added to whatever is already stored, so this is safe to call
+   * repeatedly: each call contributes only what has been counted since the
+   * last one. Adapters call it periodically as well as at the end — a single
+   * flush at the end means an interrupted run loses every tally it had
+   * accumulated, leaving post_stats short of `posts` until a full rebuild.
    */
   finish(): void {
     const up = this.#db.prepare(`

@@ -150,6 +150,10 @@ export async function ingestFuukaSql(
           if (ok) stats.posts++;
           else stats.skippedDup++;
           if (++sinceCommit >= COMMIT_EVERY) {
+            // Flush the stats tallies alongside the posts they describe, so
+            // an interrupted run leaves post_stats consistent with what
+            // landed instead of losing every tally since the run began.
+            inserter.finish();
             db.exec("COMMIT");
             db.exec("BEGIN");
             sinceCommit = 0;
