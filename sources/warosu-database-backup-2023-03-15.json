@@ -5,12 +5,16 @@
     "name": "Warosu Database Backup 2023-03-15",
     "link": "https://archive.org/details/warosu-database-backup-2023-03-15",
     "short-desc": "Database backup of warosu.org on 2023-03-15 in mysqldump (SQL statements) format",
-    "capture": "12 per-board mysqldumps, shipped as loose .sql.zst files (no zip on the IA item)"
+    "capture": "12 per-board mysqldumps as .sql.zst. The IA item lists them loose; an all-files zip of the same content also exists, so prepare handles either starting point."
   },
   "prepare": [
     {
+      "name": "unpack the zip, if the item was fetched in that form",
+      "run": "mkdir -p extracted && if [ -z \"$(ls out/*.sql 2>/dev/null)\" ] && ! ls extracted/*.sql.zst extracted/*.sql >/dev/null 2>&1 && [ -z \"$(find . -maxdepth 3 -name '*.sql.zst' -not -path './extracted/*' -print -quit)\" ]; then z=$(find . -maxdepth 3 -name '*.zip' -print -quit); [ -n \"$z\" ] && 7z x -aos -o./extracted \"$z\"; fi; true"
+    },
+    {
       "name": "decompress the zstd per-board dumps",
-      "run": "mkdir -p extracted && find source -name '*.sql.zst' | while read -r f; do o=extracted/$(basename \"${f%.zst}\"); [ -e \"$o\" ] || unzstd -q -o \"$o\" \"$f\"; done"
+      "run": "mkdir -p extracted && find . -name '*.sql.zst' -not -path './out/*' | while read -r f; do b=$(basename \"${f%.zst}\"); [ -e \"extracted/$b\" ] || [ -e \"out/$b\" ] || unzstd -q -o \"extracted/$b\" \"$f\"; done"
     },
     {
       "name": "stage the .sql dumps for ingest",
