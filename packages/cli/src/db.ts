@@ -67,8 +67,18 @@ export function openDb(path: string): DatabaseSync {
   const db = new DatabaseSync(path);
   db.exec("PRAGMA journal_mode = WAL;");
   db.exec("PRAGMA synchronous = NORMAL;");
+  // Ingests run for hours and hold the write lock in long batches. Without
+  // a busy timeout a second writer fails instantly with SQLITE_BUSY; with
+  // one it waits through a checkpoint instead of dying on a transient lock.
+  db.exec("PRAGMA busy_timeout = 30000;");
   db.exec(SCHEMA);
   return db;
+}
+
+/** True when the error is SQLite refusing a concurrent writer. */
+export function isLockedError(e: unknown): boolean {
+  const err = e as { code?: string; errstr?: string };
+  return err?.code === "ERR_SQLITE_ERROR" && /locked|busy/i.test(err.errstr ?? "");
 }
 
 export function getOrCreateSource(

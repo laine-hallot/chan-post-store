@@ -3,7 +3,7 @@ import { dirname, join } from "node:path";
 import { gunzipSync } from "node:zlib";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
-import { openDb, getOrCreateSource } from "./db.ts";
+import { openDb, getOrCreateSource, isLockedError } from "./db.ts";
 import { boardList, hasStats, refreshPostStats } from "./stats.ts";
 import { ingestJsonApi } from "./adapters/json-api.ts";
 import { ingestFuukaSql } from "./adapters/fuuka-sql.ts";
@@ -75,6 +75,28 @@ function fail(msg: string): never {
   console.error();
   console.error(USAGE);
   process.exit(1);
+}
+
+/**
+ * Runs `fn`, turning SQLite's write-lock error into a plain explanation.
+ *
+ * Only one writer at a time is allowed, and ingests hold the lock for hours,
+ * so a second one hitting it is an ordinary situation rather than a bug —
+ * it should not surface as a stack trace.
+ */
+function onLockedFail<T>(dbPath: string | undefined, fn: () => T): T {
+  try {
+    return fn();
+  } catch (e) {
+    if (isLockedError(e)) {
+      fail(
+        `${dbPath} is locked by another writer.\n` +
+          `An ingest or refresh-stats is probably already running against it —\n` +
+          `SQLite allows one writer at a time, so wait for that to finish.`,
+      );
+    }
+    throw e;
+  }
 }
 
 /** Parse a date bound; returns epoch seconds. End bounds are advanced by one
@@ -348,9 +370,11 @@ async function cmdIngest(argv: string[]) {
     fail(String((e as Error).message));
   }
 
-  const db = openDb(values.db);
+  const db = onLockedFail(values.db, () => openDb(values.db!));
   try {
-    const sourceId = getOrCreateSource(db, manifest.name, manifest.link);
+    const sourceId = onLockedFail(values.db, () =>
+      getOrCreateSource(db, manifest.name, manifest.link),
+    );
     const t0 = Date.now();
     console.log(`ingesting ${manifest.name} [${manifest.adapter}] from ${manifest.path}`);
 
