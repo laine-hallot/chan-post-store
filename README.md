@@ -25,9 +25,19 @@ Runs on Node 24+ with no runtime dependencies — SQLite comes from the built-in
 - `packages/cli/src/archive-org.ts` — archive.org metadata API + item downloader
 - `sources/` — one committed manifest per archive: provenance plus the
   adapter and path needed to ingest it (see below)
-- `Memetic Sociology/` — SFTP mount of the raw archives (slow; don't
-  recursively list it). Each dataset also keeps a local `manifest.json`
-  so the directory is self-describing when read outside this tool.
+- `Memetic Sociology/` — symlink to an sshfs mount of the raw archives
+  (slow; don't recursively list it). Each dataset also keeps a local
+  `manifest.json` so the directory is self-describing when read outside
+  this tool. Mount it with the same key the runner uses:
+
+  ```sh
+  sshfs -o IdentityFile=~/.ssh/id_4chan_nas,IdentitiesOnly=yes,IdentityAgent=none,reconnect,ServerAliveInterval=15 \
+    "$NAS_HOST:/path/to/share" ~/mnt/laines_data
+  ```
+
+  `IdentityAgent=none` matters — without it sshfs inherits whatever
+  `~/.ssh/config` offers and authentication fails. Only `ingest` needs this
+  mount; `download`, `prepare` and `list manifests` all work over SSH.
 
 ## Sources
 

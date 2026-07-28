@@ -85,9 +85,23 @@ Things that will bite you here:
   runner passes `IdentitiesOnly=yes` and `IdentityAgent=none` with a dedicated
   key. Manual `ssh` to the NAS needs the same flags or you land in a different
   account's environment.
-- **Never check paths through the local mount** when the runner is remote. The
-  gvfs mount drops periodically ("Transport endpoint is not connected"); stage
-  checks go through `runner.exec` for this reason.
+- **Never check paths through the local mount** when the runner is remote.
+  Stage checks go through `runner.exec` for this reason. `ingest` is the
+  exception — adapters read files directly, so it needs the archives visible
+  locally.
+- **The local mount is sshfs, not SMB.** gvfs/SMB dropped repeatedly
+  ("Transport endpoint is not connected", plus a stale "already mounted"
+  state that survived unmounting). sshfs reuses the same key as the runner,
+  so there is one auth path rather than two:
+
+  ```sh
+  sshfs -o IdentityFile=~/.ssh/id_4chan_nas,IdentitiesOnly=yes,IdentityAgent=none,reconnect,ServerAliveInterval=15 \
+    <host>:/path/to/share ~/mnt/laines_data
+  ```
+
+  `IdentityAgent=none` is required, not optional: sshfs shells out to `ssh`,
+  which picks up the `Host *` agent config and then offers the wrong keys.
+  The `Memetic Sociology` symlink points at this mount.
 
 ### post_stats, the summary table
 
