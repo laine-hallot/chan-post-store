@@ -4,12 +4,13 @@
     "type": "internet-archive",
     "name": "Warosu Database Backup 2023-03-15",
     "link": "https://archive.org/details/warosu-database-backup-2023-03-15",
-    "short-desc": "Database backup of warosu.org on 2023-03-15 in mysqldump (SQL statements) format"
+    "short-desc": "Database backup of warosu.org on 2023-03-15 in mysqldump (SQL statements) format",
+    "capture": "12 per-board mysqldumps, shipped as loose .sql.zst files (no zip on the IA item)"
   },
   "prepare": [
     {
-      "name": "unzip the per-board mysqldumps",
-      "run": "mkdir -p extracted && 7z x -aos -o./extracted source/warosu-database-backup-2023-03-15.zip"
+      "name": "decompress the zstd per-board dumps",
+      "run": "mkdir -p extracted && find source -name '*.sql.zst' | while read -r f; do o=extracted/$(basename \"${f%.zst}\"); [ -e \"$o\" ] || unzstd -q -o \"$o\" \"$f\"; done"
     },
     {
       "name": "stage the .sql dumps for ingest",
@@ -22,7 +23,7 @@
     "site": "4chan"
   },
   "files": {
-    "source": "./warosu-database-backup-2023-03-15.zip",
+    "source": "./source",
     "extract": {
       "path": "./extracted",
       "script": ""
