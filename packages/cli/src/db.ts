@@ -8,6 +8,14 @@ CREATE TABLE IF NOT EXISTS sources (
   notes TEXT
 );
 
+-- One row per post, not per (post, archive). source_id records which archive
+-- first supplied the row; a later archive holding the same post is skipped by
+-- the UNIQUE constraint rather than stored again.
+--
+-- Overlap between archives is therefore NOT answerable from this table. That
+-- is deliberate: aggregate queries (word frequency over a period, posts per
+-- year) would otherwise double-count posts held by several archives, and
+-- overlap is better inferred by diffing the source datasets themselves.
 CREATE TABLE IF NOT EXISTS posts (
   id             INTEGER PRIMARY KEY,
   source_id      INTEGER NOT NULL REFERENCES sources(id),
@@ -23,7 +31,7 @@ CREATE TABLE IF NOT EXISTS posts (
   body_text      TEXT,
   media_filename TEXT,
   media_md5      TEXT,
-  UNIQUE (source_id, site, board, post_no)
+  UNIQUE (site, board, post_no)
 );
 
 CREATE INDEX IF NOT EXISTS idx_posts_board_ts ON posts (site, board, ts_utc);
@@ -32,6 +40,8 @@ CREATE INDEX IF NOT EXISTS idx_posts_board_ts ON posts (site, board, ts_utc);
 -- date spans per board without touching the (body-text-heavy) table rows
 CREATE INDEX IF NOT EXISTS idx_posts_stats
   ON posts (site, board, post_no, thread_no, ts_utc);
+
+CREATE INDEX IF NOT EXISTS idx_posts_src_ts ON posts (source_id, ts_utc);
 
 CREATE VIRTUAL TABLE IF NOT EXISTS posts_fts USING fts5(
   subject, body_text,
@@ -48,6 +58,10 @@ CREATE VIRTUAL TABLE IF NOT EXISTS posts_fts USING fts5(
 --
 -- year is the UTC calendar year; posts with no timestamp are counted under
 -- year IS NULL so the totals still reconcile with the posts table.
+--
+-- Since posts holds one row per post, these counts no longer double-count
+-- across archives: SUM(posts) equals COUNT(*) FROM posts, and source_id
+-- attributes each post to whichever archive supplied it first.
 CREATE TABLE IF NOT EXISTS post_stats (
   source_id INTEGER NOT NULL REFERENCES sources(id),
   site      TEXT NOT NULL,

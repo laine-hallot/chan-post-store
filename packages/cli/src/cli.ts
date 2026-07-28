@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { openDb, getOrCreateSource, isLockedError } from "./db.ts";
 import { boardList, hasStats, refreshPostStats } from "./stats.ts";
+import { dedupePosts, needsDedupe } from "./dedupe.ts";
 import { ingestJsonApi } from "./adapters/json-api.ts";
 import { ingestFuukaSql } from "./adapters/fuuka-sql.ts";
 import { ingestWarosuSql } from "./adapters/warosu-sql.ts";
@@ -55,6 +56,7 @@ const USAGE = `Usage:
   cli.ts ingest <source> --db <file> [--board <b> ...]
   cli.ts boards --db <file>
   cli.ts refresh-stats --db <file>
+  cli.ts dedupe --db <file> --yes
   cli.ts count --db <file> --phrase <text> [--board <b>] [--site 4chan] [--from <date>] [--to <date>] [--by month|day|year|total]
   cli.ts search --db <file> --phrase <text> [--board <b>] [--site 4chan] [--from <date>] [--to <date>] [--limit 20]
   cli.ts list boards|sites|sources|manifests --db <file> [--site <s>]
@@ -549,6 +551,39 @@ function cmdRefreshStats(argv: string[]) {
   }
 }
 
+function cmdDedupe(argv: string[]) {
+  const { values } = parseArgs({
+    args: argv,
+    options: { db: { type: "string" }, yes: { type: "boolean" } },
+  });
+  if (!values.db) fail("dedupe requires --db");
+  const db = openDb(values.db);
+  try {
+    if (!needsDedupe(db)) {
+      console.log("posts is already keyed (site, board, post_no) — nothing to do");
+      return;
+    }
+    if (!values.yes) {
+      fail(
+        "dedupe rewrites the store: duplicate posts are deleted and which\n" +
+          "archives held them is lost for good. Re-run with --yes to proceed.",
+      );
+    }
+    const t0 = Date.now();
+    const r = dedupePosts(db, (stage, detail) =>
+      console.log(`  ${stage}${detail ? ` ${detail}` : ""} ...`),
+    );
+    console.log(
+      `\n${r.before.toLocaleString()} rows -> ${r.after.toLocaleString()} ` +
+        `(${r.removed.toLocaleString()} duplicates removed) ` +
+        `in ${((Date.now() - t0) / 1000 / 60).toFixed(1)} min`,
+    );
+    console.log("post_stats is now stale — run refresh-stats next.");
+  } finally {
+    db.close();
+  }
+}
+
 const FILTER_OPTIONS = {
   db: { type: "string" },
   phrase: { type: "string" },
@@ -890,6 +925,9 @@ switch (cmd) {
     break;
   case "refresh-stats":
     cmdRefreshStats(rest);
+    break;
+  case "dedupe":
+    cmdDedupe(rest);
     break;
   case "count":
     cmdCount(rest);
