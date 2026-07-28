@@ -93,6 +93,55 @@ export function postsByYearAndSource(db: DatabaseSync): YearBucket[] {
   return out;
 }
 
+/**
+ * Posts per calendar year for one board, ignoring which archive supplied
+ * them.
+ *
+ * Fast for a different reason than the by-source grid: idx_posts_board_ts
+ * (site, board, ts_utc) *covers* this query, so each year is answered from
+ * the index without touching the table. Adding a source filter would break
+ * that — no index leads with source and board together, so the planner
+ * falls back to seeking one and testing the other row by row (~130s per
+ * cell). Hence board totals here rather than a board+source split.
+ */
+export function postsByYearForBoard(
+  db: DatabaseSync,
+  site: string,
+  board: string,
+): { year: string; posts: number }[] {
+  const span = boardSpan(db, site, board);
+  if (span.minTs == null || span.maxTs == null) return [];
+
+  const count = db.prepare(
+    "SELECT COUNT(*) AS n FROM posts WHERE site = ? AND board = ? AND ts_utc >= ? AND ts_utc < ?",
+  );
+  const out: { year: string; posts: number }[] = [];
+  const first = new Date(span.minTs * 1000).getUTCFullYear();
+  const last = new Date(span.maxTs * 1000).getUTCFullYear();
+  for (let y = first; y <= last; y++) {
+    const { n } = count.get(site, board, Date.UTC(y, 0, 1) / 1000, Date.UTC(y + 1, 0, 1) / 1000) as {
+      n: number;
+    };
+    out.push({ year: String(y), posts: n });
+  }
+  return out;
+}
+
+/** Timestamp range for one board — index seeks at each end. */
+export function boardSpan(
+  db: DatabaseSync,
+  site: string,
+  board: string,
+): { minTs: number | null; maxTs: number | null } {
+  const r = db
+    .prepare(
+      `SELECT (SELECT MIN(ts_utc) FROM posts WHERE site = ?1 AND board = ?2 AND ts_utc IS NOT NULL) AS lo,
+              (SELECT MAX(ts_utc) FROM posts WHERE site = ?1 AND board = ?2 AND ts_utc IS NOT NULL) AS hi`,
+    )
+    .get(site, board) as { lo: number | null; hi: number | null };
+  return { minTs: r.lo, maxTs: r.hi };
+}
+
 export interface Totals {
   /** Rows in `posts`, dated or not. */
   posts: number;

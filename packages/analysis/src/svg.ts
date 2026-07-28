@@ -88,7 +88,8 @@ export function renderChart(d: ChartData): string {
     }
     if (line) subtitleLines.push(line);
   }
-  const padT = 63 + subtitleLines.length * 18 + 46;
+  // Room for the header, plus a legend row only when there is a legend.
+  const padT = 63 + subtitleLines.length * 18 + (d.series.length > 1 ? 46 : 20);
   const w = padL + plotW + padR;
   const h = padT + plotH + padB;
 
@@ -119,14 +120,17 @@ export function renderChart(d: ChartData): string {
 
   // Legend: identity is never colour-alone, so each swatch is labelled.
   // Advance by an estimate of rendered width — DejaVu Sans at 12px averages
-  // ~6.9px/char — since there is no text metrics API here.
-  let lx = padL;
-  for (const s of d.series) {
-    o.push(`<rect x="${lx}" y="${padT - 32}" width="10" height="10" rx="2" fill="${s.color}"/>`);
-    o.push(
-      `<text x="${lx + 15}" y="${padT - 23}" font-size="12" fill="${PAL.textSecondary}">${esc(s.name)}</text>`,
-    );
-    lx += 15 + s.name.length * 6.9 + 28;
+  // ~6.9px/char — since there is no text metrics API here. A single series
+  // needs no legend: the title already names it.
+  if (d.series.length > 1) {
+    let lx = padL;
+    for (const s of d.series) {
+      o.push(`<rect x="${lx}" y="${padT - 32}" width="10" height="10" rx="2" fill="${s.color}"/>`);
+      o.push(
+        `<text x="${lx + 15}" y="${padT - 23}" font-size="12" fill="${PAL.textSecondary}">${esc(s.name)}</text>`,
+      );
+      lx += 15 + s.name.length * 6.9 + 28;
+    }
   }
 
   // Vertical gridlines behind the bars.

@@ -3,7 +3,13 @@ import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
-import { hasSourceTimeIndex, openReadOnly, postsByYearAndSource, totals } from "./query.ts";
+import {
+  hasSourceTimeIndex,
+  openReadOnly,
+  postsByYearAndSource,
+  postsByYearForBoard,
+  totals,
+} from "./query.ts";
 import { renderChart, type ChartData, type Series } from "./svg.ts";
 
 /**
@@ -34,6 +40,8 @@ const { values } = parseArgs({
     db: { type: "string" },
     out: { type: "string" },
     svg: { type: "boolean" },
+    board: { type: "string" },
+    site: { type: "string", default: "4chan" },
   },
 });
 
@@ -54,13 +62,26 @@ if (!hasSourceTimeIndex(db)) {
 
 console.log(`reading ${dbPath} ...`);
 const t0 = Date.now();
-const buckets = postsByYearAndSource(db);
-const tot = totals(db);
+
+// Scoping to a board drops the source split: no index leads with both
+// source and board, so keeping the split there costs ~130s per bar. The
+// board question ("when is this board's data from") doesn't need it.
+const buckets = values.board
+  ? postsByYearForBoard(db, values.site, values.board).map((r) => ({
+      ...r,
+      source: `/${values.board}/`,
+    }))
+  : postsByYearAndSource(db);
+const tot = values.board ? null : totals(db);
 db.close();
-console.log(`aggregated ${buckets.length} year/source buckets in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
+console.log(`aggregated ${buckets.length} buckets in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
 
 if (buckets.length === 0) {
-  console.error("no dated posts in the database — nothing to chart");
+  console.error(
+    values.board
+      ? `no dated posts for /${values.board}/ on ${values.site}`
+      : "no dated posts in the database — nothing to chart",
+  );
   process.exit(1);
 }
 
@@ -83,32 +104,40 @@ for (const y of allYears) grid.set(y, new Map());
 for (const b of buckets) grid.get(b.year)?.set(b.source, b.posts);
 
 const fmt = (n: number) => n.toLocaleString("en-US");
-const span =
-  tot.minTs && tot.maxTs
-    ? `${new Date(tot.minTs * 1000).toISOString().slice(0, 7)} to ${new Date(tot.maxTs * 1000).toISOString().slice(0, 7)}`
-    : "unknown span";
 
-// Sum of what is actually charted, so the headline matches the bars; posts
-// with no timestamp can't be placed in a year and are called out separately.
+// Sum of what is actually charted, so the headline matches the bars.
 const charted = buckets.reduce((n, b) => n + b.posts, 0);
-const undated = tot.posts - charted;
 
-const data: ChartData = {
-  years: allYears,
-  series,
-  values: grid,
-  title: "Post coverage by year and archive",
-  subtitle:
+let title: string;
+let subtitle: string;
+if (values.board) {
+  const active = buckets.filter((b) => b.posts > 0).map((b) => b.year);
+  title = `/${values.board}/ — posts by year`;
+  subtitle =
+    `${fmt(charted)} posts, ${active[0]} to ${active[active.length - 1]}.` +
+    " Counts combine every archive, so posts held by more than one are counted once per archive.";
+} else {
+  const span =
+    tot!.minTs && tot!.maxTs
+      ? `${new Date(tot!.minTs * 1000).toISOString().slice(0, 7)} to ${new Date(tot!.maxTs * 1000).toISOString().slice(0, 7)}`
+      : "unknown span";
+  const undated = tot!.posts - charted;
+  title = "Post coverage by year and archive";
+  subtitle =
     `${fmt(charted)} dated posts across ${series.length} sources, ${span}.` +
     (undated > 0 ? ` ${fmt(undated)} undated posts are not shown.` : "") +
-    " Archives overlap, so a post may appear more than once.",
-};
+    " Archives overlap, so a post may appear more than once.";
+}
+
+const data: ChartData = { years: allYears, series, values: grid, title, subtitle };
 
 const svg = renderChart(data);
 const outDir = join(root, "artifacts");
 mkdirSync(outDir, { recursive: true });
 
-const base = values.out ? resolve(root, values.out) : join(outDir, "post-coverage");
+const base = values.out
+  ? resolve(root, values.out)
+  : join(outDir, values.board ? `post-coverage-${values.site}-${values.board}` : "post-coverage");
 const svgPath = `${base}.svg`;
 const pngPath = `${base}.png`;
 writeFileSync(svgPath, svg);
