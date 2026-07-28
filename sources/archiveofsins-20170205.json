@@ -1,0 +1,27 @@
+{
+  "dir": "Memetic Sociology/Datasets/4chan/archiveofsins-20170205",
+  "source": {
+    "type": "internet-archive",
+    "name": "Archive of Sins /soc/ images (2017-02-05)",
+    "link": "https://archive.org/details/archiveofsins-20170205",
+    "short-desc": "archiveofsins.com /soc/ dump, 2017-02-05.",
+    "capture": "IMAGES ONLY — the single 140GB payload is archiveofsins-com-20170205-soc-image.tar.gz. No post text, so nothing here is ingestable; recorded for provenance."
+  },
+  "prepare": [],
+  "ingest": {
+    "adapter": null,
+    "path": "Memetic Sociology/Datasets/4chan/archiveofsins-20170205/out",
+    "site": "4chan"
+  },
+  "files": {
+    "source": "./source",
+    "extract": {
+      "path": "./extracted",
+      "script": ""
+    },
+    "out": {
+      "path": "./out",
+      "script": ""
+    }
+  }
+}

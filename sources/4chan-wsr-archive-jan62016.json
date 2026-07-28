@@ -1,0 +1,41 @@
+{
+  "dir": "Memetic Sociology/Datasets/4chan/4chan-wsr-archive-jan62016",
+  "source": {
+    "type": "internet-archive",
+    "name": "BASC-Archiver: 4chan /wsr/ board (Jan 6, 2016)",
+    "link": "https://archive.org/details/4chan-wsr-archive-jan62016",
+    "short-desc": "An archive of 4chan's /wsr/ board as of January 6, 2016.",
+    "capture": "BASC-Archiver output: rendered HTML per thread at archive/4chan/wsr/<threadno>/<threadno>.html, with images and css alongside. No JSON — needs an HTML adapter, which does not exist yet."
+  },
+  "download": {
+    "exclude": [
+      "/images/"
+    ]
+  },
+  "prepare": [
+    {
+      "name": "untar the board archive",
+      "run": "mkdir -p extracted && for f in source/*.tar; do [ -e \"$f\" ] || continue; tar xf \"$f\" -C extracted; done"
+    },
+    {
+      "name": "stage the thread tree for ingest",
+      "run": "rm -rf out && src=extracted && [ -d extracted/archive/4chan ] && src=extracted/archive/4chan; (cp -al \"$src\" out 2>/dev/null || cp -a \"$src\" out)"
+    }
+  ],
+  "ingest": {
+    "adapter": null,
+    "path": "Memetic Sociology/Datasets/4chan/4chan-wsr-archive-jan62016/out",
+    "site": "4chan"
+  },
+  "files": {
+    "source": "./source",
+    "extract": {
+      "path": "./extracted",
+      "script": ""
+    },
+    "out": {
+      "path": "./out",
+      "script": ""
+    }
+  }
+}

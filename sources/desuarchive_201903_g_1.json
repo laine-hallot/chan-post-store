@@ -1,0 +1,27 @@
+{
+  "dir": "Memetic Sociology/Datasets/4chan/desuarchive_201903_g_1",
+  "source": {
+    "type": "internet-archive",
+    "name": "Desuarchive /g/ images (2019-03, part 1)",
+    "link": "https://archive.org/details/desuarchive_201903_g_1",
+    "short-desc": "Desuarchive /g/ media dump, March 2019, part 1.",
+    "capture": "IMAGES ONLY — 293 numbered .tar files, 760GB, holding .jpg/.png named by post timestamp (verified by reading a tar header). No post text, so nothing here is ingestable; recorded for provenance."
+  },
+  "prepare": [],
+  "ingest": {
+    "adapter": null,
+    "path": "Memetic Sociology/Datasets/4chan/desuarchive_201903_g_1/out",
+    "site": "4chan"
+  },
+  "files": {
+    "source": "./source",
+    "extract": {
+      "path": "./extracted",
+      "script": ""
+    },
+    "out": {
+      "path": "./out",
+      "script": ""
+    }
+  }
+}
