@@ -162,11 +162,23 @@ The cost is that archive overlap is no longer answerable from the database.
 That is deliberate: infer it by diffing the source datasets, which reflects
 what each archive actually contains rather than ingest order.
 
-**First writer wins, so ingest order matters for partial captures.** A board
-index truncates each thread to a preview; ingesting one claims those post
-numbers, and a later archive holding the same threads in full cannot replace
-the preview rows. Ingest fuller sources first. `source.capture` is where that
-distinction is recorded — `perma_cc_x9pp-ycvx` is the worked example.
+**Order does not affect coverage — every source is always worth ingesting.**
+Each adapter scans every post in every page it is fed, and the constraint
+rejects only post numbers already stored, so a partial capture never blocks a
+fuller one: ingesting a truncated board index and then the full thread stores
+all of the thread's posts, and so does the reverse. Missing replies get filled
+in whenever the source that has them arrives.
+
+What order *does* decide is which **copy** of a post is kept, for posts that
+appear in more than one source — first writer wins, and the loser's row is
+discarded rather than merged. That only matters where two sources disagree
+about the same post: if a format truncates the post *body* (4chan's board
+index abbreviates long comments with a "Comment too long" marker), the copy
+stored first is the copy you keep. So prefer the fuller source first when a
+capture abbreviates bodies, and otherwise ignore order.
+
+`source.capture` is where "what did this capture actually contain" is
+recorded; `perma_cc_x9pp-ycvx` is the worked example.
 
 ## Working with archive.org sources
 

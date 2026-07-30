@@ -5,7 +5,7 @@
     "name": "X9PP-YCVX: /pol/ - Politically Incorrect - 4chan",
     "link": "https://archive.org/details/perma_cc_X9PP-YCVX",
     "short-desc": "Perma.cc archive of https://boards.4chan.org/pol/ created on 2022-05-25 17:59:14.828276+00:00.",
-    "capture": "board-index: 20 threads truncated to previews (103 of ~1250 posts). Ingesting this claims those post numbers for this source -- posts is keyed (site, board, post_no), so a later archive holding the same threads in full cannot replace the preview rows. Ingest it after fuller /pol/ sources, not before. Two of the 103 posts date from 2017 and 2020: stickies, which sit on every board index regardless of when it was captured."
+    "capture": "board-index: 20 threads truncated to previews (103 of ~1250 posts). The missing replies are not lost to the corpus -- a later source holding these threads in full will still add them, since the constraint only rejects post numbers already stored. What is fixed is the copy of the 103 posts it does have: first writer wins, and a board index abbreviates long comment bodies, so ingesting a fuller /pol/ source first keeps the unabbreviated text. Two of the 103 posts date from 2017 and 2020: stickies, which sit on every board index regardless of when it was captured."
   },
   "prepare": [
     {
