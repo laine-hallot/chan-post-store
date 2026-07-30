@@ -6,6 +6,7 @@ import { parseArgs } from "node:util";
 import { openDb, getOrCreateSource, isLockedError } from "./db.ts";
 import { boardList, hasStats, refreshPostStats } from "./stats.ts";
 import { dedupePosts, needsDedupe } from "./dedupe.ts";
+import { ingestChanHtml } from "./adapters/chan-html.ts";
 import { ingestJsonApi } from "./adapters/json-api.ts";
 import { ingestFuukaSql } from "./adapters/fuuka-sql.ts";
 import { ingestWarosuSql } from "./adapters/warosu-sql.ts";
@@ -391,6 +392,19 @@ async function cmdIngest(argv: string[]) {
       console.log(
         `ingested ${stats.posts} posts from ${stats.threads} threads in ${secs}s` +
           ` (${stats.skippedPosts} posts already present/skipped, ${stats.badFiles} unreadable files)`,
+      );
+    } else if (manifest.adapter === "chan-html") {
+      const stats = ingestChanHtml(db, {
+        root: inputs[0],
+        sourceId,
+        site: manifest.site,
+        boards: values.board,
+      });
+      const secs = ((Date.now() - t0) / 1000).toFixed(1);
+      console.log(
+        `ingested ${stats.posts} posts from ${stats.files} page(s)` +
+          ` (${stats.threads} thread page(s)) in ${secs}s` +
+          ` (${stats.skippedDup} already present, ${stats.badFiles} unrecognized files)`,
       );
     } else {
       const ingest = manifest.adapter === "fuuka-sql" ? ingestFuukaSql : ingestWarosuSql;

@@ -5,7 +5,7 @@
     "name": "X9PP-YCVX: /pol/ - Politically Incorrect - 4chan",
     "link": "https://archive.org/details/perma_cc_X9PP-YCVX",
     "short-desc": "Perma.cc archive of https://boards.4chan.org/pol/ created on 2022-05-25 17:59:14.828276+00:00.",
-    "capture": "board-index: 20 threads truncated to previews (103 of ~1250 posts)"
+    "capture": "board-index: 20 threads truncated to previews (103 of ~1250 posts). Ingesting this claims those post numbers for this source -- posts is keyed (site, board, post_no), so a later archive holding the same threads in full cannot replace the preview rows. Ingest it after fuller /pol/ sources, not before. Two of the 103 posts date from 2017 and 2020: stickies, which sit on every board index regardless of when it was captured."
   },
   "prepare": [
     {
@@ -14,7 +14,7 @@
     }
   ],
   "ingest": {
-    "adapter": null,
+    "adapter": "chan-html",
     "path": "Memetic Sociology/Datasets/4chan/perma_cc_X9PP-YCVX/out",
     "site": "4chan"
   },

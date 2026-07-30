@@ -14,7 +14,7 @@
     }
   ],
   "ingest": {
-    "adapter": null,
+    "adapter": "chan-html",
     "path": "Memetic Sociology/Datasets/4chan/perma_cc_FRN8-45S5/out",
     "site": "4chan"
   },

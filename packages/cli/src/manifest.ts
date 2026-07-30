@@ -4,7 +4,7 @@ import { basename, join, resolve } from "node:path";
 /** Where committed source manifests live, relative to the project root. */
 export const SOURCES_DIR = "sources";
 
-export const ADAPTERS = ["json-api", "fuuka-sql", "warosu-sql"] as const;
+export const ADAPTERS = ["json-api", "fuuka-sql", "warosu-sql", "chan-html"] as const;
 export type Adapter = (typeof ADAPTERS)[number];
 
 export interface Manifest {
@@ -226,8 +226,9 @@ export function listManifestIds(projectRoot: string): string[] {
 
 /**
  * Expands a manifest's ingest path into the concrete inputs an adapter takes.
- * json-api wants the directory itself; the SQL adapters want one file per
- * call, and warosu backups ship a separate dump per board.
+ * json-api and chan-html want the directory itself and walk it; the SQL
+ * adapters want one file per call, and warosu backups ship a separate dump
+ * per board.
  */
 export function ingestInputs(m: Manifest): string[] {
   if (!existsSync(m.path)) {
@@ -237,8 +238,12 @@ export function ingestInputs(m: Manifest): string[] {
     );
   }
 
-  if (m.adapter === "json-api") {
-    if (!statSync(m.path).isDirectory()) bad(m.file, `ingest.path must be a directory for json-api`);
+  // Directory-walking adapters take the root itself; they find their own files
+  // (thread JSON, saved pages) rather than being handed a glob.
+  if (m.adapter === "json-api" || m.adapter === "chan-html") {
+    if (!statSync(m.path).isDirectory()) {
+      bad(m.file, `ingest.path must be a directory for ${m.adapter}`);
+    }
     return [m.path];
   }
 

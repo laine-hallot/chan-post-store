@@ -131,6 +131,22 @@ separate even when formats look similar.
 store `timestamp` as America/New_York wall time, not UTC, so it is converted
 back on ingest.
 
+`chan-html` reads pages in 4chan's *own* markup — what whole-page archivers
+(perma.cc, Wayback) capture. Three things about that format:
+
+- Every post carries `data-utc`, a true epoch, so no timezone conversion.
+  Rendered third-party archives generally do not: fybertech prints
+  `04/08/08(Tue)03:16`, New-York wall time with no seconds, and needs
+  `nyWallToUtc` like the SQL adapters.
+- **The markup is emitted twice per post**, `postInfo desktop` and
+  `postInfoM mobile`. A document-wide scan for `dateTime` or `nameBlock`
+  double-counts everything; fields must be read within one `postContainer`.
+- OPs put `.file` *before* `postInfo`, replies *after*, so nothing may depend
+  on field order.
+
+A rendered third-party archive is a different family and needs its own
+adapter, even when it is also "HTML of a 4chan thread".
+
 `posts` is keyed `UNIQUE (site, board, post_no)` — one row per post, not one
 per (post, archive). Ingest is therefore idempotent both ways: re-running a
 source skips what it already contributed, and a source holding a post another
@@ -145,6 +161,12 @@ aggregate. `dedupe` migrates a store built under the old constraint.
 The cost is that archive overlap is no longer answerable from the database.
 That is deliberate: infer it by diffing the source datasets, which reflects
 what each archive actually contains rather than ingest order.
+
+**First writer wins, so ingest order matters for partial captures.** A board
+index truncates each thread to a preview; ingesting one claims those post
+numbers, and a later archive holding the same threads in full cannot replace
+the preview rows. Ingest fuller sources first. `source.capture` is where that
+distinction is recorded — `perma_cc_x9pp-ycvx` is the worked example.
 
 ## Working with archive.org sources
 
