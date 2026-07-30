@@ -1,7 +1,7 @@
-import { opendirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { readFileSync } from "node:fs";
 import type { DatabaseSync } from "node:sqlite";
 import { parse, type HTMLElement, type Node } from "node-html-parser";
+import { listHtmlPages } from "../html-tree.ts";
 import { PostInserter } from "../ingest.ts";
 import { nyWallToUtc } from "../mysqldump.ts";
 
@@ -233,29 +233,33 @@ export function ingestFybertechHtml(
     skippedNative: 0,
   };
 
-  const files: string[] = [];
-  const dir = opendirSync(opts.root);
-  try {
-    let entry;
-    while ((entry = dir.readSync()) !== null) {
-      // Only <board>_<threadno>.html; the crawl also saved fybertech's own
-      // index pages (index.cgi?page=N.html), which hold no posts.
-      if (entry.isFile() && /^[a-z0-9]+_\d+\.html?$/i.test(entry.name)) files.push(entry.name);
-    }
-  } finally {
-    dir.closeSync();
-  }
-  files.sort();
-
   db.exec("BEGIN");
   try {
-    for (const name of files) {
-      const m = /^([a-z0-9]+)_(\d+)\.html?$/i.exec(name)!;
-      const board = m[1];
-      const threadNo = Number(m[2]);
-      if (opts.boards && !opts.boards.includes(board)) continue;
+    for (const page of listHtmlPages(opts.root, opts.boards)) {
+      // Two layouts reach this adapter. Flat: fybertech's own crawl names
+      // pages <board>_<threadno>.html, and the same directory holds its
+      // index.cgi listing pages, which have no posts and no board to derive.
+      // Nested: a mirrored site puts <threadno>.html inside a board directory,
+      // so the board is the directory and the number is the filename.
+      let board: string;
+      let threadNo: number;
+      if (page.board !== null) {
+        const m = /^(\d+)/.exec(page.name);
+        if (!m) {
+          stats.badFiles++;
+          continue;
+        }
+        board = page.board;
+        threadNo = Number(m[1]);
+      } else {
+        const m = /^([a-z0-9]+)_(\d+)\.html?$/i.exec(page.name);
+        if (!m) continue; // index.cgi and friends: not a thread page at all
+        board = m[1];
+        threadNo = Number(m[2]);
+        if (opts.boards && !opts.boards.includes(board)) continue;
+      }
 
-      const doc = parse(readFileSync(join(opts.root, name), "utf8"));
+      const doc = parse(readFileSync(page.path, "utf8"));
 
       // 4chan's own markup: chan-html's job, not this adapter's.
       if (doc.querySelector(".postContainer")) {

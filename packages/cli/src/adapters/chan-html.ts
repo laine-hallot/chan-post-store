@@ -1,7 +1,7 @@
-import { opendirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { readFileSync } from "node:fs";
 import type { DatabaseSync } from "node:sqlite";
 import { parse, type HTMLElement } from "node-html-parser";
+import { listHtmlPages } from "../html-tree.ts";
 import { PostInserter } from "../ingest.ts";
 
 /**
@@ -117,6 +117,17 @@ function readPost(
   };
 }
 
+/**
+ * Thread number from a bare `<threadno>.html` filename, as used inside a
+ * board directory. Tolerates a trailing annotation -- the handmade archives
+ * name files like `1000000 ban.html` -- and returns null when the leading
+ * token is not a number.
+ */
+function threadNoFromName(fileName: string): number | null {
+  const m = /^(\d+)/.exec(fileName);
+  return m ? Number(m[1]) : null;
+}
+
 /** Board and thread number from a saved page's filename or its own markup. */
 function threadIdentity(
   fileName: string,
@@ -157,23 +168,19 @@ export function ingestChanHtml(
     skippedForeign: 0,
   };
 
-  const files: string[] = [];
-  const dir = opendirSync(opts.root);
-  try {
-    let entry;
-    while ((entry = dir.readSync()) !== null) {
-      if (entry.isFile() && /\.html?$/i.test(entry.name)) files.push(entry.name);
-    }
-  } finally {
-    dir.closeSync();
-  }
-  files.sort();
+  const pages = listHtmlPages(opts.root, opts.boards);
 
   db.exec("BEGIN");
   try {
-    for (const name of files) {
-      const doc = parse(readFileSync(join(opts.root, name), "utf8"));
-      const id = threadIdentity(name, doc);
+    for (const page of pages) {
+      const doc = parse(readFileSync(page.path, "utf8"));
+      // In a nested tree the directory names the board, which beats anything
+      // inferable from the filename; a flat tree has no directory to consult
+      // and falls back to the filename or the page's canonical link.
+      const id =
+        page.board !== null
+          ? { board: page.board, threadNo: threadNoFromName(page.name) }
+          : threadIdentity(page.name, doc);
       if (!id) {
         // Not a recognizable board/thread page: a stylesheet, an error page,
         // or a capture of something else entirely.
