@@ -32,10 +32,23 @@ function findProjectRoot(): string {
   }
 }
 
-// Categorical slots 1-3 of the reference palette, in fixed order. Validated
-// for CVD and normal-vision separation on the light surface; slot 3 (aqua)
-// warns on contrast, which the per-row value labels answer.
-const COLORS = ["#2a78d6", "#eb6834", "#1baf7a"];
+// Categorical slots 1-6 of the reference palette, in fixed order. Validated as
+// a set on the light surface: worst adjacent CVD dE 9.1, normal-vision 19.6.
+// Aqua, yellow and magenta sit below 3:1 contrast, which the per-bar value
+// labels answer (identity never rests on hue alone).
+//
+// Never cycle this list. Reusing a hue for a 7th source would paint two
+// archives identically -- the bug this replaced, where three colors across six
+// sources made laza-fuuka indistinguishable from warosu-2025 and silently
+// mislabeled a 72M-post bar.
+const COLORS = [
+  "#2a78d6", // blue
+  "#eb6834", // orange
+  "#1baf7a", // aqua
+  "#eda100", // yellow
+  "#e87ba4", // magenta
+  "#008300", // green
+];
 
 const root = findProjectRoot();
 const { values } = parseArgs({
@@ -107,10 +120,27 @@ const hi = Number(years[years.length - 1]);
 const allYears: string[] = [];
 for (let y = lo; y <= hi; y++) allYears.push(String(y));
 
-const sourceNames = [...new Set(buckets.map((b) => b.source))].sort();
+// Largest first, so the sources that dominate the chart take the leading slots
+// and the reading order of the legend matches the visual weight of the bars.
+const totalBySource = new Map<string, number>();
+for (const b of buckets) {
+  totalBySource.set(b.source, (totalBySource.get(b.source) ?? 0) + b.posts);
+}
+const sourceNames = [...totalBySource.keys()].sort(
+  (a, z) => (totalBySource.get(z) ?? 0) - (totalBySource.get(a) ?? 0),
+);
+if (sourceNames.length > COLORS.length) {
+  // Better to stop than to hand two archives the same colour: the chart's
+  // whole job is telling them apart.
+  console.error(
+    `${sourceNames.length} sources but only ${COLORS.length} validated colors.\n` +
+      `Add slots from the reference palette (validating the new set) or chart a subset with --board.`,
+  );
+  process.exit(1);
+}
 const series: Series[] = sourceNames.map((name, i) => ({
   name,
-  color: COLORS[i % COLORS.length],
+  color: COLORS[i],
 }));
 
 const grid = new Map<string, Map<string, number>>();
@@ -130,7 +160,7 @@ if (values.board) {
   subtitle =
     `${fmt(charted)} posts, ${active[0]} to ${active[active.length - 1]}` +
     (series.length > 1 ? `, across ${series.length} archives` : "") +
-    ". Archives overlap, so a post held by more than one is counted once per archive.";
+    ". Each post is counted once, attributed to the archive that supplied it.";
 } else {
   const span =
     tot!.minTs && tot!.maxTs
@@ -141,7 +171,7 @@ if (values.board) {
   subtitle =
     `${fmt(charted)} dated posts across ${series.length} sources, ${span}.` +
     (undated > 0 ? ` ${fmt(undated)} undated posts are not shown.` : "") +
-    " Archives overlap, so a post may appear more than once.";
+    " Each post is counted once, attributed to the archive that supplied it first.";
 }
 
 const data: ChartData = { years: allYears, series, values: grid, title, subtitle };

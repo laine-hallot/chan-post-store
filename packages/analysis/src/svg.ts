@@ -2,9 +2,9 @@
  * Hand-built SVG for the corpus-coverage chart.
  *
  * Horizontal grouped bars: one row per year, one bar per source. Not the
- * mirrored population-pyramid layout, because that form encodes two mutually
- * exclusive halves — archives overlap in time and can hold the same post, so
- * mirroring would imply an exclusivity the data doesn't have.
+ * mirrored population-pyramid layout, because that form carries exactly two
+ * categories (the left and right halves) and the corpus has one series per
+ * archive — six and counting. Grouped bars extend to any number of them.
  */
 
 export interface Series {
@@ -65,12 +65,31 @@ export function renderChart(d: ChartData): string {
   const barH = 13;
   const barGap = 2; // 2px surface gap between adjacent fills
   const groupGap = 14; // space between one year and the next
-  const rowH = d.series.length * (barH + barGap) - barGap + groupGap;
   const padL = 300;
   const padR = 110;
   const padB = 64;
   const plotW = 860;
-  const plotH = d.years.length * rowH;
+
+  // Only the sources actually present in a year get a bar slot, packed from the
+  // top of the row. Reserving a slot per series in every year left most rows
+  // mostly empty -- 18 years x 6 sources of reserved height for a corpus where
+  // most years carry one or two archives -- and pushed each bar down to its
+  // series index, so the year label no longer lined up with the bar it named.
+  const rowsPresent = d.years.map((y) =>
+    d.series.filter((s) => (d.values.get(y)?.get(s.name) ?? 0) > 0),
+  );
+  const rowHeights = rowsPresent.map(
+    (present) => Math.max(present.length, 1) * (barH + barGap) - barGap + groupGap,
+  );
+  const rowTops: number[] = [];
+  {
+    let acc = 0;
+    for (const rh of rowHeights) {
+      rowTops.push(acc);
+      acc += rh;
+    }
+  }
+  const plotH = rowHeights.reduce((a, b) => a + b, 0);
 
   // Header height depends on how many lines the subtitle wraps to, so it is
   // measured before the canvas is sized.
@@ -88,8 +107,31 @@ export function renderChart(d: ChartData): string {
     }
     if (line) subtitleLines.push(line);
   }
-  // Room for the header, plus a legend row only when there is a legend.
-  const padT = 63 + subtitleLines.length * 18 + (d.series.length > 1 ? 46 : 20);
+  // Lay the legend out before sizing the canvas: with six sources the entries
+  // do not fit on one row, and the header has to reserve height for however
+  // many rows they wrap onto.
+  const LEGEND_ROW_H = 20;
+  const legendRows: { color: string; name: string; x: number }[][] =
+    d.series.length > 1 ? [[]] : [];
+  if (d.series.length > 1) {
+    let lx = 0;
+    for (const s of d.series) {
+      const entryW = 15 + s.name.length * 6.9 + 28;
+      // Wrap rather than run off the canvas, but never leave a row empty --
+      // an entry wider than the plot still has to go somewhere.
+      if (lx > 0 && lx + entryW > plotW) {
+        legendRows.push([]);
+        lx = 0;
+      }
+      legendRows[legendRows.length - 1].push({ color: s.color, name: s.name, x: lx });
+      lx += entryW;
+    }
+  }
+  // Room for the header, plus however many legend rows there are.
+  const padT =
+    63 +
+    subtitleLines.length * 18 +
+    (d.series.length > 1 ? 26 + legendRows.length * LEGEND_ROW_H : 20);
   const w = padL + plotW + padR;
   const h = padT + plotH + padB;
 
@@ -119,19 +161,20 @@ export function renderChart(d: ChartData): string {
   });
 
   // Legend: identity is never colour-alone, so each swatch is labelled.
-  // Advance by an estimate of rendered width — DejaVu Sans at 12px averages
-  // ~6.9px/char — since there is no text metrics API here. A single series
-  // needs no legend: the title already names it.
-  if (d.series.length > 1) {
-    let lx = padL;
-    for (const s of d.series) {
-      o.push(`<rect x="${lx}" y="${padT - 32}" width="10" height="10" rx="2" fill="${s.color}"/>`);
+  // Widths come from an estimate of the rendered text — DejaVu Sans at 12px
+  // averages ~6.9px/char — since there is no text metrics API here. A single
+  // series needs no legend: the title already names it.
+  legendRows.forEach((row, ri) => {
+    const ly = padT - 26 - (legendRows.length - 1 - ri) * LEGEND_ROW_H;
+    for (const e of row) {
       o.push(
-        `<text x="${lx + 15}" y="${padT - 23}" font-size="12" fill="${PAL.textSecondary}">${esc(s.name)}</text>`,
+        `<rect x="${padL + e.x}" y="${ly - 9}" width="10" height="10" rx="2" fill="${e.color}"/>`,
       );
-      lx += 15 + s.name.length * 6.9 + 28;
+      o.push(
+        `<text x="${padL + e.x + 15}" y="${ly}" font-size="12" fill="${PAL.textSecondary}">${esc(e.name)}</text>`,
+      );
     }
-  }
+  });
 
   // Vertical gridlines behind the bars.
   for (const t of tv) {
@@ -148,16 +191,18 @@ export function renderChart(d: ChartData): string {
   );
 
   d.years.forEach((year, i) => {
-    const top = padT + i * rowH;
-    const barsH = d.series.length * (barH + barGap) - barGap;
-    // Centre the year label against the bar group, not the padded row.
+    const top = padT + rowTops[i];
+    const present = rowsPresent[i];
+    // Centre the year label against the bars actually drawn. An empty year
+    // still gets one slot's worth of height, so its label sits where a bar
+    // would have been.
+    const barsH = Math.max(present.length, 1) * (barH + barGap) - barGap;
     o.push(
       `<text x="${padL - 12}" y="${top + barsH / 2 + 4}" font-size="12" fill="${PAL.textPrimary}" text-anchor="end">${esc(year)}</text>`,
     );
 
-    d.series.forEach((s, j) => {
-      const v = d.values.get(year)?.get(s.name) ?? 0;
-      if (v <= 0) return;
+    present.forEach((s, j) => {
+      const v = d.values.get(year)!.get(s.name)!;
       const bw = Math.max(scale(v), 2);
       const by = top + j * (barH + barGap);
       // 4px rounded data-end, square against the zero baseline.
@@ -165,17 +210,11 @@ export function renderChart(d: ChartData): string {
       o.push(
         `<path d="M${padL} ${by} H${padL + bw - r} a${r} ${r} 0 0 1 ${r} ${r} V${by + barH - r} a${r} ${r} 0 0 1 -${r} ${r} H${padL} Z" fill="${s.color}"/>`,
       );
-    });
-
-    // Label each bar with its own value rather than the row sum: a total
-    // sitting beside per-source bars reads as if it were the longest bar,
-    // and the axis is scaled to the largest single source, not the sum.
-    d.series.forEach((s, j) => {
-      const v = d.values.get(year)?.get(s.name) ?? 0;
-      if (v <= 0) return;
-      const by = top + j * (barH + barGap);
+      // Label each bar with its own value rather than the row sum: a total
+      // sitting beside per-source bars reads as if it were the longest bar,
+      // and the axis is scaled to the largest single source, not the sum.
       o.push(
-        `<text x="${padL + Math.max(scale(v), 2) + 8}" y="${by + barH - 2}" font-size="10" fill="${PAL.textMuted}">${compact(v)}</text>`,
+        `<text x="${padL + bw + 8}" y="${by + barH - 2}" font-size="10" fill="${PAL.textMuted}">${compact(v)}</text>`,
       );
     });
   });
