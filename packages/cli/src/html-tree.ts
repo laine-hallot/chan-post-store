@@ -1,4 +1,5 @@
-import { opendirSync, statSync } from "node:fs";
+import { opendirSync, readdirSync, statSync } from "node:fs";
+import { Buffer } from "node:buffer";
 import { join } from "node:path";
 
 /**
@@ -21,31 +22,55 @@ import { join } from "node:path";
 const ASSET_DIR = /(?:_files|^css|^js|^images|^thumbs)$/i;
 
 export interface HtmlPageRef {
-  /** Absolute path to the page. */
-  path: string;
+  /**
+   * Path to open, as raw bytes.
+   *
+   * A Buffer rather than a string because handmade archives contain filenames
+   * whose bytes are not valid UTF-8. Such a name survives readdir -- it comes
+   * back with replacement characters -- but converting it back to bytes yields
+   * a *different* name, so open() fails with ENOENT on a file that plainly
+   * exists. Keeping the original bytes makes those pages readable instead of
+   * lost; on the Yotsuba mirror it is 2 files in one 7,646-entry directory.
+   */
+  path: Buffer;
   /** Filename alone, for adapters that read identity out of it. */
   name: string;
-  /** Subdirectory it came from, or null when the tree is flat. */
+  /** Subdirectory it came from, or null when the page sits at the root. */
   board: string | null;
 }
 
-function htmlNamesIn(dir: string): string[] {
-  const out: string[] = [];
-  let d;
+/**
+ * HTML files in `dir`, as {displayName, rawName} pairs.
+ *
+ * Read with `encoding: "buffer"` so the true bytes survive: a name containing
+ * invalid UTF-8 cannot be reconstructed from the decoded string, and open()
+ * would fail on it.
+ */
+function htmlNamesIn(dir: string): { name: string; raw: Buffer }[] {
+  let raws: Buffer[];
   try {
-    d = opendirSync(dir);
+    raws = readdirSync(dir, { encoding: "buffer" });
   } catch {
-    return out;
+    return [];
   }
-  try {
-    let e;
-    while ((e = d.readSync()) !== null) {
-      if (e.isFile() && /\.html?$/i.test(e.name)) out.push(e.name);
+  const out: { name: string; raw: Buffer }[] = [];
+  for (const raw of raws) {
+    const name = raw.toString("utf8");
+    if (!/\.html?$/i.test(name)) continue;
+    // Directories can end in .html too; only files are pages.
+    try {
+      if (!statSync(joinBytes(dir, raw)).isFile()) continue;
+    } catch {
+      continue;
     }
-  } finally {
-    d.closeSync();
+    out.push({ name, raw });
   }
-  return out.sort();
+  return out.sort((a, z) => (a.name < z.name ? -1 : a.name > z.name ? 1 : 0));
+}
+
+/** Joins a string directory and a raw filename into a byte path. */
+function joinBytes(dir: string, name: Buffer): Buffer {
+  return Buffer.concat([Buffer.from(dir.endsWith("/") ? dir : `${dir}/`), name]);
 }
 
 function subdirsIn(dir: string): string[] {
@@ -70,26 +95,33 @@ function subdirsIn(dir: string): string[] {
 }
 
 /**
- * Lists the HTML pages under `root`, descending one level into board
- * directories when the root itself holds none.
+ * Lists the HTML pages under `root`, including any inside board
+ * subdirectories.
  *
- * `boards`, when given, filters nested trees by directory name. It cannot
- * filter a flat tree -- there the board comes from each page's own filename or
+ * Root-level pages and board directories are not alternatives: the Yotsuba
+ * Society mirror has 63 board directories *and* 53 board index pages
+ * (`a.html`, `cgl.html`) beside them. An earlier version treated "root has
+ * HTML" as proof the tree was flat and so found 53 pages instead of 23,295.
+ * Both are collected, and each page reports whether a directory named its
+ * board.
+ *
+ * `boards`, when given, filters the subdirectories by name. It cannot filter
+ * root-level pages -- there the board comes from the page's own filename or
  * markup, which only the adapter can read -- so callers still apply their own
  * per-page board check.
  */
 export function listHtmlPages(root: string, boards?: string[]): HtmlPageRef[] {
-  const flat = htmlNamesIn(root);
-  if (flat.length > 0) {
-    return flat.map((name) => ({ path: join(root, name), name, board: null }));
-  }
+  const out: HtmlPageRef[] = htmlNamesIn(root).map(({ name, raw }) => ({
+    path: joinBytes(root, raw),
+    name,
+    board: null,
+  }));
 
-  const out: HtmlPageRef[] = [];
   for (const board of subdirsIn(root)) {
     if (boards && !boards.includes(board)) continue;
     const dir = join(root, board);
-    for (const name of htmlNamesIn(dir)) {
-      out.push({ path: join(dir, name), name, board });
+    for (const { name, raw } of htmlNamesIn(dir)) {
+      out.push({ path: joinBytes(dir, raw), name, board });
     }
   }
   return out;

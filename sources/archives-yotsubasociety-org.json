@@ -5,7 +5,7 @@
     "name": "archives.yotsubasociety.org (4chan Archived Threads)",
     "link": "https://archive.org/details/yotsubasocietyarchives",
     "short-desc": "The Yotsuba Society Archives, which held publicly viewable 4chan thread archives, handmade by Jkid. Includes the Moot Video Archive as a bonus. This was obtained from RebeccaBlackTech from an unknown source, possibly direct web scrape. ",
-    "capture": "THE UPSTREAM TARBALL IS TRUNCATED. All 17,602,887,852 bytes download and the md5 matches archive.org, so `download` reports success -- but the bytes themselves are broken: `gzip -t` fails with 'invalid compressed data--format violated' on the NAS as well as locally, which means archive.org is hosting a corrupt file rather than the transfer being at fault. About 22.7GB and 1,274,677 tar entries read out before it dies, so most of the site is recoverable; the prepare step deliberately ignores tar's exit code and keeps whatever extracted. Treat coverage as partial and unknown-at-the-tail."
+    "capture": "23,295 thread pages across 63 board directories, laid out <board>/<threadno>.htm[l] with a sibling <threadno>_files/ of assets. Sampling says ~85% is the classic Futaba markup fybertech-html reads and ~14% is 4chan's own markup chan-html reads, so both adapters run over this same tree and each skips the other's pages -- see archives-yotsubasociety-org-native. A little of it is futaba/2chan (Japanese, class=del/chui) which is not 4chan at all and parses as nothing. ingest.path points at out/4chan deliberately: the mirror's root also holds 1chan, 4chon, auschan, bun and kuvalauta, which must not be ingested under site=4chan. Some filenames carry a human annotation ('1000000 ban.html', \"b's reponse to question.htm\") since the archive was handmade. THE UPSTREAM TARBALL IS TRUNCATED. All 17,602,887,852 bytes download and the md5 matches archive.org, so `download` reports success -- but the bytes themselves are broken: `gzip -t` fails with 'invalid compressed data--format violated' on the NAS as well as locally, which means archive.org is hosting a corrupt file rather than the transfer being at fault. About 22.7GB and 1,274,677 tar entries read out before it dies, so most of the site is recoverable; the prepare step deliberately ignores tar's exit code and keeps whatever extracted. Treat coverage as partial and unknown-at-the-tail."
   },
   "prepare": [
     {
@@ -18,8 +18,8 @@
     }
   ],
   "ingest": {
-    "adapter": null,
-    "path": "Memetic Sociology/Datasets/4chan/archives-yotsubasociety-org/out",
+    "adapter": "fybertech-html",
+    "path": "Memetic Sociology/Datasets/4chan/archives-yotsubasociety-org/out/4chan",
     "site": "4chan"
   },
   "files": {

@@ -1,0 +1,32 @@
+{
+  "dir": "Memetic Sociology/Datasets/4chan/archives-yotsubasociety-org",
+  "source": {
+    "type": "internet-archive",
+    "name": "archives.yotsubasociety.org (pages in 4chan's own markup)",
+    "link": "https://archive.org/details/yotsubasocietyarchives",
+    "short-desc": "The subset of the Yotsuba Society mirror saved as 4chan's own HTML rather than the classic Futaba template.",
+    "capture": "The ~14% of the Yotsuba Society mirror saved as 4chan's own markup -- postContainer wrappers with data-utc timestamps -- rather than the classic Futaba template the rest uses. Read by chan-html; fybertech-html skips these and this skips fybertech-html's, so both run over the same staged tree without double-counting. Unlike the classic pages these carry real UTC epochs, so their timestamps are second-accurate rather than minute-precision New-York wall time. Staged by the archives-yotsubasociety-org source; nothing to prepare here."
+  },
+  "prepare": [
+    {
+      "name": "staged by the archives-yotsubasociety-org source; nothing to do here",
+      "run": "true"
+    }
+  ],
+  "ingest": {
+    "adapter": "chan-html",
+    "path": "Memetic Sociology/Datasets/4chan/archives-yotsubasociety-org/out/4chan",
+    "site": "4chan"
+  },
+  "files": {
+    "source": "./archives.yotsubasociety.org.tar.gz",
+    "extract": {
+      "path": "./archives.yotsubasociety.org",
+      "script": ""
+    },
+    "out": {
+      "path": "./out",
+      "script": ""
+    }
+  }
+}

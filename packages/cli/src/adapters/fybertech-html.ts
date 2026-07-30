@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import type { DatabaseSync } from "node:sqlite";
 import { parse, type HTMLElement, type Node } from "node-html-parser";
+import { cleanBodyText } from "../html.ts";
 import { listHtmlPages } from "../html-tree.ts";
 import { PostInserter } from "../ingest.ts";
 import { nyWallToUtc } from "../mysqldump.ts";
@@ -115,11 +116,19 @@ function pick(root: HTMLElement, sel: string): string | null {
   return t ? t : null;
 }
 
-/** Body text with <br> turned into newlines, matching the other adapters. */
+/**
+ * Body text with <br> turned into newlines, matching the other adapters.
+ *
+ * The result is swept for leftover tags before being returned. `textContent`
+ * only drops markup the parser recognised as markup: a post containing broken
+ * or unclosed HTML -- which these handmade pages do contain -- leaves fragments
+ * like `<span class="quote"` sitting in the text as literal characters, and
+ * those would otherwise be stored as though the poster had typed them.
+ */
 function bodyOf(el: HTMLElement | null): string | null {
   if (!el) return null;
-  const t = parse(el.innerHTML.replace(/<br\s*\/?>/gi, "\n")).textContent.trimEnd();
-  return t === "" ? null : t;
+  const text = parse(el.innerHTML.replace(/<br\s*\/?>/gi, "\n")).textContent;
+  return cleanBodyText(text);
 }
 
 /**
@@ -259,7 +268,17 @@ export function ingestFybertechHtml(
         if (opts.boards && !opts.boards.includes(board)) continue;
       }
 
-      const doc = parse(readFileSync(page.path, "utf8"));
+      // An unopenable page must not end the run: handmade archives carry
+      // filenames whose bytes are not valid UTF-8, and such a name survives
+      // readdir but cannot be passed back to open().
+      let raw: string;
+      try {
+        raw = readFileSync(page.path, "utf8");
+      } catch {
+        stats.badFiles++;
+        continue;
+      }
+      const doc = parse(raw);
 
       // 4chan's own markup: chan-html's job, not this adapter's.
       if (doc.querySelector(".postContainer")) {

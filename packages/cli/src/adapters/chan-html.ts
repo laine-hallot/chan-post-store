@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import type { DatabaseSync } from "node:sqlite";
 import { parse, type HTMLElement } from "node-html-parser";
+import { cleanBodyText } from "../html.ts";
 import { listHtmlPages } from "../html-tree.ts";
 import { PostInserter } from "../ingest.ts";
 
@@ -99,9 +100,10 @@ function readPost(
     // as though the poster had written it.
     for (const abbr of body.querySelectorAll(".abbr")) abbr.remove();
     // <br> carries the line breaks; textContent would run the lines together.
+    // cleanBodyText then sweeps up markup the parser left as literal text --
+    // broken or unclosed tags inside a post survive textContent otherwise.
     const withBreaks = body.innerHTML.replace(/<br\s*\/?>/gi, "\n");
-    const t = parse(withBreaks).textContent.trimEnd();
-    bodyText = t === "" ? null : t;
+    bodyText = cleanBodyText(parse(withBreaks).textContent);
   }
 
   return {
@@ -173,7 +175,18 @@ export function ingestChanHtml(
   db.exec("BEGIN");
   try {
     for (const page of pages) {
-      const doc = parse(readFileSync(page.path, "utf8"));
+      // A page that cannot even be opened must not end the run. Handmade
+      // archives carry filenames with bytes that are not valid UTF-8, and such
+      // a name survives readdir but cannot be passed back to open() -- one of
+      // them killed an entire 23k-page pass before this guard existed.
+      let raw: string;
+      try {
+        raw = readFileSync(page.path, "utf8");
+      } catch {
+        stats.badFiles++;
+        continue;
+      }
+      const doc = parse(raw);
       // In a nested tree the directory names the board, which beats anything
       // inferable from the filename; a flat tree has no directory to consult
       // and falls back to the filename or the page's canonical link.
