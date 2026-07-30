@@ -1,7 +1,7 @@
 import { opendirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { DatabaseSync } from "node:sqlite";
-import { stripHtml } from "../html.ts";
+import { parse, type HTMLElement } from "node-html-parser";
 import { PostInserter } from "../ingest.ts";
 
 /**
@@ -16,14 +16,20 @@ import { PostInserter } from "../ingest.ts";
  * `<span class="dateTime" data-utc="1639552011">`, a true UTC epoch. There is
  * no timezone guesswork of the kind the Fuuka-family dumps need.
  *
- * Two traps in the markup:
+ * Parsed as a DOM rather than with regexes, which is what makes the format's
+ * two traps tractable:
  *
  *  - Every post is emitted twice, once as `postInfo desktop` and once as
- *    `postInfoM mobile`. A naive scan for `dateTime` or `nameBlock` counts each
- *    post twice, so fields are read from within one post container and the
- *    first match wins.
+ *    `postInfoM mobile`, so a document-wide field scan double-counts. Querying
+ *    within one post container and preferring the desktop block handles it.
  *  - Field order differs between OPs and replies: an OP puts its `.file` block
- *    before `postInfo`, a reply after. Nothing may depend on ordering.
+ *    before `postInfo`, a reply after. Selectors do not care.
+ *
+ * A board index also abbreviates long comments and appends its own notice
+ * inside the blockquote (`<span class="abbr">Comment too long…`). That is
+ * archive chrome, not post text, so the element is removed before the body is
+ * read — the kind of artifact that is a one-line subtree removal here and was
+ * a bug when the body was matched as a string.
  */
 
 interface IngestStats {
@@ -34,64 +40,85 @@ interface IngestStats {
   badFiles: number;
 }
 
-/** A post container plus the id and kind taken from its wrapper. */
-interface RawPost {
+/** Text of the first match, or null when absent or empty. */
+function text(root: HTMLElement, sel: string): string | null {
+  const el = root.querySelector(sel);
+  if (!el) return null;
+  const t = el.textContent;
+  return t === "" ? null : t;
+}
+
+/** Reads one post's fields out of its container. Thread attribution is the
+ * caller's job -- on a board index it depends on which OP came before. */
+function readPost(
+  container: HTMLElement,
+): {
   postNo: number;
   isOp: boolean;
-  html: string;
-}
+  tsUtc: number | null;
+  name: string | null;
+  tripcode: string | null;
+  subject: string | null;
+  bodyText: string | null;
+  mediaFilename: string | null;
+  mediaMd5: string | null;
+} | null {
+  // id is pc<postno> on the wrapper.
+  const id = container.getAttribute("id") ?? "";
+  const postNo = Number(id.replace(/^pc/, ""));
+  if (!Number.isInteger(postNo) || postNo <= 0) return null;
 
-// The container id carries the post number: pc<no> on the outer wrapper. Split
-// on the wrapper rather than a regex over the whole document so each post's
-// fields stay scoped to it -- the desktop/mobile duplication makes any
-// document-wide field scan wrong.
-const CONTAINER = /<div class="postContainer (op|reply)Container" id="pc(\d+)"/g;
+  const isOp = container.classList.contains("opContainer");
 
-function splitPosts(html: string): RawPost[] {
-  const out: RawPost[] = [];
-  const starts: { at: number; isOp: boolean; postNo: number }[] = [];
-  CONTAINER.lastIndex = 0;
-  let m: RegExpExecArray | null;
-  while ((m = CONTAINER.exec(html)) !== null) {
-    starts.push({ at: m.index, isOp: m[1] === "op", postNo: Number(m[2]) });
+  // Prefer the desktop block; the mobile one carries the same values, so
+  // either will do, but picking deterministically avoids reading half the
+  // fields from one and half from the other.
+  const info =
+    container.querySelector(".postInfo.desktop") ??
+    container.querySelector(".postInfoM.mobile") ??
+    container;
+
+  const utcAttr =
+    info.querySelector("[data-utc]")?.getAttribute("data-utc") ??
+    container.querySelector("[data-utc]")?.getAttribute("data-utc");
+  const utc = utcAttr != null && /^\d+$/.test(utcAttr) ? Number(utcAttr) : null;
+
+  // The poster's original filename is the anchor's title when it was truncated
+  // for display, and the link text otherwise.
+  const fileLink = container.querySelector(".fileText a");
+  const mediaFilename =
+    fileLink?.getAttribute("title") ??
+    (fileLink?.textContent === "" ? null : (fileLink?.textContent ?? null));
+
+  const body = container.querySelector("blockquote.postMessage");
+  let bodyText: string | null = null;
+  if (body) {
+    // Drop the truncation notice before reading the text, so it is not stored
+    // as though the poster had written it.
+    for (const abbr of body.querySelectorAll(".abbr")) abbr.remove();
+    // <br> carries the line breaks; textContent would run the lines together.
+    const withBreaks = body.innerHTML.replace(/<br\s*\/?>/gi, "\n");
+    const t = parse(withBreaks).textContent.trimEnd();
+    bodyText = t === "" ? null : t;
   }
-  for (let i = 0; i < starts.length; i++) {
-    const s = starts[i];
-    const end = i + 1 < starts.length ? starts[i + 1].at : html.length;
-    out.push({ postNo: s.postNo, isOp: s.isOp, html: html.slice(s.at, end) });
-  }
-  return out;
-}
 
-/** First capture of `re` in `s`, or null. */
-function first(s: string, re: RegExp): string | null {
-  const m = re.exec(s);
-  return m ? m[1] : null;
+  return {
+    postNo,
+    isOp,
+    tsUtc: utc,
+    name: text(info, ".name") ?? text(container, ".name"),
+    tripcode: text(info, ".postertrip") ?? text(container, ".postertrip"),
+    subject: text(info, ".subject") ?? text(container, ".subject"),
+    bodyText,
+    mediaFilename,
+    mediaMd5: container.querySelector("[data-md5]")?.getAttribute("data-md5") ?? null,
+  };
 }
-
-const RE_UTC = /<span class="dateTime[^"]*" data-utc="(\d+)"/;
-const RE_NAME = /<span class="name">([^<]*)<\/span>/;
-const RE_TRIP = /<span class="postertrip">([^<]*)<\/span>/;
-const RE_SUBJECT = /<span class="subject">([^<]*)<\/span>/;
-// The body runs to the closing tag; [\s\S] because posts contain newlines.
-const RE_BODY = /<blockquote class="postMessage"[^>]*>([\s\S]*?)<\/blockquote>/;
-// A board index abbreviates long comments and appends its own notice inside the
-// blockquote: `<span class="abbr">Comment too long. <a ...>Click here</a> to
-// view the full text.</span>`. Stripping tags alone would keep that sentence as
-// though the poster had typed it, so drop the whole span before stripping. The
-// body stays truncated -- the full text is only on the thread page -- but it no
-// longer carries archive chrome into search and word counts.
-const RE_ABBR = /<span class="abbr">[\s\S]*?<\/span>/g;
-// The poster's original filename is the anchor's title when it was truncated
-// for display, and the link text otherwise.
-const RE_FILE_TITLE = /<div class="fileText"[^>]*>File: <a title="([^"]*)"/;
-const RE_FILE_TEXT = /<div class="fileText"[^>]*>File: <a[^>]*>([^<]*)<\/a>/;
-const RE_MD5 = /data-md5="([^"]*)"/;
 
 /** Board and thread number from a saved page's filename or its own markup. */
 function threadIdentity(
   fileName: string,
-  html: string,
+  doc: HTMLElement,
 ): { board: string; threadNo: number | null } | null {
   // warc-extract names files after the captured URL, e.g.
   // boards.4channel.org_a_thread_231722770.html or boards.4chan.org_pol.html
@@ -100,58 +127,12 @@ function threadIdentity(
   const board = /^boards\.4chan(?:nel)?\.org_([a-z0-9]+)\b/i.exec(fileName);
   if (board) return { board: board[1], threadNo: null };
   // Fall back to the page's own canonical link when the filename is opaque.
-  const canon = /<link rel="canonical" href="[^"]*?\/([a-z0-9]+)\/thread\/(\d+)/i.exec(html);
+  const href = doc.querySelector('link[rel="canonical"]')?.getAttribute("href") ?? "";
+  const canon = /\/([a-z0-9]+)\/thread\/(\d+)/i.exec(href);
   if (canon) return { board: canon[1], threadNo: Number(canon[2]) };
-  const bmeta = /<link rel="canonical" href="[^"]*?\/([a-z0-9]+)\/?"/i.exec(html);
-  if (bmeta) return { board: bmeta[1], threadNo: null };
+  const bonly = /\/([a-z0-9]+)\/?$/i.exec(href);
+  if (bonly) return { board: bonly[1], threadNo: null };
   return null;
-}
-
-/**
- * `threadNo` is the enclosing thread when the page is a thread, and null on a
- * board index -- there each OP begins its own thread, and replies shown in the
- * preview belong to the OP above them.
- */
-function ingestPage(
-  inserter: PostInserter,
-  site: string,
-  board: string,
-  pageThreadNo: number | null,
-  html: string,
-  stats: IngestStats,
-): void {
-  let currentThread = pageThreadNo;
-  for (const p of splitPosts(html)) {
-    if (p.isOp) currentThread = pageThreadNo ?? p.postNo;
-    const utc = first(p.html, RE_UTC);
-    const fileTitle = first(p.html, RE_FILE_TITLE) ?? first(p.html, RE_FILE_TEXT);
-    const rawBody = first(p.html, RE_BODY);
-    // Trim after stripping, not before: dropping the abbr span leaves the <br>s
-    // that preceded it, which only become trailing newlines once stripHtml has
-    // converted them.
-    const body =
-      rawBody === null ? null : stripHtml(rawBody.replace(RE_ABBR, "")).trimEnd() || null;
-    const subject = first(p.html, RE_SUBJECT);
-    const name = first(p.html, RE_NAME);
-    const ok = inserter.insert({
-      site,
-      board,
-      // A reply on a board index with no OP above it would be orphaned;
-      // fall back to its own number so thread_no is never bogus.
-      threadNo: currentThread ?? p.postNo,
-      postNo: p.postNo,
-      isOp: p.isOp,
-      tsUtc: utc ? Number(utc) : null,
-      name: name ? stripHtml(name) : null,
-      tripcode: first(p.html, RE_TRIP),
-      subject: subject ? stripHtml(subject) : null,
-      bodyText: body,
-      mediaFilename: fileTitle ? stripHtml(fileTitle) : null,
-      mediaMd5: first(p.html, RE_MD5),
-    });
-    if (ok) stats.posts++;
-    else stats.skippedDup++;
-  }
 }
 
 export function ingestChanHtml(
@@ -176,8 +157,8 @@ export function ingestChanHtml(
   db.exec("BEGIN");
   try {
     for (const name of files) {
-      const html = readFileSync(join(opts.root, name), "utf8");
-      const id = threadIdentity(name, html);
+      const doc = parse(readFileSync(join(opts.root, name), "utf8"));
+      const id = threadIdentity(name, doc);
       if (!id) {
         // Not a recognizable board/thread page: a stylesheet, an error page,
         // or a capture of something else entirely.
@@ -187,10 +168,37 @@ export function ingestChanHtml(
       if (opts.boards && !opts.boards.includes(id.board)) continue;
       stats.files++;
       if (id.threadNo != null) stats.threads++;
-      ingestPage(inserter, opts.site, id.board, id.threadNo, html, stats);
-      process.stderr.write(
-        `\r/${id.board}/ files=${stats.files} posts=${stats.posts}   `,
-      );
+
+      let currentThread = id.threadNo;
+      for (const container of doc.querySelectorAll(".postContainer")) {
+        const isOp = container.classList.contains("opContainer");
+        const provisional = Number((container.getAttribute("id") ?? "").replace(/^pc/, ""));
+        if (isOp) currentThread = id.threadNo ?? provisional;
+        const p = readPost(container);
+        if (!p) {
+          stats.badFiles++;
+          continue;
+        }
+        const ok = inserter.insert({
+          site: opts.site,
+          board: id.board,
+          // A reply with no OP above it would be orphaned; fall back to its own
+          // number so thread_no is never bogus.
+          threadNo: currentThread ?? p.postNo,
+          postNo: p.postNo,
+          isOp: p.isOp,
+          tsUtc: p.tsUtc,
+          name: p.name,
+          tripcode: p.tripcode,
+          subject: p.subject,
+          bodyText: p.bodyText,
+          mediaFilename: p.mediaFilename,
+          mediaMd5: p.mediaMd5,
+        });
+        if (ok) stats.posts++;
+        else stats.skippedDup++;
+      }
+      process.stderr.write(`\r/${id.board}/ files=${stats.files} posts=${stats.posts}   `);
     }
     // Flush tallies inside the same transaction as the posts they describe.
     inserter.finish();
