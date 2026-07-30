@@ -1,0 +1,5517 @@
+{
+  "captured": "2026-07-28T18:07:04.719Z",
+  "note": "Raw per-archive contributions, before duplicate rows were deleted. Sums double-count posts held by multiple archives; that overlap is not recoverable from the deduped table.",
+  "totalRows": 566559434,
+  "rows": [
+    {
+      "source": "laza-fuuka",
+      "source_id": 1,
+      "site": "4chan",
+      "board": "a",
+      "year": 2015,
+      "posts": 2918782,
+      "min_ts": 1442773224,
+      "max_ts": 1450085578
+    },
+    {
+      "source": "laza-fuuka",
+      "source_id": 1,
+      "site": "4chan",
+      "board": "adv",
+      "year": 2015,
+      "posts": 738894,
+      "min_ts": 1432154489,
+      "max_ts": 1450096629
+    },
+    {
+      "source": "laza-fuuka",
+      "source_id": 1,
+      "site": "4chan",
+      "board": "ck",
+      "year": 2015,
+      "posts": 667717,
+      "min_ts": 1429428495,
+      "max_ts": 1450096482
+    },
+    {
+      "source": "laza-fuuka",
+      "source_id": 1,
+      "site": "4chan",
+      "board": "diy",
+      "year": 2014,
+      "posts": 2,
+      "min_ts": 1405886818,
+      "max_ts": 1405886847
+    },
+    {
+      "source": "laza-fuuka",
+      "source_id": 1,
+      "site": "4chan",
+      "board": "diy",
+      "year": 2015,
+      "posts": 108203,
+      "min_ts": 1427715791,
+      "max_ts": 1450096527
+    },
+    {
+      "source": "laza-fuuka",
+      "source_id": 1,
+      "site": "4chan",
+      "board": "g",
+      "year": 2014,
+      "posts": 1,
+      "min_ts": 1390842451,
+      "max_ts": 1390842451
+    },
+    {
+      "source": "laza-fuuka",
+      "source_id": 1,
+      "site": "4chan",
+      "board": "g",
+      "year": 2015,
+      "posts": 4341880,
+      "min_ts": 1427173614,
+      "max_ts": 1450090430
+    },
+    {
+      "source": "laza-fuuka",
+      "source_id": 1,
+      "site": "4chan",
+      "board": "his",
+      "year": 2015,
+      "posts": 230635,
+      "min_ts": 1446326885,
+      "max_ts": 1447650333
+    },
+    {
+      "source": "laza-fuuka",
+      "source_id": 1,
+      "site": "4chan",
+      "board": "hr",
+      "year": 2014,
+      "posts": 414,
+      "min_ts": 1392331506,
+      "max_ts": 1419889396
+    },
+    {
+      "source": "laza-fuuka",
+      "source_id": 1,
+      "site": "4chan",
+      "board": "hr",
+      "year": 2015,
+      "posts": 62281,
+      "min_ts": 1420070980,
+      "max_ts": 1450096646
+    },
+    {
+      "source": "laza-fuuka",
+      "source_id": 1,
+      "site": "4chan",
+      "board": "int",
+      "year": 2013,
+      "posts": 1,
+      "min_ts": 1375670513,
+      "max_ts": 1375670513
+    },
+    {
+      "source": "laza-fuuka",
+      "source_id": 1,
+      "site": "4chan",
+      "board": "int",
+      "year": 2015,
+      "posts": 11344775,
+      "min_ts": 1427288598,
+      "max_ts": 1450084185
+    },
+    {
+      "source": "laza-fuuka",
+      "source_id": 1,
+      "site": "4chan",
+      "board": "jp",
+      "year": 2015,
+      "posts": 358744,
+      "min_ts": 1437422735,
+      "max_ts": 1450092634
+    },
+    {
+      "source": "laza-fuuka",
+      "source_id": 1,
+      "site": "4chan",
+      "board": "lgbt",
+      "year": 2015,
+      "posts": 1223582,
+      "min_ts": 1426435113,
+      "max_ts": 1450096557
+    },
+    {
+      "source": "laza-fuuka",
+      "source_id": 1,
+      "site": "4chan",
+      "board": "mu",
+      "year": 2014,
+      "posts": 1,
+      "min_ts": 1405099255,
+      "max_ts": 1405099255
+    },
+    {
+      "source": "laza-fuuka",
+      "source_id": 1,
+      "site": "4chan",
+      "board": "mu",
+      "year": 2015,
+      "posts": 4662837,
+      "min_ts": 1430866247,
+      "max_ts": 1450089289
+    },
+    {
+      "source": "laza-fuuka",
+      "source_id": 1,
+      "site": "4chan",
+      "board": "news",
+      "year": 2015,
+      "posts": 8331,
+      "min_ts": 1448638702,
+      "max_ts": 1450096732
+    },
+    {
+      "source": "laza-fuuka",
+      "source_id": 1,
+      "site": "4chan",
+      "board": "out",
+      "year": 2013,
+      "posts": 3,
+      "min_ts": 1363920914,
+      "max_ts": 1371927709
+    },
+    {
+      "source": "laza-fuuka",
+      "source_id": 1,
+      "site": "4chan",
+      "board": "out",
+      "year": 2015,
+      "posts": 140283,
+      "min_ts": 1427507656,
+      "max_ts": 1450096536
+    },
+    {
+      "source": "laza-fuuka",
+      "source_id": 1,
+      "site": "4chan",
+      "board": "p",
+      "year": 2013,
+      "posts": 1,
+      "min_ts": 1367337294,
+      "max_ts": 1367337294
+    },
+    {
+      "source": "laza-fuuka",
+      "source_id": 1,
+      "site": "4chan",
+      "board": "p",
+      "year": 2015,
+      "posts": 147940,
+      "min_ts": 1427774137,
+      "max_ts": 1450096280
+    },
+    {
+      "source": "laza-fuuka",
+      "source_id": 1,
+      "site": "4chan",
+      "board": "pol",
+      "year": 2015,
+      "posts": 11252984,
+      "min_ts": 1420756844,
+      "max_ts": 1450084383
+    },
+    {
+      "source": "laza-fuuka",
+      "source_id": 1,
+      "site": "4chan",
+      "board": "qa",
+      "year": 2015,
+      "posts": 229498,
+      "min_ts": 1422081908,
+      "max_ts": 1450096205
+    },
+    {
+      "source": "laza-fuuka",
+      "source_id": 1,
+      "site": "4chan",
+      "board": "r9k",
+      "year": 2015,
+      "posts": 6659821,
+      "min_ts": 1427399960,
+      "max_ts": 1450085766
+    },
+    {
+      "source": "laza-fuuka",
+      "source_id": 1,
+      "site": "4chan",
+      "board": "sci",
+      "year": 2013,
+      "posts": 1,
+      "min_ts": 1375476712,
+      "max_ts": 1375476712
+    },
+    {
+      "source": "laza-fuuka",
+      "source_id": 1,
+      "site": "4chan",
+      "board": "sci",
+      "year": 2014,
+      "posts": 1,
+      "min_ts": 1405458975,
+      "max_ts": 1405458975
+    },
+    {
+      "source": "laza-fuuka",
+      "source_id": 1,
+      "site": "4chan",
+      "board": "sci",
+      "year": 2015,
+      "posts": 463385,
+      "min_ts": 1430468000,
+      "max_ts": 1450096556
+    },
+    {
+      "source": "laza-fuuka",
+      "source_id": 1,
+      "site": "4chan",
+      "board": "soc",
+      "year": 2013,
+      "posts": 1,
+      "min_ts": 1378155513,
+      "max_ts": 1378155513
+    },
+    {
+      "source": "laza-fuuka",
+      "source_id": 1,
+      "site": "4chan",
+      "board": "soc",
+      "year": 2015,
+      "posts": 1124899,
+      "min_ts": 1429913006,
+      "max_ts": 1450094227
+    },
+    {
+      "source": "laza-fuuka",
+      "source_id": 1,
+      "site": "4chan",
+      "board": "tv",
+      "year": 2015,
+      "posts": 6434762,
+      "min_ts": 1431083633,
+      "max_ts": 1450092434
+    },
+    {
+      "source": "laza-fuuka",
+      "source_id": 1,
+      "site": "4chan",
+      "board": "v",
+      "year": 2015,
+      "posts": 18935724,
+      "min_ts": 1431124368,
+      "max_ts": 1450084038
+    },
+    {
+      "source": "laza-fuuka",
+      "source_id": 1,
+      "site": "4chan",
+      "board": "vr",
+      "year": 2014,
+      "posts": 1,
+      "min_ts": 1391831618,
+      "max_ts": 1391831618
+    },
+    {
+      "source": "laza-fuuka",
+      "source_id": 1,
+      "site": "4chan",
+      "board": "vr",
+      "year": 2015,
+      "posts": 420556,
+      "min_ts": 1423945628,
+      "max_ts": 1450096295
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "3",
+      "year": 2017,
+      "posts": 925,
+      "min_ts": 1490141950,
+      "max_ts": 1495678140
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "a",
+      "year": 2017,
+      "posts": 719009,
+      "min_ts": 1495174226,
+      "max_ts": 1497514877
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "a",
+      "year": 2018,
+      "posts": 1144,
+      "min_ts": 1520099653,
+      "max_ts": 1520169982
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "aco",
+      "year": 2017,
+      "posts": 28522,
+      "min_ts": 1489541322,
+      "max_ts": 1497462228
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "adv",
+      "year": 2017,
+      "posts": 1777,
+      "min_ts": 1496198379,
+      "max_ts": 1497479154
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "an",
+      "year": 2017,
+      "posts": 1885,
+      "min_ts": 1494447269,
+      "max_ts": 1497323984
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "asp",
+      "year": 2017,
+      "posts": 3029,
+      "min_ts": 1495820765,
+      "max_ts": 1497471808
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "biz",
+      "year": 2017,
+      "posts": 97070,
+      "min_ts": 1496224119,
+      "max_ts": 1513976831
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "c",
+      "year": 2017,
+      "posts": 9181,
+      "min_ts": 1488961200,
+      "max_ts": 1497337730
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "cgl",
+      "year": 2017,
+      "posts": 13728,
+      "min_ts": 1491495489,
+      "max_ts": 1497186577
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "ck",
+      "year": 2017,
+      "posts": 2284,
+      "min_ts": 1496111569,
+      "max_ts": 1497468374
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "cm",
+      "year": 2016,
+      "posts": 205,
+      "min_ts": 1474114209,
+      "max_ts": 1482802026
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "cm",
+      "year": 2017,
+      "posts": 4605,
+      "min_ts": 1483404519,
+      "max_ts": 1495283900
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "co",
+      "year": 2017,
+      "posts": 3812,
+      "min_ts": 1496126815,
+      "max_ts": 1497478037
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "d",
+      "year": 2017,
+      "posts": 13387,
+      "min_ts": 1492117870,
+      "max_ts": 1497351549
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "diy",
+      "year": 2017,
+      "posts": 2365,
+      "min_ts": 1493173194,
+      "max_ts": 1497228823
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "e",
+      "year": 2017,
+      "posts": 4982,
+      "min_ts": 1486689717,
+      "max_ts": 1497121271
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "fa",
+      "year": 2017,
+      "posts": 2094,
+      "min_ts": 1495667462,
+      "max_ts": 1497464287
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "fit",
+      "year": 2013,
+      "posts": 3,
+      "min_ts": 1358180697,
+      "max_ts": 1358189512
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "fit",
+      "year": 2017,
+      "posts": 222751,
+      "min_ts": 1494607439,
+      "max_ts": 1497479103
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "fit",
+      "year": 2018,
+      "posts": 228268,
+      "min_ts": 1533577443,
+      "max_ts": 1535423215
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "g",
+      "year": 2017,
+      "posts": 230152,
+      "min_ts": 1495122441,
+      "max_ts": 1497506007
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "gd",
+      "year": 2017,
+      "posts": 783,
+      "min_ts": 1492982238,
+      "max_ts": 1496791776
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "gif",
+      "year": 2014,
+      "posts": 2,
+      "min_ts": 1397912081,
+      "max_ts": 1404224611
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "gif",
+      "year": 2017,
+      "posts": 1032790,
+      "min_ts": 1493175579,
+      "max_ts": 1513051505
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "gif",
+      "year": 2018,
+      "posts": 219935,
+      "min_ts": 1531336096,
+      "max_ts": 1536109602
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "h",
+      "year": 2016,
+      "posts": 133,
+      "min_ts": 1475465383,
+      "max_ts": 1483194933
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "h",
+      "year": 2017,
+      "posts": 15507,
+      "min_ts": 1483250433,
+      "max_ts": 1497453530
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "hc",
+      "year": 2017,
+      "posts": 6126,
+      "min_ts": 1487023813,
+      "max_ts": 1497469925
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "his",
+      "year": 2017,
+      "posts": 3101,
+      "min_ts": 1495948823,
+      "max_ts": 1497442773
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "hm",
+      "year": 2014,
+      "posts": 1,
+      "min_ts": 1400074599,
+      "max_ts": 1400074599
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "hm",
+      "year": 2016,
+      "posts": 107,
+      "min_ts": 1453303271,
+      "max_ts": 1482993150
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "hm",
+      "year": 2017,
+      "posts": 94647,
+      "min_ts": 1483258409,
+      "max_ts": 1514763772
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "hm",
+      "year": 2018,
+      "posts": 43380,
+      "min_ts": 1514765052,
+      "max_ts": 1535418352
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "hr",
+      "year": 2016,
+      "posts": 197,
+      "min_ts": 1477255225,
+      "max_ts": 1482966057
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "hr",
+      "year": 2017,
+      "posts": 8369,
+      "min_ts": 1483239121,
+      "max_ts": 1497393823
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "i",
+      "year": 2017,
+      "posts": 1470,
+      "min_ts": 1488429108,
+      "max_ts": 1497219595
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "ic",
+      "year": 2017,
+      "posts": 3738,
+      "min_ts": 1493960026,
+      "max_ts": 1497247444
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "int",
+      "year": 2013,
+      "posts": 1,
+      "min_ts": 1375670513,
+      "max_ts": 1375670513
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "int",
+      "year": 2017,
+      "posts": 1117873,
+      "min_ts": 1494878901,
+      "max_ts": 1497787031
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "int",
+      "year": 2018,
+      "posts": 421350,
+      "min_ts": 1526149415,
+      "max_ts": 1535426077
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "jp",
+      "year": 2017,
+      "posts": 25567,
+      "min_ts": 1490229901,
+      "max_ts": 1497501340
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "k",
+      "year": 2017,
+      "posts": 5421,
+      "min_ts": 1496008185,
+      "max_ts": 1497490747
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "lgbt",
+      "year": 2017,
+      "posts": 136296,
+      "min_ts": 1493481141,
+      "max_ts": 1497816915
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "lgbt",
+      "year": 2018,
+      "posts": 78163,
+      "min_ts": 1533497168,
+      "max_ts": 1535259315
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "lit",
+      "year": 2017,
+      "posts": 1950,
+      "min_ts": 1496098089,
+      "max_ts": 1497448419
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "m",
+      "year": 2017,
+      "posts": 7331,
+      "min_ts": 1494445061,
+      "max_ts": 1497375551
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "mlp",
+      "year": 2017,
+      "posts": 7636,
+      "min_ts": 1494263267,
+      "max_ts": 1497497491
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "mu",
+      "year": 2017,
+      "posts": 2760,
+      "min_ts": 1496241223,
+      "max_ts": 1497501790
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "n",
+      "year": 2017,
+      "posts": 4168,
+      "min_ts": 1486737423,
+      "max_ts": 1497040512
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "news",
+      "year": 2017,
+      "posts": 2818,
+      "min_ts": 1493309589,
+      "max_ts": 1496422321
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "o",
+      "year": 2017,
+      "posts": 4113,
+      "min_ts": 1495807574,
+      "max_ts": 1497413871
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "out",
+      "year": 2017,
+      "posts": 4927,
+      "min_ts": 1490077669,
+      "max_ts": 1497227781
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "p",
+      "year": 2017,
+      "posts": 2829,
+      "min_ts": 1493380033,
+      "max_ts": 1497175271
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "pol",
+      "year": 2017,
+      "posts": 11445268,
+      "min_ts": 1493993226,
+      "max_ts": 1513290006
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "pol",
+      "year": 2018,
+      "posts": 2182047,
+      "min_ts": 1514925759,
+      "max_ts": 1536216119
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "qa",
+      "year": 2018,
+      "posts": 1001,
+      "min_ts": 1533330176,
+      "max_ts": 1535056084
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "qst",
+      "year": 2017,
+      "posts": 22275,
+      "min_ts": 1495395321,
+      "max_ts": 1497351988
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "r",
+      "year": 2017,
+      "posts": 364,
+      "min_ts": 1496196324,
+      "max_ts": 1497489376
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "r9k",
+      "year": 2017,
+      "posts": 1398,
+      "min_ts": 1496182888,
+      "max_ts": 1497481920
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "s",
+      "year": 2017,
+      "posts": 8527,
+      "min_ts": 1493763521,
+      "max_ts": 1497404318
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "s4s",
+      "year": 2017,
+      "posts": 761,
+      "min_ts": 1496196718,
+      "max_ts": 1497504556
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "sci",
+      "year": 2017,
+      "posts": 28368,
+      "min_ts": 1493508018,
+      "max_ts": 1497448611
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "soc",
+      "year": 2017,
+      "posts": 48857,
+      "min_ts": 1491560375,
+      "max_ts": 1497477549
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "sp",
+      "year": 2017,
+      "posts": 286580,
+      "min_ts": 1494744123,
+      "max_ts": 1497430359
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "sp",
+      "year": 2018,
+      "posts": 329444,
+      "min_ts": 1516840736,
+      "max_ts": 1531363978
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "t",
+      "year": 2016,
+      "posts": 400,
+      "min_ts": 1459684829,
+      "max_ts": 1483228439
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "t",
+      "year": 2017,
+      "posts": 1365,
+      "min_ts": 1483284005,
+      "max_ts": 1514762625
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "t",
+      "year": 2018,
+      "posts": 1940,
+      "min_ts": 1514784961,
+      "max_ts": 1523085737
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "tg",
+      "year": 2017,
+      "posts": 11074,
+      "min_ts": 1495818865,
+      "max_ts": 1497483761
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "toy",
+      "year": 2017,
+      "posts": 13054,
+      "min_ts": 1491859000,
+      "max_ts": 1497486780
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "trv",
+      "year": 2017,
+      "posts": 1847,
+      "min_ts": 1492176396,
+      "max_ts": 1497368969
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "tv",
+      "year": 2017,
+      "posts": 229455,
+      "min_ts": 1496255323,
+      "max_ts": 1497984421
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "u",
+      "year": 2016,
+      "posts": 526,
+      "min_ts": 1473984142,
+      "max_ts": 1483169936
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "u",
+      "year": 2017,
+      "posts": 11432,
+      "min_ts": 1483292251,
+      "max_ts": 1497388380
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "v",
+      "year": 2017,
+      "posts": 2503,
+      "min_ts": 1496263067,
+      "max_ts": 1497478778
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "v",
+      "year": 2018,
+      "posts": 895362,
+      "min_ts": 1534495301,
+      "max_ts": 1535419013
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "vg",
+      "year": 2017,
+      "posts": 56403,
+      "min_ts": 1496090355,
+      "max_ts": 1497486574
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "vip",
+      "year": 2016,
+      "posts": 151,
+      "min_ts": 1478110526,
+      "max_ts": 1483226873
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "vip",
+      "year": 2017,
+      "posts": 1287,
+      "min_ts": 1483409780,
+      "max_ts": 1496699647
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "vp",
+      "year": 2017,
+      "posts": 4037,
+      "min_ts": 1496122593,
+      "max_ts": 1497506936
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "vr",
+      "year": 2017,
+      "posts": 4682,
+      "min_ts": 1495005752,
+      "max_ts": 1497366902
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "w",
+      "year": 2017,
+      "posts": 1802,
+      "min_ts": 1488749097,
+      "max_ts": 1497138451
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "wg",
+      "year": 2017,
+      "posts": 5467,
+      "min_ts": 1492382928,
+      "max_ts": 1497252143
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "wsg",
+      "year": 2016,
+      "posts": 301,
+      "min_ts": 1456006687,
+      "max_ts": 1483152851
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "wsg",
+      "year": 2017,
+      "posts": 333239,
+      "min_ts": 1483251509,
+      "max_ts": 1514764721
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "wsg",
+      "year": 2018,
+      "posts": 98637,
+      "min_ts": 1514764889,
+      "max_ts": 1536109162
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "wsr",
+      "year": 2017,
+      "posts": 466,
+      "min_ts": 1496045738,
+      "max_ts": 1497422490
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "x",
+      "year": 2017,
+      "posts": 4625,
+      "min_ts": 1496149448,
+      "max_ts": 1497470258
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "y",
+      "year": 2016,
+      "posts": 562,
+      "min_ts": 1454940305,
+      "max_ts": 1483221062
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "y",
+      "year": 2017,
+      "posts": 70471,
+      "min_ts": 1483270789,
+      "max_ts": 1514764654
+    },
+    {
+      "source": "4chan-threads-2017-2018",
+      "source_id": 2,
+      "site": "4chan",
+      "board": "y",
+      "year": 2018,
+      "posts": 32087,
+      "min_ts": 1514766185,
+      "max_ts": 1535418439
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "3",
+      "year": 2011,
+      "posts": 75,
+      "min_ts": 1324310556,
+      "max_ts": 1324488396
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "3",
+      "year": 2013,
+      "posts": 53523,
+      "min_ts": 1363594536,
+      "max_ts": 1388534193
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "3",
+      "year": 2014,
+      "posts": 54841,
+      "min_ts": 1388534493,
+      "max_ts": 1420069029
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "3",
+      "year": 2015,
+      "posts": 50702,
+      "min_ts": 1420070406,
+      "max_ts": 1451602603
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "3",
+      "year": 2016,
+      "posts": 35908,
+      "min_ts": 1451607967,
+      "max_ts": 1483228785
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "3",
+      "year": 2017,
+      "posts": 52732,
+      "min_ts": 1483228995,
+      "max_ts": 1514764165
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "3",
+      "year": 2018,
+      "posts": 60158,
+      "min_ts": 1514765217,
+      "max_ts": 1546300755
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "3",
+      "year": 2019,
+      "posts": 59165,
+      "min_ts": 1546301034,
+      "max_ts": 1577835868
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "3",
+      "year": 2020,
+      "posts": 73361,
+      "min_ts": 1577836992,
+      "max_ts": 1609459192
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "3",
+      "year": 2021,
+      "posts": 16258,
+      "min_ts": 1609459690,
+      "max_ts": 1640871342
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "3",
+      "year": 2022,
+      "posts": 35154,
+      "min_ts": 1641039642,
+      "max_ts": 1672530775
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "3",
+      "year": 2023,
+      "posts": 8371,
+      "min_ts": 1672531556,
+      "max_ts": 1678894109
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "biz",
+      "year": 2014,
+      "posts": 596301,
+      "min_ts": 1392328437,
+      "max_ts": 1420070272
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "biz",
+      "year": 2015,
+      "posts": 421932,
+      "min_ts": 1420070400,
+      "max_ts": 1451606367
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "biz",
+      "year": 2016,
+      "posts": 584060,
+      "min_ts": 1451606562,
+      "max_ts": 1483228654
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "biz",
+      "year": 2017,
+      "posts": 3995863,
+      "min_ts": 1483229339,
+      "max_ts": 1514764795
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "biz",
+      "year": 2018,
+      "posts": 6586722,
+      "min_ts": 1514764801,
+      "max_ts": 1546300795
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "biz",
+      "year": 2019,
+      "posts": 4329712,
+      "min_ts": 1546300800,
+      "max_ts": 1577836798
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "biz",
+      "year": 2020,
+      "posts": 8636466,
+      "min_ts": 1577836806,
+      "max_ts": 1609459193
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "biz",
+      "year": 2021,
+      "posts": 4923450,
+      "min_ts": 1609459202,
+      "max_ts": 1615188293
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "biz",
+      "year": 2022,
+      "posts": 3299877,
+      "min_ts": 1641768577,
+      "max_ts": 1672531196
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "biz",
+      "year": 2023,
+      "posts": 1043207,
+      "min_ts": 1672531202,
+      "max_ts": 1678894185
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "cgl",
+      "year": 2012,
+      "posts": 261505,
+      "min_ts": 1344825098,
+      "max_ts": 1356998391
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "cgl",
+      "year": 2013,
+      "posts": 742204,
+      "min_ts": 1356998481,
+      "max_ts": 1388534316
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "cgl",
+      "year": 2014,
+      "posts": 755045,
+      "min_ts": 1388534406,
+      "max_ts": 1420070382
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "cgl",
+      "year": 2015,
+      "posts": 763258,
+      "min_ts": 1420070419,
+      "max_ts": 1451606385
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "cgl",
+      "year": 2016,
+      "posts": 441533,
+      "min_ts": 1451606420,
+      "max_ts": 1483228798
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "cgl",
+      "year": 2017,
+      "posts": 432882,
+      "min_ts": 1483228873,
+      "max_ts": 1514764780
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "cgl",
+      "year": 2018,
+      "posts": 330429,
+      "min_ts": 1514764800,
+      "max_ts": 1546300689
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "cgl",
+      "year": 2019,
+      "posts": 244310,
+      "min_ts": 1546300997,
+      "max_ts": 1577836776
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "cgl",
+      "year": 2020,
+      "posts": 213321,
+      "min_ts": 1577836958,
+      "max_ts": 1609458644
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "cgl",
+      "year": 2021,
+      "posts": 185717,
+      "min_ts": 1609459289,
+      "max_ts": 1640995033
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "cgl",
+      "year": 2022,
+      "posts": 113075,
+      "min_ts": 1640995243,
+      "max_ts": 1672530672
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "cgl",
+      "year": 2023,
+      "posts": 16911,
+      "min_ts": 1672531501,
+      "max_ts": 1678893990
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "ck",
+      "year": 2012,
+      "posts": 418275,
+      "min_ts": 1339992179,
+      "max_ts": 1356998380
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "ck",
+      "year": 2013,
+      "posts": 937754,
+      "min_ts": 1356998435,
+      "max_ts": 1388534364
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "ck",
+      "year": 2014,
+      "posts": 1038699,
+      "min_ts": 1388534424,
+      "max_ts": 1420070384
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "ck",
+      "year": 2015,
+      "posts": 1113493,
+      "min_ts": 1420070442,
+      "max_ts": 1451606399
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "ck",
+      "year": 2016,
+      "posts": 992832,
+      "min_ts": 1451606411,
+      "max_ts": 1483228730
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "ck",
+      "year": 2017,
+      "posts": 1536550,
+      "min_ts": 1483228863,
+      "max_ts": 1514764747
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "ck",
+      "year": 2018,
+      "posts": 1774658,
+      "min_ts": 1514764831,
+      "max_ts": 1546300773
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "ck",
+      "year": 2019,
+      "posts": 1719778,
+      "min_ts": 1546300829,
+      "max_ts": 1577836772
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "ck",
+      "year": 2020,
+      "posts": 1873315,
+      "min_ts": 1577836843,
+      "max_ts": 1609459193
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "ck",
+      "year": 2021,
+      "posts": 1871457,
+      "min_ts": 1609459244,
+      "max_ts": 1640995198
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "ck",
+      "year": 2022,
+      "posts": 1419809,
+      "min_ts": 1640995201,
+      "max_ts": 1672531181
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "ck",
+      "year": 2023,
+      "posts": 293483,
+      "min_ts": 1672531243,
+      "max_ts": 1678894158
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "diy",
+      "year": 2011,
+      "posts": 104438,
+      "min_ts": 1319349228,
+      "max_ts": 1325375943
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "diy",
+      "year": 2012,
+      "posts": 254786,
+      "min_ts": 1325376001,
+      "max_ts": 1356998396
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "diy",
+      "year": 2013,
+      "posts": 208832,
+      "min_ts": 1356998441,
+      "max_ts": 1388534353
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "diy",
+      "year": 2014,
+      "posts": 172782,
+      "min_ts": 1388534503,
+      "max_ts": 1420070385
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "diy",
+      "year": 2015,
+      "posts": 174131,
+      "min_ts": 1420070502,
+      "max_ts": 1451606132
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "diy",
+      "year": 2016,
+      "posts": 159238,
+      "min_ts": 1451606716,
+      "max_ts": 1483228650
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "diy",
+      "year": 2017,
+      "posts": 198861,
+      "min_ts": 1483229343,
+      "max_ts": 1514764757
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "diy",
+      "year": 2018,
+      "posts": 221109,
+      "min_ts": 1514764826,
+      "max_ts": 1546300774
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "diy",
+      "year": 2019,
+      "posts": 215217,
+      "min_ts": 1546301111,
+      "max_ts": 1577836724
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "diy",
+      "year": 2020,
+      "posts": 247618,
+      "min_ts": 1577836876,
+      "max_ts": 1609459168
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "diy",
+      "year": 2021,
+      "posts": 58262,
+      "min_ts": 1609459237,
+      "max_ts": 1615188411
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "diy",
+      "year": 2022,
+      "posts": 131554,
+      "min_ts": 1646372080,
+      "max_ts": 1672531171
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "diy",
+      "year": 2023,
+      "posts": 48062,
+      "min_ts": 1672531429,
+      "max_ts": 1678893988
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "fa",
+      "year": 2012,
+      "posts": 1,
+      "min_ts": 1343876739,
+      "max_ts": 1343876739
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "fa",
+      "year": 2013,
+      "posts": 1586334,
+      "min_ts": 1364698120,
+      "max_ts": 1388534392
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "fa",
+      "year": 2014,
+      "posts": 1751240,
+      "min_ts": 1388534422,
+      "max_ts": 1420070371
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "fa",
+      "year": 2015,
+      "posts": 1498625,
+      "min_ts": 1420070401,
+      "max_ts": 1451606378
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "fa",
+      "year": 2016,
+      "posts": 1097343,
+      "min_ts": 1451606402,
+      "max_ts": 1483228754
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "fa",
+      "year": 2017,
+      "posts": 942089,
+      "min_ts": 1483228936,
+      "max_ts": 1514764798
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "fa",
+      "year": 2018,
+      "posts": 936624,
+      "min_ts": 1514764800,
+      "max_ts": 1546300790
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "fa",
+      "year": 2019,
+      "posts": 921069,
+      "min_ts": 1546300876,
+      "max_ts": 1577836787
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "fa",
+      "year": 2020,
+      "posts": 930010,
+      "min_ts": 1577836822,
+      "max_ts": 1609459168
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "fa",
+      "year": 2021,
+      "posts": 185737,
+      "min_ts": 1609459210,
+      "max_ts": 1615188430
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "fa",
+      "year": 2022,
+      "posts": 333799,
+      "min_ts": 1651756360,
+      "max_ts": 1672531189
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "fa",
+      "year": 2023,
+      "posts": 111646,
+      "min_ts": 1672531207,
+      "max_ts": 1678893972
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "ic",
+      "year": 2013,
+      "posts": 184560,
+      "min_ts": 1358205190,
+      "max_ts": 1388534113
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "ic",
+      "year": 2014,
+      "posts": 309505,
+      "min_ts": 1388534444,
+      "max_ts": 1420070346
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "ic",
+      "year": 2015,
+      "posts": 402669,
+      "min_ts": 1420070409,
+      "max_ts": 1451606269
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "ic",
+      "year": 2016,
+      "posts": 386166,
+      "min_ts": 1451606456,
+      "max_ts": 1483228765
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "ic",
+      "year": 2017,
+      "posts": 458087,
+      "min_ts": 1483228821,
+      "max_ts": 1514764708
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "ic",
+      "year": 2018,
+      "posts": 487574,
+      "min_ts": 1514764802,
+      "max_ts": 1546300798
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "ic",
+      "year": 2019,
+      "posts": 534184,
+      "min_ts": 1546300817,
+      "max_ts": 1577836720
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "ic",
+      "year": 2020,
+      "posts": 816404,
+      "min_ts": 1577836889,
+      "max_ts": 1609459167
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "ic",
+      "year": 2021,
+      "posts": 150046,
+      "min_ts": 1609459281,
+      "max_ts": 1615188577
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "ic",
+      "year": 2022,
+      "posts": 328985,
+      "min_ts": 1646556960,
+      "max_ts": 1672531190
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "ic",
+      "year": 2023,
+      "posts": 112673,
+      "min_ts": 1672531283,
+      "max_ts": 1678894182
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "jp",
+      "year": 2008,
+      "posts": 1777959,
+      "min_ts": 1203500451,
+      "max_ts": 1230767997
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "jp",
+      "year": 2009,
+      "posts": 2160793,
+      "min_ts": 1230768000,
+      "max_ts": 1262303996
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "jp",
+      "year": 2010,
+      "posts": 2664434,
+      "min_ts": 1262304019,
+      "max_ts": 1293839998
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "jp",
+      "year": 2011,
+      "posts": 1566932,
+      "min_ts": 1293840004,
+      "max_ts": 1325375939
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "jp",
+      "year": 2012,
+      "posts": 1945031,
+      "min_ts": 1325376009,
+      "max_ts": 1356998388
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "jp",
+      "year": 2013,
+      "posts": 1434948,
+      "min_ts": 1356998403,
+      "max_ts": 1388534386
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "jp",
+      "year": 2014,
+      "posts": 1093557,
+      "min_ts": 1388534401,
+      "max_ts": 1420070394
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "jp",
+      "year": 2015,
+      "posts": 1690471,
+      "min_ts": 1420070414,
+      "max_ts": 1451606399
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "jp",
+      "year": 2016,
+      "posts": 1497030,
+      "min_ts": 1451606400,
+      "max_ts": 1483228792
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "jp",
+      "year": 2017,
+      "posts": 1782644,
+      "min_ts": 1483228811,
+      "max_ts": 1514764794
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "jp",
+      "year": 2018,
+      "posts": 2380188,
+      "min_ts": 1514764803,
+      "max_ts": 1546300792
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "jp",
+      "year": 2019,
+      "posts": 2084662,
+      "min_ts": 1546300814,
+      "max_ts": 1577836790
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "jp",
+      "year": 2020,
+      "posts": 8546347,
+      "min_ts": 1577836806,
+      "max_ts": 1609459199
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "jp",
+      "year": 2021,
+      "posts": 5865177,
+      "min_ts": 1609459200,
+      "max_ts": 1640995191
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "jp",
+      "year": 2022,
+      "posts": 3872890,
+      "min_ts": 1640995205,
+      "max_ts": 1672531192
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "jp",
+      "year": 2023,
+      "posts": 687455,
+      "min_ts": 1672531229,
+      "max_ts": 1678894181
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "lit",
+      "year": 2010,
+      "posts": 991993,
+      "min_ts": 1268249391,
+      "max_ts": 1293839929
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "lit",
+      "year": 2011,
+      "posts": 845910,
+      "min_ts": 1293840041,
+      "max_ts": 1325375905
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "lit",
+      "year": 2012,
+      "posts": 1008087,
+      "min_ts": 1325376025,
+      "max_ts": 1356998354
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "lit",
+      "year": 2013,
+      "posts": 1103177,
+      "min_ts": 1356998414,
+      "max_ts": 1388534364
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "lit",
+      "year": 2014,
+      "posts": 1498149,
+      "min_ts": 1388534482,
+      "max_ts": 1420070385
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "lit",
+      "year": 2015,
+      "posts": 1588329,
+      "min_ts": 1420070429,
+      "max_ts": 1451606318
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "lit",
+      "year": 2016,
+      "posts": 1148647,
+      "min_ts": 1451606406,
+      "max_ts": 1483228797
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "lit",
+      "year": 2017,
+      "posts": 1583647,
+      "min_ts": 1483228804,
+      "max_ts": 1514764791
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "lit",
+      "year": 2018,
+      "posts": 1841894,
+      "min_ts": 1514764821,
+      "max_ts": 1546300785
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "lit",
+      "year": 2019,
+      "posts": 2089788,
+      "min_ts": 1546300825,
+      "max_ts": 1577836799
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "lit",
+      "year": 2020,
+      "posts": 2707762,
+      "min_ts": 1577836814,
+      "max_ts": 1609459170
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "lit",
+      "year": 2021,
+      "posts": 2472489,
+      "min_ts": 1609459213,
+      "max_ts": 1640995182
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "lit",
+      "year": 2022,
+      "posts": 1643804,
+      "min_ts": 1640995202,
+      "max_ts": 1672531185
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "lit",
+      "year": 2023,
+      "posts": 326755,
+      "min_ts": 1672531218,
+      "max_ts": 1678894202
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "sci",
+      "year": 2010,
+      "posts": 1333636,
+      "min_ts": 1273719701,
+      "max_ts": 1293839980
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "sci",
+      "year": 2011,
+      "posts": 1891075,
+      "min_ts": 1293840033,
+      "max_ts": 1325375949
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "sci",
+      "year": 2012,
+      "posts": 1191754,
+      "min_ts": 1325376001,
+      "max_ts": 1356998326
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "sci",
+      "year": 2013,
+      "posts": 842380,
+      "min_ts": 1356998489,
+      "max_ts": 1388534334
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "sci",
+      "year": 2014,
+      "posts": 707377,
+      "min_ts": 1388534424,
+      "max_ts": 1420070394
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "sci",
+      "year": 2015,
+      "posts": 772711,
+      "min_ts": 1420070421,
+      "max_ts": 1451606343
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "sci",
+      "year": 2016,
+      "posts": 669910,
+      "min_ts": 1451606487,
+      "max_ts": 1483228771
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "sci",
+      "year": 2017,
+      "posts": 831939,
+      "min_ts": 1483228826,
+      "max_ts": 1514764744
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "sci",
+      "year": 2018,
+      "posts": 851897,
+      "min_ts": 1514764808,
+      "max_ts": 1546300754
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "sci",
+      "year": 2019,
+      "posts": 995850,
+      "min_ts": 1546300833,
+      "max_ts": 1577836786
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "sci",
+      "year": 2020,
+      "posts": 1261280,
+      "min_ts": 1577836826,
+      "max_ts": 1609459199
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "sci",
+      "year": 2021,
+      "posts": 269175,
+      "min_ts": 1609459205,
+      "max_ts": 1615188743
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "sci",
+      "year": 2022,
+      "posts": 537285,
+      "min_ts": 1651659710,
+      "max_ts": 1672531169
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "sci",
+      "year": 2023,
+      "posts": 185500,
+      "min_ts": 1672531201,
+      "max_ts": 1678893879
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "vr",
+      "year": 2013,
+      "posts": 857657,
+      "min_ts": 1364551000,
+      "max_ts": 1388534392
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "vr",
+      "year": 2014,
+      "posts": 761428,
+      "min_ts": 1388534422,
+      "max_ts": 1420070283
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "vr",
+      "year": 2015,
+      "posts": 660462,
+      "min_ts": 1420070401,
+      "max_ts": 1451606271
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "vr",
+      "year": 2016,
+      "posts": 616711,
+      "min_ts": 1451606438,
+      "max_ts": 1483228723
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "vr",
+      "year": 2017,
+      "posts": 706492,
+      "min_ts": 1483228807,
+      "max_ts": 1514764759
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "vr",
+      "year": 2018,
+      "posts": 690725,
+      "min_ts": 1514764874,
+      "max_ts": 1546300775
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "vr",
+      "year": 2019,
+      "posts": 750832,
+      "min_ts": 1546300847,
+      "max_ts": 1577836772
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "vr",
+      "year": 2020,
+      "posts": 1021825,
+      "min_ts": 1577836816,
+      "max_ts": 1609459192
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "vr",
+      "year": 2021,
+      "posts": 934827,
+      "min_ts": 1609459203,
+      "max_ts": 1640995185
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "vr",
+      "year": 2022,
+      "posts": 884295,
+      "min_ts": 1640995215,
+      "max_ts": 1672531188
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "vr",
+      "year": 2023,
+      "posts": 188256,
+      "min_ts": 1672531235,
+      "max_ts": 1678894210
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "vt",
+      "year": 2021,
+      "posts": 14467871,
+      "min_ts": 1611919211,
+      "max_ts": 1640995199
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "vt",
+      "year": 2022,
+      "posts": 21867971,
+      "min_ts": 1640995201,
+      "max_ts": 1672531198
+    },
+    {
+      "source": "warosu-2023-03-15",
+      "source_id": 3,
+      "site": "4chan",
+      "board": "vt",
+      "year": 2023,
+      "posts": 5089527,
+      "min_ts": 1672531200,
+      "max_ts": 1678894234
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (per-board tarballs)",
+      "source_id": 4,
+      "site": "4chan",
+      "board": "3",
+      "year": 2015,
+      "posts": 771,
+      "min_ts": 1440105990,
+      "max_ts": 1448323981
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (per-board tarballs)",
+      "source_id": 4,
+      "site": "4chan",
+      "board": "aco",
+      "year": 2015,
+      "posts": 129,
+      "min_ts": 1447221841,
+      "max_ts": 1448205015
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (per-board tarballs)",
+      "source_id": 4,
+      "site": "4chan",
+      "board": "adv",
+      "year": 2015,
+      "posts": 842,
+      "min_ts": 1443917279,
+      "max_ts": 1450118343
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (per-board tarballs)",
+      "source_id": 4,
+      "site": "4chan",
+      "board": "adv",
+      "year": 2016,
+      "posts": 376,
+      "min_ts": 1451673307,
+      "max_ts": 1475432530
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (per-board tarballs)",
+      "source_id": 4,
+      "site": "4chan",
+      "board": "an",
+      "year": 2015,
+      "posts": 104,
+      "min_ts": 1447876699,
+      "max_ts": 1448256057
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (per-board tarballs)",
+      "source_id": 4,
+      "site": "4chan",
+      "board": "asp",
+      "year": 2015,
+      "posts": 41,
+      "min_ts": 1447431393,
+      "max_ts": 1447470169
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "3",
+      "year": 2011,
+      "posts": 75,
+      "min_ts": 1324310556,
+      "max_ts": 1324488396
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "3",
+      "year": 2013,
+      "posts": 53523,
+      "min_ts": 1363594536,
+      "max_ts": 1388534193
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "3",
+      "year": 2014,
+      "posts": 54841,
+      "min_ts": 1388534493,
+      "max_ts": 1420069029
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "3",
+      "year": 2015,
+      "posts": 50702,
+      "min_ts": 1420070406,
+      "max_ts": 1451602603
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "3",
+      "year": 2016,
+      "posts": 35908,
+      "min_ts": 1451607967,
+      "max_ts": 1483228785
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "3",
+      "year": 2017,
+      "posts": 52732,
+      "min_ts": 1483228995,
+      "max_ts": 1514764165
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "3",
+      "year": 2018,
+      "posts": 60158,
+      "min_ts": 1514765217,
+      "max_ts": 1546300755
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "3",
+      "year": 2019,
+      "posts": 59165,
+      "min_ts": 1546301034,
+      "max_ts": 1577835868
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "3",
+      "year": 2020,
+      "posts": 73361,
+      "min_ts": 1577836992,
+      "max_ts": 1609459192
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "3",
+      "year": 2021,
+      "posts": 16258,
+      "min_ts": 1609459690,
+      "max_ts": 1640871342
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "3",
+      "year": 2022,
+      "posts": 35154,
+      "min_ts": 1641039642,
+      "max_ts": 1672530775
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "3",
+      "year": 2023,
+      "posts": 37308,
+      "min_ts": 1672531556,
+      "max_ts": 1704066756
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "3",
+      "year": 2024,
+      "posts": 35421,
+      "min_ts": 1704067391,
+      "max_ts": 1735687394
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "3",
+      "year": 2025,
+      "posts": 12544,
+      "min_ts": 1735690627,
+      "max_ts": 1755271089
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "biz",
+      "year": 2014,
+      "posts": 596301,
+      "min_ts": 1392328437,
+      "max_ts": 1420070272
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "biz",
+      "year": 2015,
+      "posts": 421932,
+      "min_ts": 1420070400,
+      "max_ts": 1451606367
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "biz",
+      "year": 2016,
+      "posts": 584060,
+      "min_ts": 1451606562,
+      "max_ts": 1483228654
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "biz",
+      "year": 2017,
+      "posts": 3995863,
+      "min_ts": 1483229339,
+      "max_ts": 1514764795
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "biz",
+      "year": 2018,
+      "posts": 6586722,
+      "min_ts": 1514764801,
+      "max_ts": 1546300795
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "biz",
+      "year": 2019,
+      "posts": 4329712,
+      "min_ts": 1546300800,
+      "max_ts": 1577836798
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "biz",
+      "year": 2020,
+      "posts": 8636466,
+      "min_ts": 1577836806,
+      "max_ts": 1609459193
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "biz",
+      "year": 2021,
+      "posts": 4923450,
+      "min_ts": 1609459202,
+      "max_ts": 1615188293
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "biz",
+      "year": 2022,
+      "posts": 3299877,
+      "min_ts": 1641768577,
+      "max_ts": 1672531196
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "biz",
+      "year": 2023,
+      "posts": 4039913,
+      "min_ts": 1672531202,
+      "max_ts": 1704067175
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "biz",
+      "year": 2024,
+      "posts": 2382406,
+      "min_ts": 1704067202,
+      "max_ts": 1735689596
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "biz",
+      "year": 2025,
+      "posts": 1270563,
+      "min_ts": 1735689607,
+      "max_ts": 1755271715
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "cgl",
+      "year": 2012,
+      "posts": 261505,
+      "min_ts": 1344825098,
+      "max_ts": 1356998391
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "cgl",
+      "year": 2013,
+      "posts": 742204,
+      "min_ts": 1356998481,
+      "max_ts": 1388534316
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "cgl",
+      "year": 2014,
+      "posts": 755045,
+      "min_ts": 1388534406,
+      "max_ts": 1420070382
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "cgl",
+      "year": 2015,
+      "posts": 763258,
+      "min_ts": 1420070419,
+      "max_ts": 1451606385
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "cgl",
+      "year": 2016,
+      "posts": 441533,
+      "min_ts": 1451606420,
+      "max_ts": 1483228798
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "cgl",
+      "year": 2017,
+      "posts": 432882,
+      "min_ts": 1483228873,
+      "max_ts": 1514764780
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "cgl",
+      "year": 2018,
+      "posts": 330429,
+      "min_ts": 1514764800,
+      "max_ts": 1546300689
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "cgl",
+      "year": 2019,
+      "posts": 244310,
+      "min_ts": 1546300997,
+      "max_ts": 1577836776
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "cgl",
+      "year": 2020,
+      "posts": 213321,
+      "min_ts": 1577836958,
+      "max_ts": 1609458644
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "cgl",
+      "year": 2021,
+      "posts": 185717,
+      "min_ts": 1609459289,
+      "max_ts": 1640995033
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "cgl",
+      "year": 2022,
+      "posts": 113075,
+      "min_ts": 1640995243,
+      "max_ts": 1672530672
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "cgl",
+      "year": 2023,
+      "posts": 70907,
+      "min_ts": 1672531501,
+      "max_ts": 1704066400
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "cgl",
+      "year": 2024,
+      "posts": 46846,
+      "min_ts": 1704068129,
+      "max_ts": 1735684559
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "cgl",
+      "year": 2025,
+      "posts": 14658,
+      "min_ts": 1735691472,
+      "max_ts": 1755271605
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "ck",
+      "year": 2012,
+      "posts": 418275,
+      "min_ts": 1339992179,
+      "max_ts": 1356998380
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "ck",
+      "year": 2013,
+      "posts": 937754,
+      "min_ts": 1356998435,
+      "max_ts": 1388534364
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "ck",
+      "year": 2014,
+      "posts": 1038699,
+      "min_ts": 1388534424,
+      "max_ts": 1420070384
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "ck",
+      "year": 2015,
+      "posts": 1113493,
+      "min_ts": 1420070442,
+      "max_ts": 1451606399
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "ck",
+      "year": 2016,
+      "posts": 992832,
+      "min_ts": 1451606411,
+      "max_ts": 1483228730
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "ck",
+      "year": 2017,
+      "posts": 1536550,
+      "min_ts": 1483228863,
+      "max_ts": 1514764747
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "ck",
+      "year": 2018,
+      "posts": 1774658,
+      "min_ts": 1514764831,
+      "max_ts": 1546300773
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "ck",
+      "year": 2019,
+      "posts": 1719778,
+      "min_ts": 1546300829,
+      "max_ts": 1577836772
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "ck",
+      "year": 2020,
+      "posts": 1873315,
+      "min_ts": 1577836843,
+      "max_ts": 1609459193
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "ck",
+      "year": 2021,
+      "posts": 1871457,
+      "min_ts": 1609459244,
+      "max_ts": 1640995198
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "ck",
+      "year": 2022,
+      "posts": 1419809,
+      "min_ts": 1640995201,
+      "max_ts": 1672531181
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "ck",
+      "year": 2023,
+      "posts": 1272283,
+      "min_ts": 1672531243,
+      "max_ts": 1704067179
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "ck",
+      "year": 2024,
+      "posts": 1018122,
+      "min_ts": 1704067244,
+      "max_ts": 1735689516
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "ck",
+      "year": 2025,
+      "posts": 461986,
+      "min_ts": 1735689621,
+      "max_ts": 1755271733
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "diy",
+      "year": 2011,
+      "posts": 104438,
+      "min_ts": 1319349228,
+      "max_ts": 1325375943
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "diy",
+      "year": 2012,
+      "posts": 254786,
+      "min_ts": 1325376001,
+      "max_ts": 1356998396
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "diy",
+      "year": 2013,
+      "posts": 208832,
+      "min_ts": 1356998441,
+      "max_ts": 1388534353
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "diy",
+      "year": 2014,
+      "posts": 172782,
+      "min_ts": 1388534503,
+      "max_ts": 1420070385
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "diy",
+      "year": 2015,
+      "posts": 174131,
+      "min_ts": 1420070502,
+      "max_ts": 1451606132
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "diy",
+      "year": 2016,
+      "posts": 159238,
+      "min_ts": 1451606716,
+      "max_ts": 1483228650
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "diy",
+      "year": 2017,
+      "posts": 198861,
+      "min_ts": 1483229343,
+      "max_ts": 1514764757
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "diy",
+      "year": 2018,
+      "posts": 221109,
+      "min_ts": 1514764826,
+      "max_ts": 1546300774
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "diy",
+      "year": 2019,
+      "posts": 215217,
+      "min_ts": 1546301111,
+      "max_ts": 1577836724
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "diy",
+      "year": 2020,
+      "posts": 247618,
+      "min_ts": 1577836876,
+      "max_ts": 1609459168
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "diy",
+      "year": 2021,
+      "posts": 58262,
+      "min_ts": 1609459237,
+      "max_ts": 1615188411
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "diy",
+      "year": 2022,
+      "posts": 131554,
+      "min_ts": 1646372080,
+      "max_ts": 1672531171
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "diy",
+      "year": 2023,
+      "posts": 202770,
+      "min_ts": 1672531429,
+      "max_ts": 1704067142
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "diy",
+      "year": 2024,
+      "posts": 149019,
+      "min_ts": 1704067206,
+      "max_ts": 1735689302
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "diy",
+      "year": 2025,
+      "posts": 53482,
+      "min_ts": 1735690346,
+      "max_ts": 1755271652
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "fa",
+      "year": 2012,
+      "posts": 1,
+      "min_ts": 1343876739,
+      "max_ts": 1343876739
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "fa",
+      "year": 2013,
+      "posts": 1586334,
+      "min_ts": 1364698120,
+      "max_ts": 1388534392
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "fa",
+      "year": 2014,
+      "posts": 1751240,
+      "min_ts": 1388534422,
+      "max_ts": 1420070371
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "fa",
+      "year": 2015,
+      "posts": 1498625,
+      "min_ts": 1420070401,
+      "max_ts": 1451606378
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "fa",
+      "year": 2016,
+      "posts": 1096017,
+      "min_ts": 1451606402,
+      "max_ts": 1483228754
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "fa",
+      "year": 2017,
+      "posts": 942089,
+      "min_ts": 1483228936,
+      "max_ts": 1514764798
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "fa",
+      "year": 2018,
+      "posts": 936624,
+      "min_ts": 1514764800,
+      "max_ts": 1546300790
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "fa",
+      "year": 2019,
+      "posts": 921069,
+      "min_ts": 1546300876,
+      "max_ts": 1577836787
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "fa",
+      "year": 2020,
+      "posts": 930010,
+      "min_ts": 1577836822,
+      "max_ts": 1609459168
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "fa",
+      "year": 2021,
+      "posts": 185737,
+      "min_ts": 1609459210,
+      "max_ts": 1615188430
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "fa",
+      "year": 2022,
+      "posts": 333799,
+      "min_ts": 1651756360,
+      "max_ts": 1672531189
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "fa",
+      "year": 2023,
+      "posts": 536409,
+      "min_ts": 1672531207,
+      "max_ts": 1704067141
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "fa",
+      "year": 2024,
+      "posts": 395646,
+      "min_ts": 1704067206,
+      "max_ts": 1735689520
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "fa",
+      "year": 2025,
+      "posts": 160428,
+      "min_ts": 1735689764,
+      "max_ts": 1755271732
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "ic",
+      "year": 2013,
+      "posts": 184560,
+      "min_ts": 1358205190,
+      "max_ts": 1388534113
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "ic",
+      "year": 2014,
+      "posts": 309505,
+      "min_ts": 1388534444,
+      "max_ts": 1420070346
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "ic",
+      "year": 2015,
+      "posts": 402669,
+      "min_ts": 1420070409,
+      "max_ts": 1451606269
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "ic",
+      "year": 2016,
+      "posts": 386166,
+      "min_ts": 1451606456,
+      "max_ts": 1483228765
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "ic",
+      "year": 2017,
+      "posts": 458087,
+      "min_ts": 1483228821,
+      "max_ts": 1514764708
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "ic",
+      "year": 2018,
+      "posts": 487574,
+      "min_ts": 1514764802,
+      "max_ts": 1546300798
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "ic",
+      "year": 2019,
+      "posts": 534184,
+      "min_ts": 1546300817,
+      "max_ts": 1577836720
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "ic",
+      "year": 2020,
+      "posts": 816404,
+      "min_ts": 1577836889,
+      "max_ts": 1609459167
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "ic",
+      "year": 2021,
+      "posts": 150046,
+      "min_ts": 1609459281,
+      "max_ts": 1615188577
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "ic",
+      "year": 2022,
+      "posts": 328985,
+      "min_ts": 1646556960,
+      "max_ts": 1672531190
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "ic",
+      "year": 2023,
+      "posts": 548738,
+      "min_ts": 1672531283,
+      "max_ts": 1704067172
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "ic",
+      "year": 2024,
+      "posts": 420936,
+      "min_ts": 1704067212,
+      "max_ts": 1735689574
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "ic",
+      "year": 2025,
+      "posts": 271095,
+      "min_ts": 1735689639,
+      "max_ts": 1755271932
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "jp",
+      "year": 2008,
+      "posts": 1753329,
+      "min_ts": 1203500451,
+      "max_ts": 1230767997
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "jp",
+      "year": 2009,
+      "posts": 2151543,
+      "min_ts": 1230768000,
+      "max_ts": 1262303996
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "jp",
+      "year": 2010,
+      "posts": 2660845,
+      "min_ts": 1262304019,
+      "max_ts": 1293839998
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "jp",
+      "year": 2011,
+      "posts": 1557835,
+      "min_ts": 1293840004,
+      "max_ts": 1325375939
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "jp",
+      "year": 2012,
+      "posts": 1937619,
+      "min_ts": 1325376009,
+      "max_ts": 1356998388
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "jp",
+      "year": 2013,
+      "posts": 1431717,
+      "min_ts": 1356998403,
+      "max_ts": 1388534386
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "jp",
+      "year": 2014,
+      "posts": 1092223,
+      "min_ts": 1388534401,
+      "max_ts": 1420070394
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "jp",
+      "year": 2015,
+      "posts": 1690471,
+      "min_ts": 1420070414,
+      "max_ts": 1451606399
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "jp",
+      "year": 2016,
+      "posts": 1490059,
+      "min_ts": 1451606400,
+      "max_ts": 1483228792
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "jp",
+      "year": 2017,
+      "posts": 1769158,
+      "min_ts": 1483228811,
+      "max_ts": 1514764794
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "jp",
+      "year": 2018,
+      "posts": 2380188,
+      "min_ts": 1514764803,
+      "max_ts": 1546300792
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "jp",
+      "year": 2019,
+      "posts": 2079773,
+      "min_ts": 1546300814,
+      "max_ts": 1577836790
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "jp",
+      "year": 2020,
+      "posts": 8534029,
+      "min_ts": 1577836806,
+      "max_ts": 1609459199
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "jp",
+      "year": 2021,
+      "posts": 5854039,
+      "min_ts": 1609459200,
+      "max_ts": 1640995191
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "jp",
+      "year": 2022,
+      "posts": 3866708,
+      "min_ts": 1640995205,
+      "max_ts": 1672531192
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "jp",
+      "year": 2023,
+      "posts": 3412761,
+      "min_ts": 1672531229,
+      "max_ts": 1704067195
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "jp",
+      "year": 2024,
+      "posts": 2913292,
+      "min_ts": 1704067206,
+      "max_ts": 1735689597
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "jp",
+      "year": 2025,
+      "posts": 1270422,
+      "min_ts": 1735689614,
+      "max_ts": 1755272114
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "lit",
+      "year": 2010,
+      "posts": 984257,
+      "min_ts": 1268249391,
+      "max_ts": 1293839929
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "lit",
+      "year": 2011,
+      "posts": 817031,
+      "min_ts": 1293840041,
+      "max_ts": 1325375905
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "lit",
+      "year": 2012,
+      "posts": 1002389,
+      "min_ts": 1325376025,
+      "max_ts": 1356998354
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "lit",
+      "year": 2013,
+      "posts": 1103177,
+      "min_ts": 1356998414,
+      "max_ts": 1388534364
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "lit",
+      "year": 2014,
+      "posts": 1498149,
+      "min_ts": 1388534482,
+      "max_ts": 1420070385
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "lit",
+      "year": 2015,
+      "posts": 1588329,
+      "min_ts": 1420070429,
+      "max_ts": 1451606318
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "lit",
+      "year": 2016,
+      "posts": 1148647,
+      "min_ts": 1451606406,
+      "max_ts": 1483228797
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "lit",
+      "year": 2017,
+      "posts": 1583647,
+      "min_ts": 1483228804,
+      "max_ts": 1514764791
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "lit",
+      "year": 2018,
+      "posts": 1841894,
+      "min_ts": 1514764821,
+      "max_ts": 1546300785
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "lit",
+      "year": 2019,
+      "posts": 2089788,
+      "min_ts": 1546300825,
+      "max_ts": 1577836799
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "lit",
+      "year": 2020,
+      "posts": 2707421,
+      "min_ts": 1577836814,
+      "max_ts": 1609459170
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "lit",
+      "year": 2021,
+      "posts": 2472489,
+      "min_ts": 1609459213,
+      "max_ts": 1640995182
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "lit",
+      "year": 2022,
+      "posts": 1643804,
+      "min_ts": 1640995202,
+      "max_ts": 1672531185
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "lit",
+      "year": 2023,
+      "posts": 1430813,
+      "min_ts": 1672531218,
+      "max_ts": 1704067187
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "lit",
+      "year": 2024,
+      "posts": 1177388,
+      "min_ts": 1704067223,
+      "max_ts": 1735689585
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "lit",
+      "year": 2025,
+      "posts": 568088,
+      "min_ts": 1735689659,
+      "max_ts": 1755272158
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "sci",
+      "year": 2010,
+      "posts": 1333636,
+      "min_ts": 1273719701,
+      "max_ts": 1293839980
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "sci",
+      "year": 2011,
+      "posts": 1875620,
+      "min_ts": 1293840033,
+      "max_ts": 1325375949
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "sci",
+      "year": 2012,
+      "posts": 1188578,
+      "min_ts": 1325376001,
+      "max_ts": 1356998326
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "sci",
+      "year": 2013,
+      "posts": 842380,
+      "min_ts": 1356998489,
+      "max_ts": 1388534334
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "sci",
+      "year": 2014,
+      "posts": 707377,
+      "min_ts": 1388534424,
+      "max_ts": 1420070394
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "sci",
+      "year": 2015,
+      "posts": 772711,
+      "min_ts": 1420070421,
+      "max_ts": 1451606343
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "sci",
+      "year": 2016,
+      "posts": 669910,
+      "min_ts": 1451606487,
+      "max_ts": 1483228771
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "sci",
+      "year": 2017,
+      "posts": 831939,
+      "min_ts": 1483228826,
+      "max_ts": 1514764744
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "sci",
+      "year": 2018,
+      "posts": 851897,
+      "min_ts": 1514764808,
+      "max_ts": 1546300754
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "sci",
+      "year": 2019,
+      "posts": 995850,
+      "min_ts": 1546300833,
+      "max_ts": 1577836786
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "sci",
+      "year": 2020,
+      "posts": 1261280,
+      "min_ts": 1577836826,
+      "max_ts": 1609459199
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "sci",
+      "year": 2021,
+      "posts": 269175,
+      "min_ts": 1609459205,
+      "max_ts": 1615188743
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "sci",
+      "year": 2022,
+      "posts": 537285,
+      "min_ts": 1651659710,
+      "max_ts": 1672531169
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "sci",
+      "year": 2023,
+      "posts": 856472,
+      "min_ts": 1672531201,
+      "max_ts": 1704067188
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "sci",
+      "year": 2024,
+      "posts": 580661,
+      "min_ts": 1704067225,
+      "max_ts": 1735689510
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "sci",
+      "year": 2025,
+      "posts": 220655,
+      "min_ts": 1735689910,
+      "max_ts": 1755272004
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "vr",
+      "year": 2013,
+      "posts": 857657,
+      "min_ts": 1364551000,
+      "max_ts": 1388534392
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "vr",
+      "year": 2014,
+      "posts": 761428,
+      "min_ts": 1388534422,
+      "max_ts": 1420070283
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "vr",
+      "year": 2015,
+      "posts": 660462,
+      "min_ts": 1420070401,
+      "max_ts": 1451606271
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "vr",
+      "year": 2016,
+      "posts": 616711,
+      "min_ts": 1451606438,
+      "max_ts": 1483228723
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "vr",
+      "year": 2017,
+      "posts": 706492,
+      "min_ts": 1483228807,
+      "max_ts": 1514764759
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "vr",
+      "year": 2018,
+      "posts": 690725,
+      "min_ts": 1514764874,
+      "max_ts": 1546300775
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "vr",
+      "year": 2019,
+      "posts": 750832,
+      "min_ts": 1546300847,
+      "max_ts": 1577836772
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "vr",
+      "year": 2020,
+      "posts": 1021825,
+      "min_ts": 1577836816,
+      "max_ts": 1609459192
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "vr",
+      "year": 2021,
+      "posts": 934827,
+      "min_ts": 1609459203,
+      "max_ts": 1640995185
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "vr",
+      "year": 2022,
+      "posts": 884295,
+      "min_ts": 1640995215,
+      "max_ts": 1672531188
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "vr",
+      "year": 2023,
+      "posts": 925381,
+      "min_ts": 1672531235,
+      "max_ts": 1704067175
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "vr",
+      "year": 2024,
+      "posts": 827732,
+      "min_ts": 1704067246,
+      "max_ts": 1735689547
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "vr",
+      "year": 2025,
+      "posts": 423360,
+      "min_ts": 1735689652,
+      "max_ts": 1755272761
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "vt",
+      "year": 2021,
+      "posts": 14467871,
+      "min_ts": 1611919211,
+      "max_ts": 1640995199
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "vt",
+      "year": 2022,
+      "posts": 21867971,
+      "min_ts": 1640995201,
+      "max_ts": 1672531198
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "vt",
+      "year": 2023,
+      "posts": 25528484,
+      "min_ts": 1672531200,
+      "max_ts": 1704067199
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "vt",
+      "year": 2024,
+      "posts": 26947545,
+      "min_ts": 1704067201,
+      "max_ts": 1735689599
+    },
+    {
+      "source": "Warosu Database Backup 2025-08-15",
+      "source_id": 5,
+      "site": "4chan",
+      "board": "vt",
+      "year": 2025,
+      "posts": 10863600,
+      "min_ts": 1735689600,
+      "max_ts": 1755272824
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "3",
+      "year": 2015,
+      "posts": 771,
+      "min_ts": 1440105990,
+      "max_ts": 1448323981
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "a",
+      "year": 2015,
+      "posts": 43532,
+      "min_ts": 1438338442,
+      "max_ts": 1451485071
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "a",
+      "year": 2016,
+      "posts": 33972,
+      "min_ts": 1451733259,
+      "max_ts": 1480281589
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "aco",
+      "year": 2015,
+      "posts": 129,
+      "min_ts": 1447221841,
+      "max_ts": 1448205015
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "adv",
+      "year": 2015,
+      "posts": 842,
+      "min_ts": 1443917279,
+      "max_ts": 1450118343
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "adv",
+      "year": 2016,
+      "posts": 376,
+      "min_ts": 1451673307,
+      "max_ts": 1475432530
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "an",
+      "year": 2015,
+      "posts": 104,
+      "min_ts": 1447876699,
+      "max_ts": 1448256057
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "asp",
+      "year": 2015,
+      "posts": 41,
+      "min_ts": 1447431393,
+      "max_ts": 1447470169
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "b",
+      "year": 2015,
+      "posts": 1361,
+      "min_ts": 1438500223,
+      "max_ts": 1448139597
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "b",
+      "year": 2016,
+      "posts": 3004,
+      "min_ts": 1451693653,
+      "max_ts": 1479653152
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "biz",
+      "year": 2015,
+      "posts": 541,
+      "min_ts": 1438307972,
+      "max_ts": 1451606365
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "biz",
+      "year": 2016,
+      "posts": 751,
+      "min_ts": 1451607833,
+      "max_ts": 1476131284
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "c",
+      "year": 2015,
+      "posts": 9280,
+      "min_ts": 1433396403,
+      "max_ts": 1451604066
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "c",
+      "year": 2016,
+      "posts": 7020,
+      "min_ts": 1451606410,
+      "max_ts": 1479670859
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "cgl",
+      "year": 2015,
+      "posts": 7616,
+      "min_ts": 1438321797,
+      "max_ts": 1451606385
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "cgl",
+      "year": 2016,
+      "posts": 14146,
+      "min_ts": 1451606856,
+      "max_ts": 1479704692
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "ck",
+      "year": 2015,
+      "posts": 1319,
+      "min_ts": 1440727261,
+      "max_ts": 1450053077
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "cm",
+      "year": 2014,
+      "posts": 253,
+      "min_ts": 1401428582,
+      "max_ts": 1420060200
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "cm",
+      "year": 2015,
+      "posts": 6228,
+      "min_ts": 1420072556,
+      "max_ts": 1451601287
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "cm",
+      "year": 2016,
+      "posts": 3568,
+      "min_ts": 1451620169,
+      "max_ts": 1475409550
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "co",
+      "year": 2015,
+      "posts": 5028,
+      "min_ts": 1443745487,
+      "max_ts": 1451145082
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "co",
+      "year": 2016,
+      "posts": 1838,
+      "min_ts": 1452098625,
+      "max_ts": 1476139992
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "d",
+      "year": 2015,
+      "posts": 1046,
+      "min_ts": 1443029512,
+      "max_ts": 1451593362
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "d",
+      "year": 2016,
+      "posts": 651,
+      "min_ts": 1451611390,
+      "max_ts": 1473631553
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "diy",
+      "year": 2014,
+      "posts": 2,
+      "min_ts": 1405886818,
+      "max_ts": 1405886847
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "diy",
+      "year": 2015,
+      "posts": 256,
+      "min_ts": 1442342720,
+      "max_ts": 1443982689
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "e",
+      "year": 2015,
+      "posts": 509,
+      "min_ts": 1424110554,
+      "max_ts": 1451602229
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "e",
+      "year": 2016,
+      "posts": 175,
+      "min_ts": 1451609290,
+      "max_ts": 1473622683
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "f",
+      "year": 2015,
+      "posts": 4,
+      "min_ts": 1438524169,
+      "max_ts": 1438525725
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "fa",
+      "year": 2015,
+      "posts": 146,
+      "min_ts": 1443888410,
+      "max_ts": 1443983508
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "g",
+      "year": 2015,
+      "posts": 24408,
+      "min_ts": 1438162683,
+      "max_ts": 1451606384
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "g",
+      "year": 2016,
+      "posts": 14903,
+      "min_ts": 1451606423,
+      "max_ts": 1479673648
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "gd",
+      "year": 2016,
+      "posts": 14,
+      "min_ts": 1475995786,
+      "max_ts": 1476129710
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "gif",
+      "year": 2015,
+      "posts": 1886,
+      "min_ts": 1438433558,
+      "max_ts": 1448164106
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "gif",
+      "year": 2016,
+      "posts": 69,
+      "min_ts": 1473569264,
+      "max_ts": 1473631711
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "h",
+      "year": 2016,
+      "posts": 123,
+      "min_ts": 1451633050,
+      "max_ts": 1451876237
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "his",
+      "year": 2015,
+      "posts": 1458,
+      "min_ts": 1446515063,
+      "max_ts": 1446917730
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "his",
+      "year": 2016,
+      "posts": 877,
+      "min_ts": 1453017453,
+      "max_ts": 1475415256
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "hm",
+      "year": 2015,
+      "posts": 506,
+      "min_ts": 1437283877,
+      "max_ts": 1440967192
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "hm",
+      "year": 2016,
+      "posts": 449,
+      "min_ts": 1453504483,
+      "max_ts": 1473645416
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "hr",
+      "year": 2014,
+      "posts": 278,
+      "min_ts": 1392331506,
+      "max_ts": 1419784810
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "hr",
+      "year": 2015,
+      "posts": 3890,
+      "min_ts": 1420541681,
+      "max_ts": 1451595191
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "hr",
+      "year": 2016,
+      "posts": 3556,
+      "min_ts": 1451645557,
+      "max_ts": 1479651940
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "i",
+      "year": 2015,
+      "posts": 599,
+      "min_ts": 1433999074,
+      "max_ts": 1451590337
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "i",
+      "year": 2016,
+      "posts": 126,
+      "min_ts": 1451626877,
+      "max_ts": 1454219413
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "int",
+      "year": 2015,
+      "posts": 1358,
+      "min_ts": 1443944558,
+      "max_ts": 1447470029
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "int",
+      "year": 2016,
+      "posts": 139,
+      "min_ts": 1475430844,
+      "max_ts": 1475450622
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "jp",
+      "year": 2015,
+      "posts": 1098,
+      "min_ts": 1438184099,
+      "max_ts": 1450552962
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "jp",
+      "year": 2016,
+      "posts": 2251,
+      "min_ts": 1455160263,
+      "max_ts": 1479705743
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "k",
+      "year": 2015,
+      "posts": 2281,
+      "min_ts": 1438387426,
+      "max_ts": 1448502044
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "k",
+      "year": 2016,
+      "posts": 2547,
+      "min_ts": 1454110040,
+      "max_ts": 1479658333
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "lgbt",
+      "year": 2015,
+      "posts": 4226,
+      "min_ts": 1438132732,
+      "max_ts": 1449108493
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "lgbt",
+      "year": 2016,
+      "posts": 2266,
+      "min_ts": 1452154365,
+      "max_ts": 1475449905
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "lit",
+      "year": 2015,
+      "posts": 27,
+      "min_ts": 1443975948,
+      "max_ts": 1443984045
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "lit",
+      "year": 2016,
+      "posts": 2075,
+      "min_ts": 1452777248,
+      "max_ts": 1457343694
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "m",
+      "year": 2015,
+      "posts": 1303,
+      "min_ts": 1437757808,
+      "max_ts": 1448162530
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "m",
+      "year": 2016,
+      "posts": 194,
+      "min_ts": 1466824058,
+      "max_ts": 1473626630
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "mlp",
+      "year": 2015,
+      "posts": 2599,
+      "min_ts": 1439034430,
+      "max_ts": 1449993165
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "mlp",
+      "year": 2016,
+      "posts": 4264,
+      "min_ts": 1456119141,
+      "max_ts": 1475491026
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "mu",
+      "year": 2015,
+      "posts": 3177,
+      "min_ts": 1443526390,
+      "max_ts": 1451363064
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "mu",
+      "year": 2016,
+      "posts": 1188,
+      "min_ts": 1457255687,
+      "max_ts": 1479441927
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "n",
+      "year": 2015,
+      "posts": 2171,
+      "min_ts": 1422609007,
+      "max_ts": 1451605357
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "n",
+      "year": 2016,
+      "posts": 4636,
+      "min_ts": 1451608068,
+      "max_ts": 1475397513
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "news",
+      "year": 2015,
+      "posts": 2814,
+      "min_ts": 1448727112,
+      "max_ts": 1450809378
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "news",
+      "year": 2016,
+      "posts": 4435,
+      "min_ts": 1452215226,
+      "max_ts": 1479538716
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "o",
+      "year": 2015,
+      "posts": 1270,
+      "min_ts": 1438121566,
+      "max_ts": 1448169187
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "o",
+      "year": 2016,
+      "posts": 728,
+      "min_ts": 1453946181,
+      "max_ts": 1473631644
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "out",
+      "year": 2016,
+      "posts": 505,
+      "min_ts": 1456328899,
+      "max_ts": 1457305448
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "p",
+      "year": 2015,
+      "posts": 1498,
+      "min_ts": 1437326974,
+      "max_ts": 1451601381
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "p",
+      "year": 2016,
+      "posts": 3033,
+      "min_ts": 1451608600,
+      "max_ts": 1479651771
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "po",
+      "year": 2014,
+      "posts": 113,
+      "min_ts": 1410754011,
+      "max_ts": 1419498096
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "po",
+      "year": 2015,
+      "posts": 115,
+      "min_ts": 1420834888,
+      "max_ts": 1451582947
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "po",
+      "year": 2016,
+      "posts": 10,
+      "min_ts": 1451640518,
+      "max_ts": 1457225858
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "pol",
+      "year": 2015,
+      "posts": 8126,
+      "min_ts": 1438468960,
+      "max_ts": 1451143589
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "pol",
+      "year": 2016,
+      "posts": 13018,
+      "min_ts": 1452468991,
+      "max_ts": 1479446263
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "qa",
+      "year": 2015,
+      "posts": 18190,
+      "min_ts": 1437298794,
+      "max_ts": 1451602333
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "qa",
+      "year": 2016,
+      "posts": 3940,
+      "min_ts": 1451768817,
+      "max_ts": 1475417371
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "r9k",
+      "year": 2015,
+      "posts": 7129,
+      "min_ts": 1438476738,
+      "max_ts": 1448223933
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "r9k",
+      "year": 2016,
+      "posts": 4531,
+      "min_ts": 1451862482,
+      "max_ts": 1479673351
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "s",
+      "year": 2015,
+      "posts": 223,
+      "min_ts": 1447428803,
+      "max_ts": 1448165885
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "s",
+      "year": 2016,
+      "posts": 167,
+      "min_ts": 1472695346,
+      "max_ts": 1473641553
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "s4s",
+      "year": 2015,
+      "posts": 502,
+      "min_ts": 1440455972,
+      "max_ts": 1448847628
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "sci",
+      "year": 2015,
+      "posts": 488,
+      "min_ts": 1441987110,
+      "max_ts": 1444268157
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "sci",
+      "year": 2016,
+      "posts": 915,
+      "min_ts": 1456718821,
+      "max_ts": 1476145988
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "soc",
+      "year": 2016,
+      "posts": 1749,
+      "min_ts": 1456615845,
+      "max_ts": 1475377510
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "sp",
+      "year": 2016,
+      "posts": 250,
+      "min_ts": 1457298001,
+      "max_ts": 1457301699
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "t",
+      "year": 2015,
+      "posts": 496,
+      "min_ts": 1429920847,
+      "max_ts": 1448197709
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "t",
+      "year": 2016,
+      "posts": 461,
+      "min_ts": 1458478129,
+      "max_ts": 1473631303
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "tg",
+      "year": 2015,
+      "posts": 437,
+      "min_ts": 1443466771,
+      "max_ts": 1443498763
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "toy",
+      "year": 2016,
+      "posts": 219,
+      "min_ts": 1455105450,
+      "max_ts": 1457301281
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "trash",
+      "year": 2015,
+      "posts": 620,
+      "min_ts": 1446896182,
+      "max_ts": 1451088168
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "trv",
+      "year": 2015,
+      "posts": 104,
+      "min_ts": 1450200791,
+      "max_ts": 1451508120
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "trv",
+      "year": 2016,
+      "posts": 1354,
+      "min_ts": 1451685341,
+      "max_ts": 1475374913
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "tv",
+      "year": 2015,
+      "posts": 2491,
+      "min_ts": 1438468572,
+      "max_ts": 1451489976
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "tv",
+      "year": 2016,
+      "posts": 4480,
+      "min_ts": 1453099836,
+      "max_ts": 1479657477
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "u",
+      "year": 2015,
+      "posts": 1523,
+      "min_ts": 1436051686,
+      "max_ts": 1448183044
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "v",
+      "year": 2015,
+      "posts": 22891,
+      "min_ts": 1438485747,
+      "max_ts": 1451244590
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "v",
+      "year": 2016,
+      "posts": 24280,
+      "min_ts": 1451624845,
+      "max_ts": 1479674815
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "vg",
+      "year": 2015,
+      "posts": 12041,
+      "min_ts": 1438209772,
+      "max_ts": 1448170700
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "vg",
+      "year": 2016,
+      "posts": 10018,
+      "min_ts": 1452304296,
+      "max_ts": 1479673784
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "vip",
+      "year": 2016,
+      "posts": 376,
+      "min_ts": 1475861951,
+      "max_ts": 1479657361
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "vp",
+      "year": 2015,
+      "posts": 3892,
+      "min_ts": 1438213409,
+      "max_ts": 1450626988
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "vp",
+      "year": 2016,
+      "posts": 580,
+      "min_ts": 1452218674,
+      "max_ts": 1475029378
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "vr",
+      "year": 2015,
+      "posts": 2272,
+      "min_ts": 1437444345,
+      "max_ts": 1448185964
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "vr",
+      "year": 2016,
+      "posts": 1543,
+      "min_ts": 1452975897,
+      "max_ts": 1473632424
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "w",
+      "year": 2015,
+      "posts": 1022,
+      "min_ts": 1436546538,
+      "max_ts": 1451572096
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "w",
+      "year": 2016,
+      "posts": 1133,
+      "min_ts": 1451622937,
+      "max_ts": 1473754336
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "wg",
+      "year": 2015,
+      "posts": 414,
+      "min_ts": 1439626642,
+      "max_ts": 1448187707
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "wg",
+      "year": 2016,
+      "posts": 1481,
+      "min_ts": 1451797603,
+      "max_ts": 1473747784
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "wsg",
+      "year": 2015,
+      "posts": 7972,
+      "min_ts": 1438062830,
+      "max_ts": 1451523229
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "wsg",
+      "year": 2016,
+      "posts": 5235,
+      "min_ts": 1451625864,
+      "max_ts": 1479705383
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "wsr",
+      "year": 2015,
+      "posts": 154,
+      "min_ts": 1450991692,
+      "max_ts": 1451535694
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "wsr",
+      "year": 2016,
+      "posts": 119,
+      "min_ts": 1451666523,
+      "max_ts": 1474831525
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "x",
+      "year": 2013,
+      "posts": 55,
+      "min_ts": 1378543128,
+      "max_ts": 1378546056
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "x",
+      "year": 2016,
+      "posts": 396,
+      "min_ts": 1473580659,
+      "max_ts": 1475370959
+    },
+    {
+      "source": "Yotsuba Society Archives, part 2 (2016-12-04)",
+      "source_id": 6,
+      "site": "4chan",
+      "board": "y",
+      "year": 2015,
+      "posts": 114,
+      "min_ts": 1444578594,
+      "max_ts": 1448146017
+    }
+  ]
+}

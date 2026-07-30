@@ -8,3 +8,9 @@ data/
 *.db-wal
 artifacts/*
 !artifacts/.gitkeep
+# Generated charts are reproducible; the pre-dedupe stats snapshot is not --
+# it records per-archive contributions that no longer exist in the store.
+!artifacts/post_stats-pre-dedupe.json
+
+# run logs from long ingests/migrations
+*.log
