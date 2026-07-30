@@ -22,8 +22,8 @@ interface StatCell {
   maxTs: number | null;
 }
 
-/** Writes normalized posts into `posts` + `posts_fts`, skipping ones the
- * source has already contributed. */
+/** Writes normalized posts into `posts` + `posts_fts`, skipping any post
+ * already in the store -- whichever archive contributed it. */
 export class PostInserter {
   #post: StatementSync;
   #fts: StatementSync;
@@ -40,7 +40,7 @@ export class PostInserter {
         source_id, site, board, thread_no, post_no, is_op, ts_utc,
         name, tripcode, subject, body_text, media_filename, media_md5
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT (source_id, site, board, post_no) DO NOTHING
+      ON CONFLICT (site, board, post_no) DO NOTHING
       RETURNING id
     `);
     this.#fts = db.prepare(
@@ -48,7 +48,15 @@ export class PostInserter {
     );
   }
 
-  /** Returns true if the post was new, false if this source already had it. */
+  /**
+   * Returns true if the post was stored, false if it was already present.
+   *
+   * "Already present" spans archives, not just this source: `posts` is keyed
+   * (site, board, post_no), so a post another archive supplied first is
+   * skipped here. Adapters counting these as "duplicates" are counting
+   * overlap with the rest of the corpus as well as with earlier runs of
+   * themselves.
+   */
   insert(p: PostRow): boolean {
     const row = this.#post.get(
       this.#sourceId,
