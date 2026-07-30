@@ -7,6 +7,7 @@ import { openDb, getOrCreateSource, isLockedError } from "./db.ts";
 import { boardList, hasStats, refreshPostStats } from "./stats.ts";
 import { dedupePosts, needsDedupe } from "./dedupe.ts";
 import { ingestChanHtml } from "./adapters/chan-html.ts";
+import { ingestFybertechHtml } from "./adapters/fybertech-html.ts";
 import { ingestJsonApi } from "./adapters/json-api.ts";
 import { ingestFuukaSql } from "./adapters/fuuka-sql.ts";
 import { ingestWarosuSql } from "./adapters/warosu-sql.ts";
@@ -404,7 +405,24 @@ async function cmdIngest(argv: string[]) {
       console.log(
         `ingested ${stats.posts} posts from ${stats.files} page(s)` +
           ` (${stats.threads} thread page(s)) in ${secs}s` +
-          ` (${stats.skippedDup} already present, ${stats.badFiles} unrecognized files)`,
+          ` (${stats.skippedDup} already present, ${stats.badFiles} unrecognized` +
+          (stats.skippedForeign > 0
+            ? `, ${stats.skippedForeign} not in 4chan's own markup`
+            : "") +
+          `)`,
+      );
+    } else if (manifest.adapter === "fybertech-html") {
+      const stats = ingestFybertechHtml(db, {
+        root: inputs[0],
+        sourceId,
+        site: manifest.site,
+        boards: values.board,
+      });
+      const secs = ((Date.now() - t0) / 1000).toFixed(1);
+      console.log(
+        `ingested ${stats.posts} posts from ${stats.files} thread page(s) in ${secs}s` +
+          ` (${stats.skippedDup} already present, ${stats.badFiles} with no posts,` +
+          ` ${stats.skippedNative} in 4chan's own markup — ingest those with chan-html)`,
       );
     } else {
       const ingest = manifest.adapter === "fuuka-sql" ? ingestFuukaSql : ingestWarosuSql;

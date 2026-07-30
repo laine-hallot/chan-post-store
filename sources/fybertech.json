@@ -5,7 +5,7 @@
     "name": "Fybertech 4chan Archive",
     "link": "https://archive.org/details/fybertech",
     "short-desc": "Fybertech has one of the largest collections of 2008-2014 4chan threads, outside of the fallen Chanarchive and the modern 4archive",
-    "capture": "WARC crawl of 631 individual thread pages (2008-2014). The item ships the same crawl twice: loose WARCs under 2015-02-16-WARC/, and fybertech-2015-02-16.7z containing them. Only the loose set is used."
+    "capture": "638 thread pages named <board>_<threadno>.html across 29 boards (2008-2014; /co/ 227, /v/ 147, /tg/ 68 lead), plus 23 index.cgi listing pages that hold no posts. The crawl ships the rendered site tree at www.fybertech.com/4thread/ alongside the WARCs, so no WARC parsing is needed. THREE markup generations are mixed together: 420 pages in the classic template (replies in td.reply, OP loose at body level, some pages wrapping the date in span.posttime and some leaving it a bare text node, and some omitting <body> entirely), 197 in a later div.post template, and 20 that are 4chan's OWN markup and belong to chan-html instead. co_68816611.html is a fybertech error page with no posts. Timestamps are displayed New-York wall time; pages before ~2013 show no seconds, so those are minute-precision."
   },
   "download": {
     "exclude": [
@@ -14,16 +14,20 @@
   },
   "prepare": [
     {
-      "name": "stage the loose WARCs (skips the redundant .7z of the same data)",
-      "run": "mkdir -p extracted && if [ -d source/fybertech/2015-02-16-WARC ]; then (cp -al source/fybertech/2015-02-16-WARC/*.warc.gz extracted/ 2>/dev/null || cp -a source/fybertech/2015-02-16-WARC/*.warc.gz extracted/); elif ! ls extracted/*.warc.gz >/dev/null 2>&1; then 7z x -aos -o./extracted source/fybertech/fybertech-2015-02-16.7z; fi"
+      "name": "unpack the crawl if only the .7z is present",
+      "run": "mkdir -p extracted && if [ ! -d extracted/www.fybertech.com ] && [ ! -d extracted/2015-02-16-WARC ]; then 7z x -aos -o./extracted source/fybertech/fybertech-2015-02-16.7z; fi"
     },
     {
-      "name": "extract captured HTML from the WARCs",
-      "run": "local: node \"$CLI\" warc-extract $TARGET --warc \"$DIR/extracted\" --out \"$DIR/out\""
+      "name": "stage the rendered thread pages (no WARC parsing: the crawl ships them)",
+      "run": "rm -rf out && if [ -d extracted/www.fybertech.com/4thread ]; then (cp -al extracted/www.fybertech.com/4thread out 2>/dev/null || cp -a extracted/www.fybertech.com/4thread out); else echo 'no 4thread/ tree; falling back to the WARCs' >&2; mkdir -p out; fi"
+    },
+    {
+      "name": "fall back to WARC extraction only if staging found no pages",
+      "run": "local: if ! ls \"$DIR/out\"/*.html >/dev/null 2>&1; then node \"$CLI\" warc-extract $TARGET --warc \"$DIR/extracted\" --out \"$DIR/out\"; fi"
     }
   ],
   "ingest": {
-    "adapter": null,
+    "adapter": "fybertech-html",
     "path": "Memetic Sociology/Datasets/4chan/fybertech/out",
     "site": "4chan"
   },

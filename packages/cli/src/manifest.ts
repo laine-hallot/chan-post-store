@@ -4,7 +4,13 @@ import { basename, join, resolve } from "node:path";
 /** Where committed source manifests live, relative to the project root. */
 export const SOURCES_DIR = "sources";
 
-export const ADAPTERS = ["json-api", "fuuka-sql", "warosu-sql", "chan-html"] as const;
+export const ADAPTERS = [
+  "json-api",
+  "fuuka-sql",
+  "warosu-sql",
+  "chan-html",
+  "fybertech-html",
+] as const;
 export type Adapter = (typeof ADAPTERS)[number];
 
 export interface Manifest {
@@ -240,7 +246,11 @@ export function ingestInputs(m: Manifest): string[] {
 
   // Directory-walking adapters take the root itself; they find their own files
   // (thread JSON, saved pages) rather than being handed a glob.
-  if (m.adapter === "json-api" || m.adapter === "chan-html") {
+  if (
+    m.adapter === "json-api" ||
+    m.adapter === "chan-html" ||
+    m.adapter === "fybertech-html"
+  ) {
     if (!statSync(m.path).isDirectory()) {
       bad(m.file, `ingest.path must be a directory for ${m.adapter}`);
     }

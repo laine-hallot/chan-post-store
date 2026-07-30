@@ -145,7 +145,28 @@ back on ingest.
   on field order.
 
 A rendered third-party archive is a different family and needs its own
-adapter, even when it is also "HTML of a 4chan thread".
+adapter, even when it is also "HTML of a 4chan thread". `fybertech-html` is
+that case: no `data-utc`, so its displayed `04/08/08(Tue)03:16` goes through
+`nyWallToUtc`, and pre-2013 pages show no seconds (recorded as `:00`, never
+guessed).
+
+**One crawl can hold several markup generations.** fybertech's 638 pages are
+420 classic (`td.reply`, OP loose at body level), 197 later (`div.post`), and
+20 in 4chan's *own* markup. Two habits follow:
+
+- Survey the whole tree before writing the parser, not one file. A single
+  sampled page missed two of those three variants, and within the classic one
+  some pages wrap the date in `span.posttime` while others leave it a bare text
+  node — that difference alone silently nulled 7834 timestamps (5.4%).
+  Not every page even has a `<body>` element.
+- **Each adapter skips what belongs to the other**, so one staged directory can
+  feed both (`fybertech` + `fybertech-native` point at the same `out/`).
+  `chan-html` skips pages with no `.postContainer`; `fybertech-html` skips
+  pages that have one.
+
+Assert on zero, not on a percentage: "timestamps parsed for nearly all" passed
+at 5.4% missing. Every fybertech post displays a date, so any null is a parse
+gap, and the test now demands none.
 
 `posts` is keyed `UNIQUE (site, board, post_no)` — one row per post, not one
 per (post, archive). Ingest is therefore idempotent both ways: re-running a

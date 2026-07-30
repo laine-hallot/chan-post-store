@@ -38,6 +38,8 @@ interface IngestStats {
   posts: number;
   skippedDup: number;
   badFiles: number;
+  /** Pages that are not 4chan's own markup -- another adapter's business. */
+  skippedForeign: number;
 }
 
 /** Text of the first match, or null when absent or empty. */
@@ -126,6 +128,12 @@ function threadIdentity(
   if (thread) return { board: thread[1], threadNo: Number(thread[2]) };
   const board = /^boards\.4chan(?:nel)?\.org_([a-z0-9]+)\b/i.exec(fileName);
   if (board) return { board: board[1], threadNo: null };
+  // <board>_<threadno>.html -- how third-party mirrors name their saved pages.
+  // Some of those pages are the site's own markup rather than the mirror's own
+  // template (fybertech has 20 such), so this adapter reads them; the mirror's
+  // rendered pages are a different family and belong to their own adapter.
+  const mirrored = /^([a-z0-9]+)_(\d+)\.html?$/i.exec(fileName);
+  if (mirrored) return { board: mirrored[1], threadNo: Number(mirrored[2]) };
   // Fall back to the page's own canonical link when the filename is opaque.
   const href = doc.querySelector('link[rel="canonical"]')?.getAttribute("href") ?? "";
   const canon = /\/([a-z0-9]+)\/thread\/(\d+)/i.exec(href);
@@ -140,7 +148,14 @@ export function ingestChanHtml(
   opts: { root: string; sourceId: number; site: string; boards?: string[] },
 ): IngestStats {
   const inserter = new PostInserter(db, opts.sourceId);
-  const stats: IngestStats = { files: 0, threads: 0, posts: 0, skippedDup: 0, badFiles: 0 };
+  const stats: IngestStats = {
+    files: 0,
+    threads: 0,
+    posts: 0,
+    skippedDup: 0,
+    badFiles: 0,
+    skippedForeign: 0,
+  };
 
   const files: string[] = [];
   const dir = opendirSync(opts.root);
@@ -166,6 +181,16 @@ export function ingestChanHtml(
         continue;
       }
       if (opts.boards && !opts.boards.includes(id.board)) continue;
+
+      // No postContainer means this is not 4chan's own markup: a third-party
+      // mirror's rendered template, an error page, or something else. Counted
+      // separately rather than as an empty success, because a directory can
+      // legitimately hold both (fybertech's crawl mixes 20 native pages in
+      // with 617 of its own) and each adapter must skip the other's files.
+      if (!doc.querySelector(".postContainer")) {
+        stats.skippedForeign++;
+        continue;
+      }
       stats.files++;
       if (id.threadNo != null) stats.threads++;
 
