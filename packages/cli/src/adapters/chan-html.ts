@@ -75,6 +75,13 @@ const RE_TRIP = /<span class="postertrip">([^<]*)<\/span>/;
 const RE_SUBJECT = /<span class="subject">([^<]*)<\/span>/;
 // The body runs to the closing tag; [\s\S] because posts contain newlines.
 const RE_BODY = /<blockquote class="postMessage"[^>]*>([\s\S]*?)<\/blockquote>/;
+// A board index abbreviates long comments and appends its own notice inside the
+// blockquote: `<span class="abbr">Comment too long. <a ...>Click here</a> to
+// view the full text.</span>`. Stripping tags alone would keep that sentence as
+// though the poster had typed it, so drop the whole span before stripping. The
+// body stays truncated -- the full text is only on the thread page -- but it no
+// longer carries archive chrome into search and word counts.
+const RE_ABBR = /<span class="abbr">[\s\S]*?<\/span>/g;
 // The poster's original filename is the anchor's title when it was truncated
 // for display, and the link text otherwise.
 const RE_FILE_TITLE = /<div class="fileText"[^>]*>File: <a title="([^"]*)"/;
@@ -118,7 +125,12 @@ function ingestPage(
     if (p.isOp) currentThread = pageThreadNo ?? p.postNo;
     const utc = first(p.html, RE_UTC);
     const fileTitle = first(p.html, RE_FILE_TITLE) ?? first(p.html, RE_FILE_TEXT);
-    const body = first(p.html, RE_BODY);
+    const rawBody = first(p.html, RE_BODY);
+    // Trim after stripping, not before: dropping the abbr span leaves the <br>s
+    // that preceded it, which only become trailing newlines once stripHtml has
+    // converted them.
+    const body =
+      rawBody === null ? null : stripHtml(rawBody.replace(RE_ABBR, "")).trimEnd() || null;
     const subject = first(p.html, RE_SUBJECT);
     const name = first(p.html, RE_NAME);
     const ok = inserter.insert({
@@ -133,7 +145,7 @@ function ingestPage(
       name: name ? stripHtml(name) : null,
       tripcode: first(p.html, RE_TRIP),
       subject: subject ? stripHtml(subject) : null,
-      bodyText: body ? stripHtml(body) : null,
+      bodyText: body,
       mediaFilename: fileTitle ? stripHtml(fileTitle) : null,
       mediaMd5: first(p.html, RE_MD5),
     });
