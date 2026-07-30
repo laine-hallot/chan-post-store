@@ -18,6 +18,8 @@
             # for staging/extracting the raw archives
             p7zip
             zstd
+            # mount stuff on storage server
+            sshfs
             # for poking at the post database by hand
             sqlite
             # rasterizes the analysis charts (SVG -> PNG) without pulling a
