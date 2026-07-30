@@ -92,7 +92,18 @@ function looseText(el: Node): string {
  */
 function dateWithin(el: HTMLElement): number | null {
   const span = el.querySelector(".posttime")?.textContent;
-  return parseFyberDate(span ?? "") ?? parseFyberDate(looseText(el));
+  const fromSpan = parseFyberDate(span ?? "");
+  if (fromSpan != null) return fromSpan;
+  const fromLoose = parseFyberDate(looseText(el));
+  if (fromLoose != null) return fromLoose;
+  // Neither shape matched, so the date is nested inside another element. A
+  // capcode post wraps the name in coloured spans and the date ends up inside
+  // that block rather than beside it -- moot's `## Admin` posts do exactly
+  // this. Search the header markup, stopping at the blockquote so a date
+  // written in the post body can never be read as the post's own.
+  const html = el.innerHTML;
+  const bq = html.search(/<blockquote/i);
+  return parseFyberDate(bq > 0 ? html.slice(0, bq) : html);
 }
 
 /**
@@ -153,16 +164,26 @@ function fileNameFrom(text: string | null): string | null {
 
 // ---- the two fybertech templates ----------------------------------------
 
-/** `<div class="post">` per post, OP included. */
-function readLater(doc: HTMLElement, threadNo: number): ParsedPost[] {
+/**
+ * `<div class="post">` per post, OP included.
+ *
+ * The first post on the page is the OP -- this template renders a thread in
+ * order. Matching `postNo === threadNo` instead would depend on the caller's
+ * thread number being right, and on an annotated filename ("8 216.htm") it is
+ * not, which left those pages with no OP at all.
+ */
+function readLater(doc: HTMLElement): ParsedPost[] {
   const out: ParsedPost[] = [];
+  let first = true;
   for (const p of doc.querySelectorAll(".post")) {
     const noText = pick(p, ".post_no");
     const postNo = Number(noText);
     if (!Number.isInteger(postNo) || postNo <= 0) continue;
+    const isOp = first;
+    first = false;
     out.push({
       postNo,
-      isOp: postNo === threadNo,
+      isOp,
       tsUtc: parseFyberDate(pick(p, ".post_now") ?? ""),
       name: pick(p, ".post_name"),
       // post_id holds a tripcode when there is one; empty on every sampled page.
@@ -251,7 +272,7 @@ export function ingestFybertechHtml(
       // Nested: a mirrored site puts <threadno>.html inside a board directory,
       // so the board is the directory and the number is the filename.
       let board: string;
-      let threadNo: number;
+      let threadNoFromFile: number | null;
       if (page.board !== null) {
         const m = /^(\d+)/.exec(page.name);
         if (!m) {
@@ -259,12 +280,12 @@ export function ingestFybertechHtml(
           continue;
         }
         board = page.board;
-        threadNo = Number(m[1]);
+        threadNoFromFile = Number(m[1]);
       } else {
         const m = /^([a-z0-9]+)_(\d+)\.html?$/i.exec(page.name);
         if (!m) continue; // index.cgi and friends: not a thread page at all
         board = m[1];
-        threadNo = Number(m[2]);
+        threadNoFromFile = Number(m[2]);
         if (opts.boards && !opts.boards.includes(board)) continue;
       }
 
@@ -286,8 +307,23 @@ export function ingestFybertechHtml(
         continue;
       }
 
+      // The page's own `nothread<id>` beats the filename. Handmade archives
+      // annotate names -- `8 216.htm`, `1861111 2.htm` -- and a leading-digits
+      // regex reads those as thread 8 and thread 1861111, which then collide
+      // with, or misattribute, real threads. The markup is authoritative;
+      // fall back to the filename only when the page carries no id.
+      const idInMarkup = doc
+        .querySelectorAll("span[id]")
+        .map((s) => /^nothread(\d+)$/.exec(s.getAttribute("id") ?? "")?.[1])
+        .find((v) => v != null);
+      const threadNo = idInMarkup ? Number(idInMarkup) : threadNoFromFile;
+      if (threadNo == null || !Number.isInteger(threadNo) || threadNo <= 0) {
+        stats.badFiles++;
+        continue;
+      }
+
       const posts = doc.querySelector(".post_com")
-        ? readLater(doc, threadNo)
+        ? readLater(doc)
         : doc.querySelector("td.reply, span.postername")
           ? readClassic(doc, threadNo)
           : [];
@@ -296,13 +332,19 @@ export function ingestFybertechHtml(
         continue;
       }
 
+      // The OP's own post number is the thread number, by definition. Prefer it
+      // over anything derived from the filename, which the handmade archives
+      // annotate.
+      const opNo = posts.find((p) => p.isOp)?.postNo;
+      const realThreadNo = opNo ?? threadNo;
+
       stats.files++;
       stats.threads++;
       for (const p of posts) {
         const ok = inserter.insert({
           site: opts.site,
           board,
-          threadNo,
+          threadNo: realThreadNo,
           postNo: p.postNo,
           isOp: p.isOp,
           tsUtc: p.tsUtc,
