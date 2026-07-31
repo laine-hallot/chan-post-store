@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "devDependencies": {},
+  "devDependencies": {
+    "typescript": "^6.0.0"
+  },
   "scripts": {
     "coverage": "node src/coverage.ts"
   },
