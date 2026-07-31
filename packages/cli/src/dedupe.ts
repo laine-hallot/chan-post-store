@@ -23,19 +23,19 @@ export interface DedupeProgress {
   (stage: string, detail?: string): void;
 }
 
-function tableSql(db: DatabaseSync, name: string): string | null {
+const tableSql = (db: DatabaseSync, name: string): string | null => {
   const row = db
     .prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = ?")
     .get(name) as { sql: string } | undefined;
   return row?.sql ?? null;
-}
+};
 
 /** True when `posts` still carries source_id in its uniqueness constraint. */
-export function needsDedupe(db: DatabaseSync): boolean {
+export const needsDedupe = (db: DatabaseSync): boolean => {
   const sql = tableSql(db, "posts");
   if (!sql) return false;
   return /UNIQUE\s*\(\s*source_id\s*,/i.test(sql);
-}
+};
 
 export interface DedupeResult {
   before: number;
@@ -47,11 +47,11 @@ export interface DedupeResult {
  * Deletes duplicate posts, swaps the constraint, and rebuilds the derived
  * tables. Long-running: each stage is a full pass over the store.
  */
-export function dedupePosts(
+export const dedupePosts = (
   db: DatabaseSync,
   onProgress: DedupeProgress,
-): DedupeResult {
-  const count = () =>
+): DedupeResult => {
+  const count = (): number =>
     (db.prepare("SELECT COUNT(*) c FROM posts").get() as { c: number }).c;
 
   onProgress("counting rows");
@@ -140,4 +140,4 @@ export function dedupePosts(
   db.exec("INSERT INTO posts_fts(posts_fts) VALUES('rebuild')");
 
   return { before, after, removed: before - after };
-}
+};

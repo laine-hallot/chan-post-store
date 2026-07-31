@@ -26,9 +26,9 @@ export interface ExecOptions {
 }
 
 /** Single-quote a string for POSIX sh. Archive paths contain spaces. */
-export function shQuote(s: string): string {
+export const shQuote = (s: string): string => {
   return `'${s.replaceAll("'", `'\\''`)}'`;
-}
+};
 
 export interface Runner {
   /** Reads a file from wherever the runner points. */
@@ -51,12 +51,12 @@ export interface Runner {
   close(): Promise<void>;
 }
 
-function run(
+const run = (
   file: string,
   args: string[],
   inherit: boolean,
   stdin?: Buffer,
-): Promise<ExecResult & { raw: Buffer }> {
+): Promise<ExecResult & { raw: Buffer }> => {
   return new Promise((res, rej) => {
     // spawn, not exec: staging commands stream progress for minutes to hours
     // and can emit more output than exec's buffer holds.
@@ -80,7 +80,7 @@ function run(
       child.stdin!.end(stdin);
     }
   });
-}
+};
 
 export class LocalRunner implements Runner {
   readonly where = "local";
@@ -257,7 +257,7 @@ export class RemoteRunner implements Runner {
 }
 
 /** Minimal KEY=value parser; no export/quotes handling beyond trimming. */
-export function readEnvFile(file: string): Record<string, string> {
+export const readEnvFile = (file: string): Record<string, string> => {
   if (!existsSync(file)) return {};
   const out: Record<string, string> = {};
   for (const line of readFileSync(file, "utf8").split("\n")) {
@@ -268,7 +268,7 @@ export function readEnvFile(file: string): Record<string, string> {
     out[t.slice(0, i).trim()] = t.slice(i + 1).trim().replace(/^["']|["']$/g, "");
   }
   return out;
-}
+};
 
 export interface RunnerConfig {
   /** --local forces local even when .env names a host. */
@@ -287,7 +287,7 @@ export interface RunnerConfig {
  * local otherwise. NAS_ROOT is where the archives live on the NAS, which is
  * a local path there, not the SMB mount path used here.
  */
-export async function makeRunner(cfg: RunnerConfig): Promise<Runner> {
+export const makeRunner = async (cfg: RunnerConfig): Promise<Runner> => {
   const env = readEnvFile(join(cfg.projectRoot, ".env"));
   const host = cfg.forceLocal ? undefined : (cfg.host ?? env.NAS_HOST);
   if (!host) return new LocalRunner(cfg.projectRoot);
@@ -302,9 +302,9 @@ export async function makeRunner(cfg: RunnerConfig): Promise<Runner> {
   const r = new RemoteRunner(host, root, key ? expandHome(key) : undefined);
   await r.connect();
   return r;
-}
+};
 
 /** Expands a leading ~ so .env can hold the usual ~/.ssh/... form. */
-function expandHome(p: string): string {
+const expandHome = (p: string): string => {
   return p.startsWith("~/") ? join(homedir(), p.slice(2)) : p;
-}
+};

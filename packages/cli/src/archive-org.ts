@@ -25,16 +25,16 @@ export interface IaItem {
   totalBytes: number;
 }
 
-export function itemUrl(id: string): string {
+export const itemUrl = (id: string): string => {
   return `https://archive.org/download/${encodeURIComponent(id)}`;
-}
+};
 
 /** Pulls an archive.org identifier out of a details/download URL. */
-export function identifierFromLink(link: string): string | undefined {
+export const identifierFromLink = (link: string): string | undefined => {
   return /archive\.org\/(?:details|download|metadata)\/([^/?#]+)/.exec(link)?.[1];
-}
+};
 
-export async function fetchItem(id: string): Promise<IaItem> {
+export const fetchItem = async (id: string): Promise<IaItem> => {
   const url = `https://archive.org/metadata/${encodeURIComponent(id)}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`metadata fetch failed for ${id}: HTTP ${res.status}`);
@@ -59,18 +59,18 @@ export async function fetchItem(id: string): Promise<IaItem> {
     files,
     totalBytes: files.reduce((n, f) => n + f.size, 0),
   };
-}
+};
 
 /**
  * IA's `<id>_files.xml` is the item's own file manifest, so it cannot list
  * its own finished checksum; the metadata API reports a stale md5 (and
  * size 0) for it. Verifying it would always fail.
  */
-function md5IsTrustworthy(item: IaItem, f: IaFile): boolean {
+const md5IsTrustworthy = (item: IaItem, f: IaFile): boolean => {
   return f.md5 != null && f.name !== `${item.identifier}_files.xml`;
-}
+};
 
-export function humanBytes(n: number): string {
+export const humanBytes = (n: number): string => {
   const u = ["B", "KB", "MB", "GB", "TB"];
   let i = 0;
   while (n >= 1024 && i < u.length - 1) {
@@ -78,7 +78,7 @@ export function humanBytes(n: number): string {
     i++;
   }
   return `${n.toFixed(i === 0 ? 0 : 1)}${u[i]}`;
-}
+};
 
 export interface DownloadOptions {
   item: IaItem;
@@ -98,13 +98,13 @@ export interface FileOutcome {
 }
 
 /** md5 of a remote/local path, or undefined when the file isn't there. */
-async function md5Of(runner: Runner, path: string): Promise<string | undefined> {
+const md5Of = async (runner: Runner, path: string): Promise<string | undefined> => {
   const r = await runner.exec(
     `test -f ${shQuote(path)} && md5sum ${shQuote(path)} | cut -d' ' -f1`,
   );
   const out = r.stdout.trim();
   return r.code === 0 && /^[0-9a-f]{32}$/.test(out) ? out : undefined;
-}
+};
 
 /**
  * Downloads every file in the item into `dest`.
@@ -115,7 +115,7 @@ async function md5Of(runner: Runner, path: string): Promise<string | undefined> 
  * checked afterwards, since a resumed transfer is exactly where corruption
  * would otherwise go unnoticed.
  */
-export async function downloadItem(opts: DownloadOptions): Promise<FileOutcome[]> {
+export const downloadItem = async (opts: DownloadOptions): Promise<FileOutcome[]> => {
   const { item, dest, runner } = opts;
   const base = itemUrl(item.identifier);
   const results: FileOutcome[] = [];
@@ -188,4 +188,4 @@ export async function downloadItem(opts: DownloadOptions): Promise<FileOutcome[]
   }
 
   return results;
-}
+};

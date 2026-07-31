@@ -8,7 +8,7 @@ import type { DatabaseSync } from "node:sqlite";
  * full pass over the store — minutes on a large database — which is exactly
  * the cost the table exists to avoid paying per query.
  */
-export function refreshPostStats(db: DatabaseSync): number {
+export const refreshPostStats = (db: DatabaseSync): number => {
   db.exec("BEGIN");
   try {
     db.exec("DELETE FROM post_stats");
@@ -27,7 +27,7 @@ export function refreshPostStats(db: DatabaseSync): number {
     db.exec("ROLLBACK");
     throw e;
   }
-}
+};
 
 export interface BoardStat {
   site: string;
@@ -38,7 +38,7 @@ export interface BoardStat {
 }
 
 /** Every board in the store, from the summary table rather than `posts`. */
-export function boardList(db: DatabaseSync): BoardStat[] {
+export const boardList = (db: DatabaseSync): BoardStat[] => {
   return db
     .prepare(
       `SELECT site, board,
@@ -50,14 +50,14 @@ export function boardList(db: DatabaseSync): BoardStat[] {
         ORDER BY site, board`,
     )
     .all() as unknown as BoardStat[];
-}
+};
 
 /** Posts per year for one board, summed across archives. */
-export function boardYears(
+export const boardYears = (
   db: DatabaseSync,
   site: string,
   board: string,
-): { year: number; posts: number }[] {
+): { year: number; posts: number }[] => {
   return db
     .prepare(
       `SELECT year, SUM(posts) AS posts
@@ -66,10 +66,10 @@ export function boardYears(
         GROUP BY year ORDER BY year`,
     )
     .all(site, board) as unknown as { year: number; posts: number }[];
-}
+};
 
 /** True when the summary table has been populated. */
-export function hasStats(db: DatabaseSync): boolean {
+export const hasStats = (db: DatabaseSync): boolean => {
   const r = db.prepare("SELECT COUNT(*) AS n FROM post_stats").get() as { n: number };
   return r.n > 0;
-}
+};

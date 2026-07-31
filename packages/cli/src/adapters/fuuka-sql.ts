@@ -1,6 +1,8 @@
+import type { DatabaseSync } from "node:sqlite";
+
 import { createReadStream } from "node:fs";
 import { createInterface } from "node:readline";
-import type { DatabaseSync } from "node:sqlite";
+
 import { PostInserter } from "../ingest.ts";
 import { nyWallToUtc, parseTuples } from "../mysqldump.ts";
 
@@ -27,7 +29,7 @@ interface IngestStats {
 
 // ---- dump walking --------------------------------------------------------
 
-export async function ingestFuukaSql(
+export const ingestFuukaSql = async (
   db: DatabaseSync,
   opts: {
     file: string;
@@ -36,7 +38,7 @@ export async function ingestFuukaSql(
     boards?: string[];
     fileSize?: number;
   },
-): Promise<IngestStats> {
+): Promise<IngestStats> => {
   const inserter = new PostInserter(db, opts.sourceId);
   const stats: IngestStats = {
     posts: 0,
@@ -70,7 +72,7 @@ export async function ingestFuukaSql(
   let sinceCommit = 0;
   db.exec("BEGIN");
 
-  const progress = () => {
+  const progress = (): void => {
     const mb = (bytesRead / 1e6).toFixed(0);
     const pct = opts.fileSize
       ? ` (${((bytesRead / opts.fileSize) * 100).toFixed(1)}%)`
@@ -173,4 +175,4 @@ export async function ingestFuukaSql(
   // Fold this run's tallies into post_stats before reporting.
   inserter.finish();
   return stats;
-}
+};

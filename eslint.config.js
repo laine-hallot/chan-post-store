@@ -12,6 +12,9 @@ export default defineConfig([
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,
+      parserOptions: {
+        projectService: true,
+      },
     },
     plugins: { js, perfectionist },
     rules: {
@@ -23,7 +26,13 @@ export default defineConfig([
         },
       ],
       "prefer-destructuring": "off",
-      "@typescript-eslint/prefer-destructuring": "warn",
+      "@typescript-eslint/prefer-destructuring": [
+        "warn",
+        {
+          array: false,
+          object: true,
+        },
+      ],
       "@typescript-eslint/explicit-function-return-type": "warn",
       "@typescript-eslint/no-confusing-non-null-assertion": "warn",
       "@typescript-eslint/prefer-as-const": "warn",

@@ -1,5 +1,6 @@
-import { LocalRunner, shQuote, type Runner } from "./runner.ts";
 import type { SourceInfo } from "./manifest.ts";
+
+import { LocalRunner, shQuote, type Runner } from "./runner.ts";
 
 /**
  * Runs a source's prepare steps.
@@ -35,12 +36,12 @@ export interface PrepareResult {
   skipped: boolean;
 }
 
-async function pathExists(runner: Runner, path: string): Promise<boolean> {
+const pathExists = async (runner: Runner, path: string): Promise<boolean> => {
   const r = await runner.exec(`test -e ${shQuote(path)}`);
   return r.code === 0;
-}
+};
 
-export async function runPrepare(opts: PrepareOptions): Promise<PrepareResult> {
+export const runPrepare = async (opts: PrepareOptions): Promise<PrepareResult> => {
   const { info, dir, runner } = opts;
   if (info.prepare.length === 0) {
     throw new Error(
@@ -88,4 +89,4 @@ export async function runPrepare(opts: PrepareOptions): Promise<PrepareResult> {
     n++;
   }
   return { ran: n, skipped: false };
-}
+};

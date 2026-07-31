@@ -77,7 +77,7 @@ CREATE INDEX IF NOT EXISTS idx_post_stats_board
   ON post_stats (site, board, year);
 `;
 
-export function openDb(path: string): DatabaseSync {
+export const openDb = (path: string): DatabaseSync => {
   const db = new DatabaseSync(path);
   db.exec("PRAGMA journal_mode = WAL;");
   db.exec("PRAGMA synchronous = NORMAL;");
@@ -87,19 +87,19 @@ export function openDb(path: string): DatabaseSync {
   db.exec("PRAGMA busy_timeout = 30000;");
   db.exec(SCHEMA);
   return db;
-}
+};
 
 /** True when the error is SQLite refusing a concurrent writer. */
-export function isLockedError(e: unknown): boolean {
+export const isLockedError = (e: unknown): boolean => {
   const err = e as { code?: string; errstr?: string };
   return err?.code === "ERR_SQLITE_ERROR" && /locked|busy/i.test(err.errstr ?? "");
-}
+};
 
-export function getOrCreateSource(
+export const getOrCreateSource = (
   db: DatabaseSync,
   name: string,
   link?: string,
-): number {
+): number => {
   db.prepare("INSERT INTO sources (name, link) VALUES (?, ?) ON CONFLICT(name) DO NOTHING")
     .run(name, link ?? null);
   const row = db.prepare("SELECT id FROM sources WHERE name = ?").get(name) as
@@ -107,4 +107,4 @@ export function getOrCreateSource(
     | undefined;
   if (!row) throw new Error(`failed to create source ${name}`);
   return row.id;
-}
+};

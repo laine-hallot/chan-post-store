@@ -1,6 +1,8 @@
+import type { DatabaseSync } from "node:sqlite";
+
 import { existsSync, opendirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { DatabaseSync } from "node:sqlite";
+
 import { stripHtml } from "../html.ts";
 import { PostInserter } from "../ingest.ts";
 
@@ -33,7 +35,7 @@ interface IngestStats {
   badFiles: number;
 }
 
-function* threadFiles(
+const threadFiles = function* (
   boardDir: string,
   board: string,
 ): Generator<{ path: string; threadNo: number }> {
@@ -62,9 +64,9 @@ function* threadFiles(
   } finally {
     dir.closeSync();
   }
-}
+};
 
-function listBoards(root: string, only?: string[]): string[] {
+const listBoards = (root: string, only?: string[]): string[] => {
   const boards: string[] = [];
   const dir = opendirSync(root);
   try {
@@ -78,12 +80,12 @@ function listBoards(root: string, only?: string[]): string[] {
     dir.closeSync();
   }
   return boards.sort();
-}
+};
 
-export function ingestJsonApi(
+export const ingestJsonApi = (
   db: DatabaseSync,
   opts: { root: string; sourceId: number; site: string; boards?: string[] },
-): IngestStats {
+): IngestStats => {
   const inserter = new PostInserter(db, opts.sourceId);
 
   const stats: IngestStats = { threads: 0, posts: 0, skippedPosts: 0, badFiles: 0 };
@@ -97,9 +99,9 @@ export function ingestJsonApi(
       for (const { path: file, threadNo } of threadFiles(boardDir, board)) {
         let posts: ApiPost[];
         try {
-          const parsed = JSON.parse(readFileSync(file, "utf8"));
-          posts = parsed.posts;
-          if (!Array.isArray(posts)) throw new Error("no posts array");
+          const { posts: parsed } = JSON.parse(readFileSync(file, "utf8"));
+          if (!Array.isArray(parsed)) throw new Error("no posts array");
+          posts = parsed;
         } catch {
           stats.badFiles++;
           continue;
@@ -154,4 +156,4 @@ export function ingestJsonApi(
   // Fold this run's tallies into post_stats before reporting.
   inserter.finish();
   return stats;
-}
+};

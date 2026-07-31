@@ -11,7 +11,7 @@ const offsetCache = new Map<number, number>();
 
 /** UTC offset of America/New_York at the given UTC time, in seconds
  * (negative; -14400 for EDT, -18000 for EST). Cached per hour. */
-function nyOffsetAt(utcSec: number): number {
+const nyOffsetAt = (utcSec: number): number => {
   const hour = Math.floor(utcSec / 3600);
   const cached = offsetCache.get(hour);
   if (cached !== undefined) return cached;
@@ -24,15 +24,15 @@ function nyOffsetAt(utcSec: number): number {
   const offset = sign * (Number(m[2]) * 3600 + Number(m[3] ?? 0) * 60);
   offsetCache.set(hour, offset);
   return offset;
-}
+};
 
 /** Interpret `wall` (epoch-encoded New York wall clock, as stored by
  * Fuuka/Asagi archivers) as true UTC. */
-export function nyWallToUtc(wall: number): number {
+export const nyWallToUtc = (wall: number): number => {
   let utc = wall - nyOffsetAt(wall);
   utc = wall - nyOffsetAt(utc);
   return utc;
-}
+};
 
 // ---- mysqldump INSERT tuple parsing -------------------------------------
 
@@ -45,7 +45,7 @@ const ESCAPES: Record<string, string> = {
   b: "\b",
 };
 
-export function* parseTuples(
+export const parseTuples = function* (
   line: string,
   start: number,
 ): Generator<(string | null)[]> {
@@ -103,4 +103,4 @@ export function* parseTuples(
     }
     yield vals;
   }
-}
+};

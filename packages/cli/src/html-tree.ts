@@ -1,5 +1,5 @@
-import { opendirSync, readdirSync, statSync } from "node:fs";
 import { Buffer } from "node:buffer";
+import { opendirSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 /**
@@ -46,7 +46,7 @@ export interface HtmlPageRef {
  * invalid UTF-8 cannot be reconstructed from the decoded string, and open()
  * would fail on it.
  */
-function htmlNamesIn(dir: string): { name: string; raw: Buffer }[] {
+const htmlNamesIn = (dir: string): { name: string; raw: Buffer }[] => {
   let raws: Buffer[];
   try {
     raws = readdirSync(dir, { encoding: "buffer" });
@@ -66,14 +66,14 @@ function htmlNamesIn(dir: string): { name: string; raw: Buffer }[] {
     out.push({ name, raw });
   }
   return out.sort((a, z) => (a.name < z.name ? -1 : a.name > z.name ? 1 : 0));
-}
+};
 
 /** Joins a string directory and a raw filename into a byte path. */
-function joinBytes(dir: string, name: Buffer): Buffer {
+const joinBytes = (dir: string, name: Buffer): Buffer => {
   return Buffer.concat([Buffer.from(dir.endsWith("/") ? dir : `${dir}/`), name]);
-}
+};
 
-function subdirsIn(dir: string): string[] {
+const subdirsIn = (dir: string): string[] => {
   const out: string[] = [];
   let d;
   try {
@@ -92,7 +92,7 @@ function subdirsIn(dir: string): string[] {
     d.closeSync();
   }
   return out.sort();
-}
+};
 
 /**
  * Lists the HTML pages under `root`, including any inside board
@@ -110,7 +110,7 @@ function subdirsIn(dir: string): string[] {
  * markup, which only the adapter can read -- so callers still apply their own
  * per-page board check.
  */
-export function listHtmlPages(root: string, boards?: string[]): HtmlPageRef[] {
+export const listHtmlPages = (root: string, boards?: string[]): HtmlPageRef[] => {
   const out: HtmlPageRef[] = htmlNamesIn(root).map(({ name, raw }) => ({
     path: joinBytes(root, raw),
     name,
@@ -125,13 +125,13 @@ export function listHtmlPages(root: string, boards?: string[]): HtmlPageRef[] {
     }
   }
   return out;
-}
+};
 
 /** True when `path` is a directory, false for anything unreadable. */
-export function isDir(path: string): boolean {
+export const isDir = (path: string): boolean => {
   try {
     return statSync(path).isDirectory();
   } catch {
     return false;
   }
-}
+};

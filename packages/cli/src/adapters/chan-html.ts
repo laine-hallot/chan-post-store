@@ -1,8 +1,10 @@
-import { readFileSync } from "node:fs";
 import type { DatabaseSync } from "node:sqlite";
+
 import { parse, type HTMLElement } from "node-html-parser";
-import { cleanBodyText } from "../html.ts";
+import { readFileSync } from "node:fs";
+
 import { listHtmlPages } from "../html-tree.ts";
+import { cleanBodyText } from "../html.ts";
 import { PostInserter } from "../ingest.ts";
 
 /**
@@ -44,16 +46,16 @@ interface IngestStats {
 }
 
 /** Text of the first match, or null when absent or empty. */
-function text(root: HTMLElement, sel: string): string | null {
+const text = (root: HTMLElement, sel: string): string | null => {
   const el = root.querySelector(sel);
   if (!el) return null;
   const t = el.textContent;
   return t === "" ? null : t;
-}
+};
 
 /** Reads one post's fields out of its container. Thread attribution is the
  * caller's job -- on a board index it depends on which OP came before. */
-function readPost(
+const readPost = (
   container: HTMLElement,
 ): {
   postNo: number;
@@ -65,7 +67,7 @@ function readPost(
   bodyText: string | null;
   mediaFilename: string | null;
   mediaMd5: string | null;
-} | null {
+} | null => {
   // id is pc<postno> on the wrapper.
   const id = container.getAttribute("id") ?? "";
   const postNo = Number(id.replace(/^pc/, ""));
@@ -117,7 +119,7 @@ function readPost(
     mediaFilename,
     mediaMd5: container.querySelector("[data-md5]")?.getAttribute("data-md5") ?? null,
   };
-}
+};
 
 /**
  * Thread number from a bare `<threadno>.html` filename, as used inside a
@@ -125,16 +127,16 @@ function readPost(
  * name files like `1000000 ban.html` -- and returns null when the leading
  * token is not a number.
  */
-function threadNoFromName(fileName: string): number | null {
+const threadNoFromName = (fileName: string): number | null => {
   const m = /^(\d+)/.exec(fileName);
   return m ? Number(m[1]) : null;
-}
+};
 
 /** Board and thread number from a saved page's filename or its own markup. */
-function threadIdentity(
+const threadIdentity = (
   fileName: string,
   doc: HTMLElement,
-): { board: string; threadNo: number | null } | null {
+): { board: string; threadNo: number | null } | null => {
   // warc-extract names files after the captured URL, e.g.
   // boards.4channel.org_a_thread_231722770.html or boards.4chan.org_pol.html
   const thread = /^boards\.4chan(?:nel)?\.org_([a-z0-9]+)_thread_(\d+)/i.exec(fileName);
@@ -154,12 +156,12 @@ function threadIdentity(
   const bonly = /\/([a-z0-9]+)\/?$/i.exec(href);
   if (bonly) return { board: bonly[1], threadNo: null };
   return null;
-}
+};
 
-export function ingestChanHtml(
+export const ingestChanHtml = (
   db: DatabaseSync,
   opts: { root: string; sourceId: number; site: string; boards?: string[] },
-): IngestStats {
+): IngestStats => {
   const inserter = new PostInserter(db, opts.sourceId);
   const stats: IngestStats = {
     files: 0,
@@ -254,4 +256,4 @@ export function ingestChanHtml(
   }
   process.stderr.write("\n");
   return stats;
-}
+};

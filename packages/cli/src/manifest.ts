@@ -63,9 +63,12 @@ export interface SourceInfo {
 /** A manifest whose `ingest` block is still a scaffold placeholder. */
 export class PendingSourceError extends Error {}
 
-function bad(file: string, msg: string): never {
+// The annotation is load-bearing: a call only ends control flow when the
+// callee is a function declaration or a const with an explicit type, and the
+// validators below rely on `bad()` narrowing the value they just rejected.
+const bad: (file: string, msg: string) => never = (file, msg) => {
   throw new Error(`${file}: ${msg}`);
-}
+};
 
 /**
  * Reads one `sources/<id>.json`. The `source` block carries provenance
@@ -74,7 +77,7 @@ function bad(file: string, msg: string): never {
  * relative so they survive the archive storage moving, as long as the
  * "Memetic Sociology" symlink is repointed.
  */
-export function readManifest(file: string, projectRoot: string): Manifest {
+export const readManifest = (file: string, projectRoot: string): Manifest => {
   if (!existsSync(file)) bad(file, "no such manifest");
 
   let raw: unknown;
@@ -86,21 +89,21 @@ export function readManifest(file: string, projectRoot: string): Manifest {
   if (typeof raw !== "object" || raw === null) bad(file, "expected a JSON object");
 
   const doc = raw as { source?: Record<string, unknown>; ingest?: Record<string, unknown> };
-  const source = doc.source;
-  const ingest = doc.ingest;
+  const {source} = doc;
+  const {ingest} = doc;
   if (!source) bad(file, 'missing "source" block');
   if (!ingest) bad(file, 'missing "ingest" block');
 
-  const name = source.name;
+  const {name} = source;
   if (typeof name !== "string" || name === "") bad(file, 'source.name is required');
 
-  const link = source.link;
+  const {link} = source;
   if (link != null && typeof link !== "string") bad(file, "source.link must be a string");
 
   // Scaffolded-but-unfinished manifests are an expected state, not corruption:
   // the prepare pipeline hasn't produced this source's data yet.
-  const adapter = ingest.adapter;
-  const path = ingest.path;
+  const {adapter} = ingest;
+  const {path} = ingest;
   if (adapter === null || path === null || adapter === "" || path === "") {
     throw new PendingSourceError(
       `${file}: ingest.adapter/ingest.path not filled in yet — run this source's` +
@@ -125,7 +128,7 @@ export function readManifest(file: string, projectRoot: string): Manifest {
     path: resolve(projectRoot, path),
     site,
   };
-}
+};
 
 /**
  * Reads the provenance + staging half of a manifest, ignoring `ingest`.
@@ -133,7 +136,7 @@ export function readManifest(file: string, projectRoot: string): Manifest {
  * A source that hasn't been downloaded yet necessarily has an unfilled
  * ingest block, so `download` must not require one.
  */
-export function readSourceInfo(file: string): SourceInfo {
+export const readSourceInfo = (file: string): SourceInfo => {
   if (!existsSync(file)) bad(file, "no such manifest");
   let raw: unknown;
   try {
@@ -146,12 +149,12 @@ export function readSourceInfo(file: string): SourceInfo {
     files?: { source?: unknown };
   };
   if (!doc.source) bad(file, 'missing "source" block');
-  const name = doc.source.name;
+  const {name} = doc.source;
   if (typeof name !== "string" || name === "") bad(file, "source.name is required");
-  const link = doc.source.link;
+  const {link} = doc.source;
 
   const id = basename(file, ".json");
-  const dir = (doc as { dir?: unknown }).dir;
+  const {dir} = (doc as { dir?: unknown });
   if (typeof dir !== "string" || dir === "") {
     bad(file, '"dir" (the dataset directory, project-root relative) is required');
   }
@@ -213,22 +216,22 @@ export function readSourceInfo(file: string): SourceInfo {
     prepareOutput: output ?? "out",
     downloadExclude,
   };
-}
+};
 
 /** Resolves a source id (or a direct path to a manifest file) to its file. */
-export function manifestPath(idOrPath: string, projectRoot: string): string {
+export const manifestPath = (idOrPath: string, projectRoot: string): string => {
   if (idOrPath.endsWith(".json")) return resolve(projectRoot, idOrPath);
   return join(projectRoot, SOURCES_DIR, `${idOrPath}.json`);
-}
+};
 
-export function listManifestIds(projectRoot: string): string[] {
+export const listManifestIds = (projectRoot: string): string[] => {
   const dir = join(projectRoot, SOURCES_DIR);
   if (!existsSync(dir)) return [];
   return readdirSync(dir)
     .filter((f) => f.endsWith(".json"))
     .map((f) => basename(f, ".json"))
     .sort();
-}
+};
 
 /**
  * Expands a manifest's ingest path into the concrete inputs an adapter takes.
@@ -236,7 +239,7 @@ export function listManifestIds(projectRoot: string): string[] {
  * adapters want one file per call, and warosu backups ship a separate dump
  * per board.
  */
-export function ingestInputs(m: Manifest): string[] {
+export const ingestInputs = (m: Manifest): string[] => {
   if (!existsSync(m.path)) {
     throw new PendingSourceError(
       `${m.file}: ingest.path does not exist: ${m.path}\n` +
@@ -269,4 +272,4 @@ export function ingestInputs(m: Manifest): string[] {
     );
   }
   return sql;
-}
+};

@@ -1,16 +1,22 @@
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { gunzipSync } from "node:zlib";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
-import { openDb, getOrCreateSource, isLockedError } from "./db.ts";
-import { boardList, hasStats, refreshPostStats } from "./stats.ts";
-import { dedupePosts, needsDedupe } from "./dedupe.ts";
+import { gunzipSync } from "node:zlib";
+
 import { ingestChanHtml } from "./adapters/chan-html.ts";
+import { ingestFuukaSql } from "./adapters/fuuka-sql.ts";
 import { ingestFybertechHtml } from "./adapters/fybertech-html.ts";
 import { ingestJsonApi } from "./adapters/json-api.ts";
-import { ingestFuukaSql } from "./adapters/fuuka-sql.ts";
 import { ingestWarosuSql } from "./adapters/warosu-sql.ts";
+import {
+  downloadItem,
+  fetchItem,
+  humanBytes,
+  identifierFromLink,
+} from "./archive-org.ts";
+import { openDb, getOrCreateSource, isLockedError } from "./db.ts";
+import { dedupePosts, needsDedupe } from "./dedupe.ts";
 import {
   ingestInputs,
   listManifestIds,
@@ -20,14 +26,9 @@ import {
   readSourceInfo,
   SOURCES_DIR,
 } from "./manifest.ts";
-import {
-  downloadItem,
-  fetchItem,
-  humanBytes,
-  identifierFromLink,
-} from "./archive-org.ts";
-import { makeRunner, shQuote } from "./runner.ts";
 import { runPrepare } from "./prepare.ts";
+import { makeRunner, shQuote } from "./runner.ts";
+import { boardList, hasStats, refreshPostStats } from "./stats.ts";
 import { htmlPages, uriToFilename } from "./warc.ts";
 
 /**
@@ -37,7 +38,7 @@ import { htmlPages, uriToFilename } from "./warc.ts";
  * fixed number of `..` hops, so moving this package within the workspace
  * doesn't silently resolve archive paths somewhere wrong.
  */
-function findProjectRoot(): string {
+const findProjectRoot = (): string => {
   let dir = dirname(fileURLToPath(import.meta.url));
   for (;;) {
     if (existsSync(join(dir, SOURCES_DIR))) return dir;
@@ -47,7 +48,7 @@ function findProjectRoot(): string {
     }
     dir = up;
   }
-}
+};
 
 const PROJECT_ROOT = findProjectRoot();
 
@@ -74,12 +75,13 @@ given), so the transfer goes straight there; --local forces this machine.
 Dates are YYYY, YYYY-MM, or YYYY-MM-DD (UTC). --from/--to are both inclusive:
 --to 2018-09 means "through the end of September 2018".`;
 
-function fail(msg: string): never {
+// Explicitly typed so calls still end control flow — see `bad` in manifest.ts.
+const fail: (msg: string) => never = (msg) => {
   console.error(msg);
   console.error();
   console.error(USAGE);
   process.exit(1);
-}
+};
 
 /**
  * Runs `fn`, turning SQLite's write-lock error into a plain explanation.
@@ -88,7 +90,7 @@ function fail(msg: string): never {
  * so a second one hitting it is an ordinary situation rather than a bug —
  * it should not surface as a stack trace.
  */
-function onLockedFail<T>(dbPath: string | undefined, fn: () => T): T {
+const onLockedFail = <T>(dbPath: string | undefined, fn: () => T): T => {
   try {
     return fn();
   } catch (e) {
@@ -101,11 +103,11 @@ function onLockedFail<T>(dbPath: string | undefined, fn: () => T): T {
     }
     throw e;
   }
-}
+};
 
 /** Parse a date bound; returns epoch seconds. End bounds are advanced by one
  * unit of their precision so they can be used as an exclusive upper bound. */
-function parseBound(s: string, end: boolean): number {
+const parseBound = (s: string, end: boolean): number => {
   const m = /^(\d{4})(?:-(\d{2}))?(?:-(\d{2}))?$/.exec(s);
   if (!m) fail(`invalid date: ${s}`);
   let [year, month, day] = [Number(m[1]), m[2] ? Number(m[2]) : null, m[3] ? Number(m[3]) : null];
@@ -115,9 +117,9 @@ function parseBound(s: string, end: boolean): number {
     else year++;
   }
   return Date.UTC(year, (month ?? 1) - 1, day ?? 1) / 1000;
-}
+};
 
-async function cmdDownload(argv: string[]) {
+const cmdDownload = async (argv: string[]): Promise<void> => {
   const id = argv[0];
   if (!id || id.startsWith("-")) {
     const ids = listManifestIds(PROJECT_ROOT);
@@ -190,7 +192,7 @@ async function cmdDownload(argv: string[]) {
       dryRun: values["dry-run"],
     });
 
-    const by = (s: string) => results.filter((r) => r.status === s).length;
+    const by = (s: string): number => results.filter((r) => r.status === s).length;
     console.log(
       `\n${by("downloaded")} downloaded, ${by("skipped")} skipped, ${by("failed")} failed`,
     );
@@ -202,9 +204,9 @@ async function cmdDownload(argv: string[]) {
   } finally {
     await runner.close();
   }
-}
+};
 
-async function cmdPrepare(argv: string[]) {
+const cmdPrepare = async (argv: string[]): Promise<void> => {
   const id = argv[0];
   if (!id || id.startsWith("-")) {
     const ids = listManifestIds(PROJECT_ROOT);
@@ -275,13 +277,13 @@ async function cmdPrepare(argv: string[]) {
   } finally {
     await runner.close();
   }
-}
+};
 
 /**
  * Extracts HTML pages from a WARC into a directory. Invoked from manifest
  * prepare steps; the de-chunk + brotli handling is impractical in shell.
  */
-async function cmdWarcExtract(argv: string[]) {
+const cmdWarcExtract = async (argv: string[]): Promise<void> => {
   const { values } = parseArgs({
     args: argv,
     options: {
@@ -340,9 +342,9 @@ async function cmdWarcExtract(argv: string[]) {
   } finally {
     await runner.close();
   }
-}
+};
 
-async function cmdIngest(argv: string[]) {
+const cmdIngest = async (argv: string[]): Promise<void> => {
   const id = argv[0];
   if (!id || id.startsWith("-")) {
     const ids = listManifestIds(PROJECT_ROOT);
@@ -451,7 +453,7 @@ async function cmdIngest(argv: string[]) {
   } finally {
     db.close();
   }
-}
+};
 
 /**
  * Registry view: what's in sources/, and how far each has got.
@@ -460,7 +462,7 @@ async function cmdIngest(argv: string[]) {
  * rather than on whatever the local SMB mount happens to be showing (that
  * mount drops periodically and would otherwise report everything missing).
  */
-async function cmdListManifests(argv: string[]) {
+const cmdListManifests = async (argv: string[]): Promise<void> => {
   const { values } = parseArgs({
     args: argv,
     options: {
@@ -503,7 +505,7 @@ async function cmdListManifests(argv: string[]) {
         );
         stages = probe.stdout.trim();
         try {
-          adapter = readManifest(manifestPath(id, PROJECT_ROOT), PROJECT_ROOT).adapter;
+          ({ adapter } = readManifest(manifestPath(id, PROJECT_ROOT), PROJECT_ROOT));
         } catch {
           adapter = "-";
         }
@@ -518,7 +520,7 @@ async function cmdListManifests(argv: string[]) {
   } finally {
     await runner.close();
   }
-}
+};
 
 /**
  * Rebuilds the post_stats summary table.
@@ -535,7 +537,7 @@ async function cmdListManifests(argv: string[]) {
  * boards exist and when is their data from" immediately; the counts are raw
  * per-archive contributions and can double-count a post held twice.
  */
-function cmdBoards(argv: string[]) {
+const cmdBoards = (argv: string[]): void => {
   const { values } = parseArgs({ args: argv, options: { db: { type: "string" } } });
   if (!values.db) fail("boards requires --db");
   const db = openDb(values.db);
@@ -567,9 +569,9 @@ function cmdBoards(argv: string[]) {
   } finally {
     db.close();
   }
-}
+};
 
-function cmdRefreshStats(argv: string[]) {
+const cmdRefreshStats = (argv: string[]): void => {
   const { values } = parseArgs({ args: argv, options: { db: { type: "string" } } });
   if (!values.db) fail("refresh-stats requires --db");
   const db = openDb(values.db);
@@ -581,9 +583,9 @@ function cmdRefreshStats(argv: string[]) {
   } finally {
     db.close();
   }
-}
+};
 
-function cmdDedupe(argv: string[]) {
+const cmdDedupe = (argv: string[]): void => {
   const { values } = parseArgs({
     args: argv,
     options: { db: { type: "string" }, yes: { type: "boolean" } },
@@ -614,7 +616,7 @@ function cmdDedupe(argv: string[]) {
   } finally {
     db.close();
   }
-}
+};
 
 const FILTER_OPTIONS = {
   db: { type: "string" },
@@ -634,10 +636,10 @@ interface FilterValues {
 }
 
 /** WHERE clauses + params shared by `count` and `search`. */
-function phraseFilters(values: FilterValues): {
+const phraseFilters = (values: FilterValues): {
   where: string;
   params: (string | number)[];
-} {
+} => {
   const where: string[] = ["posts_fts MATCH ?", "p.site = ?"];
   const params: (string | number)[] = [
     `"${values.phrase!.replaceAll('"', '""')}"`,
@@ -656,7 +658,7 @@ function phraseFilters(values: FilterValues): {
     params.push(parseBound(values.to, true));
   }
   return { where: where.join(" AND "), params };
-}
+};
 
 const BUCKET_FORMATS: Record<string, string> = {
   day: "%Y-%m-%d",
@@ -664,7 +666,7 @@ const BUCKET_FORMATS: Record<string, string> = {
   year: "%Y",
 };
 
-function cmdCount(argv: string[]) {
+const cmdCount = (argv: string[]): void => {
   const { values } = parseArgs({
     args: argv,
     options: { ...FILTER_OPTIONS, by: { type: "string", default: "month" } },
@@ -709,9 +711,9 @@ function cmdCount(argv: string[]) {
   } finally {
     db.close();
   }
-}
+};
 
-function cmdSearch(argv: string[]) {
+const cmdSearch = (argv: string[]): void => {
   const { values } = parseArgs({
     args: argv,
     options: { ...FILTER_OPTIONS, limit: { type: "string", default: "20" } },
@@ -783,24 +785,24 @@ function cmdSearch(argv: string[]) {
   } finally {
     db.close();
   }
-}
+};
 
-function printTable(
+const printTable = (
   headers: string[],
   rows: (string | number | null)[][],
   footer?: (string | number | null)[],
-) {
+): void => {
   const bodyAndFoot = footer ? [...rows, footer] : rows;
   const numeric = headers.map((_, i) =>
     rows.every((r) => r[i] == null || typeof r[i] === "number"),
   );
-  const fmt = (v: string | number | null) =>
+  const fmt = (v: string | number | null): string =>
     v == null ? "-" : typeof v === "number" ? v.toLocaleString("en-US") : v;
   const cells = bodyAndFoot.map((r) => r.map(fmt));
   const widths = headers.map((h, i) =>
     Math.max(h.length, ...cells.map((r) => r[i].length)),
   );
-  const line = (row: string[]) =>
+  const line = (row: string[]): string =>
     row
       .map((c, i) => (numeric[i] ? c.padStart(widths[i]) : c.padEnd(widths[i])))
       .join("  ")
@@ -813,17 +815,17 @@ function printTable(
     console.log(rule);
     console.log(line(cells[rows.length]));
   }
-}
+};
 
 // How each column of the totals row is derived from the body rows. "sum"
 // adds the values, "min"/"max" span dates, "label" holds the "TOTAL" tag,
 // and "blank" leaves free-text columns (e.g. a source link) empty.
 type TotalRule = "sum" | "min" | "max" | "label" | "blank";
 
-function totalsRow(
+const totalsRow = (
   rules: TotalRule[],
   rows: (string | number | null)[][],
-): (string | number | null)[] {
+): (string | number | null)[] => {
   return rules.map((rule, i) => {
     switch (rule) {
       case "label":
@@ -842,7 +844,7 @@ function totalsRow(
       }
     }
   });
-}
+};
 
 const LIST_QUERIES: Record<
   string,
@@ -894,7 +896,7 @@ const LIST_QUERIES: Record<
   },
 };
 
-async function cmdList(argv: string[]) {
+const cmdList = async (argv: string[]): Promise<void> => {
   const what = argv[0];
   // `manifests` reads sources/, not the database, so it takes no --db
   if (what === "manifests") {
@@ -939,7 +941,7 @@ async function cmdList(argv: string[]) {
   } finally {
     db.close();
   }
-}
+};
 
 const [cmd, ...rest] = process.argv.slice(2);
 switch (cmd) {

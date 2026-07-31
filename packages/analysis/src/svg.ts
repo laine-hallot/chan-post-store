@@ -37,7 +37,7 @@ const PAL = {
  * The final tick is always >= max, so the axis encloses the data — stopping
  * at the last tick below max would let bars run past the end of the scale.
  */
-function ticks(max: number, count = 5): number[] {
+const ticks = (max: number, count = 5): number[] => {
   if (max <= 0) return [0, 1];
   const raw = max / count;
   const mag = 10 ** Math.floor(Math.log10(raw));
@@ -47,19 +47,19 @@ function ticks(max: number, count = 5): number[] {
   for (let v = 0; v < max - step * 1e-9; v += step) out.push(v);
   out.push(out.length ? out[out.length - 1] + step : step);
   return out;
-}
+};
 
-function compact(n: number): string {
+const compact = (n: number): string => {
   if (n >= 1e9) return `${(n / 1e9).toFixed(n >= 1e10 ? 0 : 1)}B`;
   if (n >= 1e6) return `${(n / 1e6).toFixed(n >= 1e7 ? 0 : 1)}M`;
   if (n >= 1e3) return `${(n / 1e3).toFixed(n >= 1e4 ? 0 : 1)}k`;
   return String(n);
-}
+};
 
-const esc = (s: string) =>
+const esc = (s: string): string =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-export function renderChart(d: ChartData): string {
+export const renderChart = (d: ChartData): string => {
   // Bars are sized first and the row derived from them, so a bar is always a
   // bar rather than a hairline however many series there are.
   const barH = 13;
@@ -140,7 +140,7 @@ export function renderChart(d: ChartData): string {
     for (const s of d.series) max = Math.max(max, d.values.get(y)?.get(s.name) ?? 0);
   }
   const tv = ticks(max);
-  const scale = (v: number) => (v / tv[tv.length - 1]) * plotW;
+  const scale = (v: number): number => (v / tv[tv.length - 1]) * plotW;
 
   const o: string[] = [];
   o.push(
@@ -221,4 +221,4 @@ export function renderChart(d: ChartData): string {
 
   o.push("</svg>");
   return o.join("\n");
-}
+};

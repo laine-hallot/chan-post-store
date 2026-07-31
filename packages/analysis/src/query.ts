@@ -17,19 +17,19 @@ export interface YearBucket {
   posts: number;
 }
 
-export function openReadOnly(path: string): DatabaseSync {
+export const openReadOnly = (path: string): DatabaseSync => {
   return new DatabaseSync(path, { readOnly: true });
-}
+};
 
 /** True when the post_stats summary table exists and is populated. */
-export function hasPostStats(db: DatabaseSync): boolean {
+export const hasPostStats = (db: DatabaseSync): boolean => {
   const t = db
     .prepare("SELECT 1 AS ok FROM sqlite_master WHERE type='table' AND name='post_stats'")
     .get() as { ok?: number } | undefined;
   if (t?.ok !== 1) return false;
   const n = db.prepare("SELECT COUNT(*) AS n FROM post_stats").get() as { n: number };
   return n.n > 0;
-}
+};
 
 /**
  * Year/source grid straight out of post_stats.
@@ -38,10 +38,10 @@ export function hasPostStats(db: DatabaseSync): boolean {
  * ~17s of index range counts, and it is the only way to get a board+source
  * split at all — no index on `posts` serves that combination.
  */
-export function bucketsFromStats(
+export const bucketsFromStats = (
   db: DatabaseSync,
   filter?: { site: string; board: string },
-): YearBucket[] {
+): YearBucket[] => {
   const where = filter ? "WHERE ps.site = ? AND ps.board = ? AND ps.year IS NOT NULL" : "WHERE ps.year IS NOT NULL";
   const args = filter ? [filter.site, filter.board] : [];
   return db
@@ -54,10 +54,10 @@ export function bucketsFromStats(
         ORDER BY ps.year, s.name`,
     )
     .all(...args) as unknown as YearBucket[];
-}
+};
 
 /** Corpus totals from post_stats: a few hundred rows, not 288M. */
-export function totalsFromStats(db: DatabaseSync): Totals {
+export const totalsFromStats = (db: DatabaseSync): Totals => {
   const r = db
     .prepare(
       `SELECT SUM(posts) AS posts,
@@ -67,15 +67,15 @@ export function totalsFromStats(db: DatabaseSync): Totals {
     )
     .get() as { posts: number | null; lo: number | null; hi: number | null };
   return { posts: r.posts ?? 0, minTs: r.lo, maxTs: r.hi };
-}
+};
 
 /** True when the covering index for source+time grouping is present. */
-export function hasSourceTimeIndex(db: DatabaseSync): boolean {
+export const hasSourceTimeIndex = (db: DatabaseSync): boolean => {
   const row = db
     .prepare("SELECT 1 AS ok FROM sqlite_master WHERE type='index' AND name='idx_posts_src_ts'")
     .get() as { ok?: number } | undefined;
   return row?.ok === 1;
-}
+};
 
 /**
  * Earliest and latest post timestamps.
@@ -85,7 +85,9 @@ export function hasSourceTimeIndex(db: DatabaseSync): boolean {
  * (which leads with source_id) and scans the table, ~45s. Per source it is
  * an index seek at each end, under a second in total.
  */
-export function timestampSpan(db: DatabaseSync): { minTs: number | null; maxTs: number | null } {
+export const timestampSpan = (
+  db: DatabaseSync,
+): { minTs: number | null; maxTs: number | null } => {
   const sources = db.prepare("SELECT id FROM sources").all() as unknown as { id: number }[];
   const ends = db.prepare(
     `SELECT (SELECT MIN(ts_utc) FROM posts WHERE source_id = ?1 AND ts_utc IS NOT NULL) AS lo,
@@ -99,7 +101,7 @@ export function timestampSpan(db: DatabaseSync): { minTs: number | null; maxTs: 
     if (r.hi != null) maxTs = maxTs == null ? r.hi : Math.max(maxTs, r.hi);
   }
   return { minTs, maxTs };
-}
+};
 
 /**
  * Posts per calendar year per source. Undated posts are excluded.
@@ -111,7 +113,7 @@ export function timestampSpan(db: DatabaseSync): { minTs: number | null; maxTs: 
  * for the range counts, i.e. the aggregate is slower than merely counting
  * every row (33s), because the formatting dominates.
  */
-export function postsByYearAndSource(db: DatabaseSync): YearBucket[] {
+export const postsByYearAndSource = (db: DatabaseSync): YearBucket[] => {
   const sources = db.prepare("SELECT id, name FROM sources ORDER BY name").all() as unknown as {
     id: number;
     name: string;
@@ -139,7 +141,7 @@ export function postsByYearAndSource(db: DatabaseSync): YearBucket[] {
     }
   }
   return out;
-}
+};
 
 /**
  * Posts per calendar year for one board, ignoring which archive supplied
@@ -152,11 +154,11 @@ export function postsByYearAndSource(db: DatabaseSync): YearBucket[] {
  * falls back to seeking one and testing the other row by row (~130s per
  * cell). Hence board totals here rather than a board+source split.
  */
-export function postsByYearForBoard(
+export const postsByYearForBoard = (
   db: DatabaseSync,
   site: string,
   board: string,
-): { year: string; posts: number }[] {
+): { year: string; posts: number }[] => {
   const span = boardSpan(db, site, board);
   if (span.minTs == null || span.maxTs == null) return [];
 
@@ -173,14 +175,14 @@ export function postsByYearForBoard(
     out.push({ year: String(y), posts: n });
   }
   return out;
-}
+};
 
 /** Timestamp range for one board — index seeks at each end. */
-export function boardSpan(
+export const boardSpan = (
   db: DatabaseSync,
   site: string,
   board: string,
-): { minTs: number | null; maxTs: number | null } {
+): { minTs: number | null; maxTs: number | null } => {
   const r = db
     .prepare(
       `SELECT (SELECT MIN(ts_utc) FROM posts WHERE site = ?1 AND board = ?2 AND ts_utc IS NOT NULL) AS lo,
@@ -188,7 +190,7 @@ export function boardSpan(
     )
     .get(site, board) as { lo: number | null; hi: number | null };
   return { minTs: r.lo, maxTs: r.hi };
-}
+};
 
 export interface Totals {
   /** Rows in `posts`, dated or not. */
@@ -205,7 +207,7 @@ export interface Totals {
  * idx_posts_src_ts (which leads with source_id) and costs ~49s, whereas a
  * bounded MIN/MAX per source is an index seek at each end.
  */
-export function totals(db: DatabaseSync): Totals {
+export const totals = (db: DatabaseSync): Totals => {
   const all = db.prepare("SELECT COUNT(*) AS n FROM posts").get() as { n: number };
   return { posts: all.n, ...timestampSpan(db) };
-}
+};

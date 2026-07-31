@@ -1,8 +1,10 @@
-import { readFileSync } from "node:fs";
 import type { DatabaseSync } from "node:sqlite";
+
 import { parse, type HTMLElement, type Node } from "node-html-parser";
-import { cleanBodyText } from "../html.ts";
+import { readFileSync } from "node:fs";
+
 import { listHtmlPages } from "../html-tree.ts";
+import { cleanBodyText } from "../html.ts";
 import { PostInserter } from "../ingest.ts";
 import { nyWallToUtc } from "../mysqldump.ts";
 
@@ -55,7 +57,7 @@ interface ParsedPost {
  * zero, which loses precision but never invents it. */
 const DATE = /(\d{2})\/(\d{2})\/(\d{2})\((?:\w{3})\)(\d{2}):(\d{2})(?::(\d{2}))?/;
 
-export function parseFyberDate(s: string): number | null {
+export const parseFyberDate = (s: string): number | null => {
   const m = DATE.exec(s);
   if (!m) return null;
   const [, mo, dd, yy, hh, mi, ss] = m;
@@ -69,17 +71,17 @@ export function parseFyberDate(s: string): number | null {
   ) / 1000;
   // The displayed clock is New York wall time, not UTC.
   return nyWallToUtc(wall);
-}
+};
 
 /** Concatenated text of a node's own text children, trimmed. */
-function looseText(el: Node): string {
+const looseText = (el: Node): string => {
   return el.childNodes
     .filter((n) => n.nodeType === 3)
     .map((n) => (n as unknown as { rawText: string }).rawText)
     .join(" ")
     .replace(/\s+/g, " ")
     .trim();
-}
+};
 
 /**
  * The timestamp, wherever this page's generation put it.
@@ -90,7 +92,7 @@ function looseText(el: Node): string {
  * text covers both -- reading only loose text silently lost the date on 7834
  * posts (5.4%), because the wrapped ones leave nothing but whitespace behind.
  */
-function dateWithin(el: HTMLElement): number | null {
+const dateWithin = (el: HTMLElement): number | null => {
   const span = el.querySelector(".posttime")?.textContent;
   const fromSpan = parseFyberDate(span ?? "");
   if (fromSpan != null) return fromSpan;
@@ -104,7 +106,7 @@ function dateWithin(el: HTMLElement): number | null {
   const html = el.innerHTML;
   const bq = html.search(/<blockquote/i);
   return parseFyberDate(bq > 0 ? html.slice(0, bq) : html);
-}
+};
 
 /**
  * The OP's date, for pages where it is a text node that belongs to no element
@@ -115,17 +117,17 @@ function dateWithin(el: HTMLElement): number | null {
  * scanning the whole document would silently stamp the OP with reply #1's
  * timestamp.
  */
-function firstDateBeforeReplies(el: HTMLElement): number | null {
+const firstDateBeforeReplies = (el: HTMLElement): number | null => {
   const html = el.innerHTML;
   const cut = html.search(/<td[^>]*class="reply"|<div class="post"/i);
   return parseFyberDate(cut > 0 ? html.slice(0, cut) : html);
-}
+};
 
 /** Text of `sel` within `root`, or null when missing or blank. */
-function pick(root: HTMLElement, sel: string): string | null {
+const pick = (root: HTMLElement, sel: string): string | null => {
   const t = root.querySelector(sel)?.textContent?.trim();
   return t ? t : null;
-}
+};
 
 /**
  * Body text with <br> turned into newlines, matching the other adapters.
@@ -136,11 +138,11 @@ function pick(root: HTMLElement, sel: string): string | null {
  * like `<span class="quote"` sitting in the text as literal characters, and
  * those would otherwise be stored as though the poster had typed them.
  */
-function bodyOf(el: HTMLElement | null): string | null {
+const bodyOf = (el: HTMLElement | null): string | null => {
   if (!el) return null;
   const text = parse(el.innerHTML.replace(/<br\s*\/?>/gi, "\n")).textContent;
   return cleanBodyText(text);
-}
+};
 
 /**
  * fybertech prints the file line as
@@ -149,7 +151,7 @@ function bodyOf(el: HTMLElement | null): string | null {
  * leading token is the server's timestamp name. Prefer the original, since
  * that is what the other adapters store.
  */
-function fileNameFrom(text: string | null): string | null {
+const fileNameFrom = (text: string | null): string | null => {
   if (!text) return null;
   const paren = /\(([^)]*)\)\s*$/.exec(text);
   if (paren) {
@@ -160,7 +162,7 @@ function fileNameFrom(text: string | null): string | null {
   }
   const served = /File\s*:?\s*([^\s-]+)/.exec(text);
   return served ? served[1] : null;
-}
+};
 
 // ---- the two fybertech templates ----------------------------------------
 
@@ -172,7 +174,7 @@ function fileNameFrom(text: string | null): string | null {
  * thread number being right, and on an annotated filename ("8 216.htm") it is
  * not, which left those pages with no OP at all.
  */
-function readLater(doc: HTMLElement): ParsedPost[] {
+const readLater = (doc: HTMLElement): ParsedPost[] => {
   const out: ParsedPost[] = [];
   let first = true;
   for (const p of doc.querySelectorAll(".post")) {
@@ -194,13 +196,13 @@ function readLater(doc: HTMLElement): ParsedPost[] {
     });
   }
   return out;
-}
+};
 
 /**
  * Replies in `td.reply`; the OP is loose at body level, so it is read from
  * whatever precedes the first reply table rather than from a container.
  */
-function readClassic(doc: HTMLElement, threadNo: number): ParsedPost[] {
+const readClassic = (doc: HTMLElement, threadNo: number): ParsedPost[] => {
   const out: ParsedPost[] = [];
 
   // --- the OP ---
@@ -247,12 +249,12 @@ function readClassic(doc: HTMLElement, threadNo: number): ParsedPost[] {
     });
   }
   return out;
-}
+};
 
-export function ingestFybertechHtml(
+export const ingestFybertechHtml = (
   db: DatabaseSync,
   opts: { root: string; sourceId: number; site: string; boards?: string[] },
-): IngestStats {
+): IngestStats => {
   const inserter = new PostInserter(db, opts.sourceId);
   const stats: IngestStats = {
     files: 0,
@@ -273,13 +275,14 @@ export function ingestFybertechHtml(
       // so the board is the directory and the number is the filename.
       let board: string;
       let threadNoFromFile: number | null;
-      if (page.board !== null) {
+      const { board: pageBoard } = page;
+      if (pageBoard !== null) {
         const m = /^(\d+)/.exec(page.name);
         if (!m) {
           stats.badFiles++;
           continue;
         }
-        board = page.board;
+        board = pageBoard;
         threadNoFromFile = Number(m[1]);
       } else {
         const m = /^([a-z0-9]+)_(\d+)\.html?$/i.exec(page.name);
@@ -371,4 +374,4 @@ export function ingestFybertechHtml(
   }
   process.stderr.write(`\rfiles=${stats.files} posts=${stats.posts}   \n`);
   return stats;
-}
+};

@@ -22,7 +22,7 @@ export interface WarcRecord {
 const SEP = "WARC/1.0\r\n";
 
 /** Undoes HTTP chunked transfer-encoding. */
-function deChunk(buf: Buffer): Buffer {
+const deChunk = (buf: Buffer): Buffer => {
   const out: Buffer[] = [];
   let i = 0;
   for (;;) {
@@ -34,9 +34,9 @@ function deChunk(buf: Buffer): Buffer {
     i = nl + 2 + size + 2;
   }
   return Buffer.concat(out);
-}
+};
 
-function decode(payload: Buffer, httpHeaders: string): Buffer {
+const decode = (payload: Buffer, httpHeaders: string): Buffer => {
   let out = payload;
   if (/transfer-encoding:\s*chunked/i.test(httpHeaders)) out = deChunk(out);
   const enc = /content-encoding:\s*([\w-]+)/i.exec(httpHeaders)?.[1]?.toLowerCase();
@@ -49,7 +49,7 @@ function decode(payload: Buffer, httpHeaders: string): Buffer {
     // A body we can't decode is returned as-is; callers filter by content.
   }
   return out;
-}
+};
 
 /**
  * Iterates the response records of an uncompressed WARC.
@@ -57,7 +57,7 @@ function decode(payload: Buffer, httpHeaders: string): Buffer {
  * The buffer is scanned as latin1 so string offsets map 1:1 onto bytes;
  * decoding as utf8 first would shift them and corrupt the slices.
  */
-export function* readResponses(warc: Buffer): Generator<WarcRecord> {
+export const readResponses = function* (warc: Buffer): Generator<WarcRecord> {
   const s = warc.toString("latin1");
   let pos = 0;
   while (pos < s.length) {
@@ -90,7 +90,7 @@ export function* readResponses(warc: Buffer): Generator<WarcRecord> {
       body: decode(body.subarray(hh + 4), httpHeaders),
     };
   }
-}
+};
 
 /**
  * Response records that carry HTML from the given host.
@@ -99,7 +99,7 @@ export function* readResponses(warc: Buffer): Generator<WarcRecord> {
  * are served as text/html and would otherwise be written out alongside the
  * real captures — /robots.txt and /favicon.ico both come back this way.
  */
-export function* htmlPages(
+export const htmlPages = function* (
   warc: Buffer,
   hostPattern: RegExp,
 ): Generator<WarcRecord> {
@@ -110,10 +110,10 @@ export function* htmlPages(
     if (!(status >= 200 && status < 300)) continue;
     yield r;
   }
-}
+};
 
 /** Filename-safe slug for a captured URL. */
-export function uriToFilename(uri: string): string {
+export const uriToFilename = (uri: string): string => {
   const u = uri.replace(/^https?:\/\//, "").replace(/\/$/, "");
   return `${u.replace(/[^A-Za-z0-9._-]+/g, "_")}.html`;
-}
+};

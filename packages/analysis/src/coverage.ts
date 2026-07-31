@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
+
 import {
   bucketsFromStats,
   hasPostStats,
@@ -22,7 +23,7 @@ import { renderChart, type ChartData, type Series } from "./svg.ts";
  * Run: node packages/analysis/src/coverage.ts [--db data/posts.db]
  */
 
-function findProjectRoot(): string {
+const findProjectRoot = (): string => {
   let dir = dirname(fileURLToPath(import.meta.url));
   for (;;) {
     if (existsSync(join(dir, "sources"))) return dir;
@@ -30,7 +31,7 @@ function findProjectRoot(): string {
     if (up === dir) throw new Error("could not locate the repo root");
     dir = up;
   }
-}
+};
 
 // Categorical slots 1-6 of the reference palette, in fixed order. Validated as
 // a set on the light surface: worst adjacent CVD dE 9.1, normal-vision 19.6.
@@ -147,7 +148,7 @@ const grid = new Map<string, Map<string, number>>();
 for (const y of allYears) grid.set(y, new Map());
 for (const b of buckets) grid.get(b.year)?.set(b.source, b.posts);
 
-const fmt = (n: number) => n.toLocaleString("en-US");
+const fmt = (n: number): string => n.toLocaleString("en-US");
 
 // Sum of what is actually charted, so the headline matches the bars.
 const charted = buckets.reduce((n, b) => n + b.posts, 0);
