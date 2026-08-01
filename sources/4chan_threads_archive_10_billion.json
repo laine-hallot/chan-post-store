@@ -1,0 +1,45 @@
+{
+  "dir": "Memetic Sociology/Datasets/4chan/4chan_threads_archive_10_billion",
+  "source": {
+    "type": "internet-archive",
+    "name": "4Chan Threads Text Archive Ten Billion 2009",
+    "link": "https://archive.org/details/4chan_threads_archive_10_billion",
+    "short-desc": "A text-only compilation of roughly 10 million unique 4chan threads, primarily 2006-2008, from an anonymous donor. Uploaded to the Internet Archive by Jason Scott in October 2018 under the archiveteam collection. The item ships the same corpus three times over: HTML, XML and MySQL.",
+    "capture": "22GB across three renderings of one corpus, and only the XML is ingestible. threads/xml/<board>.tar.gz (4.5GB, 42 boards) is one <thread> file per thread: <link> giving host+board+OP number, then nested <post num= date=> with optional <poster>, <tripcode>, <email>, <subject>, <text> CDATA and <img/> (always empty — this is the text-only dump). threads/style/fourchan.xsl is the stylesheet that rendered it and documents the full field set. threads/html/<board>.tar.gz (7.1GB, 44 boards) is that XML run through the XSL with the number and date templates producing NOTHING: every post is just postername + blockquote, so replies carry no post_no at all and no post carries a timestamp. It is kept only for /b/ (3.3GB) and /p/, the two boards the XML tree omits, where the OP number is still recoverable from the filename; the other 42 HTML boards are excluded as redundant. chanarchive.tar.gz (10.5GB) is the MySQL form, but as raw MyISAM table files (chanarchive/threads.MYD, ...), not a mysqldump — reading it means attaching the tables to a MySQL server, so no existing adapter touches it. It is downloaded anyway because it is the only candidate holding /b/ WITH post numbers. XML dates are minute precision with no seconds and no timezone ('2006-09-16 23:23'); they are presumably 4chan's displayed New-York wall time and would need nyWallToUtc like fybertech, but that is UNVERIFIED — cross-check a shared post against another archive before trusting it."
+  },
+  "download": {
+    "exclude": [
+      "^threads/html/(?!b\\.tar\\.gz$|p\\.tar\\.gz$)"
+    ]
+  },
+  "prepare": [
+    {
+      "name": "unpack the per-board XML tarballs",
+      "run": "mkdir -p extracted/xml && for f in source/threads/xml/*.tar.gz; do [ -e \"$f\" ] || continue; b=$(basename \"$f\" .tar.gz); [ -d \"extracted/xml/$b\" ] || tar xzf \"$f\" -C extracted/xml; done"
+    },
+    {
+      "name": "unpack the /b/ and /p/ HTML tarballs (the boards the XML tree omits)",
+      "run": "mkdir -p extracted/html && for b in b p; do f=\"source/threads/html/$b.tar.gz\"; [ -e \"$f\" ] || continue; [ -d \"extracted/html/$b\" ] || tar xzf \"$f\" -C extracted/html; done"
+    },
+    {
+      "name": "stage for ingest",
+      "run": "rm -rf out && (cp -al extracted out 2>/dev/null || cp -a extracted out)"
+    }
+  ],
+  "ingest": {
+    "adapter": null,
+    "path": "Memetic Sociology/Datasets/4chan/4chan_threads_archive_10_billion/out/xml",
+    "site": "4chan"
+  },
+  "files": {
+    "source": "./source",
+    "extract": {
+      "path": "./extracted",
+      "script": ""
+    },
+    "out": {
+      "path": "./out",
+      "script": ""
+    }
+  }
+}

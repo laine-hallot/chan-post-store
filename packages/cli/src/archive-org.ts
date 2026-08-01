@@ -125,6 +125,12 @@ export const downloadItem = async (opts: DownloadOptions): Promise<FileOutcome[]
     if (mk.code !== 0) throw new Error(`could not create ${dest}: ${mk.stderr.trim()}`);
   }
 
+  // Item file names can themselves be nested (threads/xml/a.tar.gz), and curl
+  // will not create the parent directory. Remembering which ones exist keeps
+  // this to one mkdir per directory rather than one per file, which matters
+  // when every exec is an SSH round-trip.
+  const made = new Set<string>([dest.replace(/\/$/, "")]);
+
   let n = 0;
   for (const f of item.files) {
     n++;
@@ -150,6 +156,13 @@ export const downloadItem = async (opts: DownloadOptions): Promise<FileOutcome[]
     }
 
     console.log(label);
+    const parent = target.slice(0, target.lastIndexOf("/"));
+    if (!made.has(parent)) {
+      const mk = await runner.exec(`mkdir -p ${shQuote(parent)}`);
+      if (mk.code !== 0) throw new Error(`could not create ${parent}: ${mk.stderr.trim()}`);
+      made.add(parent);
+    }
+
     const url = `${base}/${encodeURIComponent(f.name)}`;
     const cmd =
       `curl -fL --retry 3 --retry-delay 2 -C - --progress-bar ` +
