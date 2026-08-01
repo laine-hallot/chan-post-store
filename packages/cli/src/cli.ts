@@ -509,8 +509,11 @@ const cmdListManifests = async (argv: string[]): Promise<void> => {
         } catch {
           adapter = "-";
         }
-        // "ready" means out/ has content and an adapter is declared.
-        status = stages.endsWith("o") && adapter !== "-" ? "ready" : "pending";
+        // "ready" means out/ has content and an adapter is declared. A dead
+        // end outranks both: it is not waiting on anything, so listing it as
+        // "pending" would invite someone to survey the item all over again.
+        if (info.deadEnd) status = "dead-end";
+        else status = stages.endsWith("o") && adapter !== "-" ? "ready" : "pending";
       } catch (e) {
         status = e instanceof PendingSourceError ? "pending" : "error";
       }

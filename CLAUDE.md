@@ -56,6 +56,15 @@ running before ingest must use `readSourceInfo`.
 relative so moving the archive storage only means repointing the
 `Memetic Sociology` symlink.
 
+A manifest may also set top-level `"dead-end": true`, which `list manifests`
+shows in place of `pending`. It means the item has been surveyed and holds
+nothing ingestible — `4plebs` is 127GB of images with no post text anywhere.
+That is not the same as a `null` adapter, which means "not written yet", and
+the difference is the point: a dead end is a *finished* investigation, and the
+manifest exists precisely so the next person doesn't repeat it. Put the
+evidence in `source.capture`, including how far the survey actually went
+(`4plebs` records two boards scanned in full and seven sampled at the head).
+
 ### The staging pipeline
 
 `source/` → `extracted/` → `out/`, all under the manifest's `dir`.

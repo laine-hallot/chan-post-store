@@ -58,6 +58,13 @@ export interface SourceInfo {
    * dataset dir; defaults to "out".
    */
   prepareOutput: string;
+  /**
+   * Set when the item has been surveyed and holds nothing this store can
+   * ingest — an image-only dump, say. Distinct from a null adapter, which
+   * means "not written yet": a dead end is a finished investigation, and the
+   * manifest exists so nobody repeats it. `source.capture` says why.
+   */
+  deadEnd: boolean;
 }
 
 /** A manifest whose `ingest` block is still a scaffold placeholder. */
@@ -182,6 +189,11 @@ export const readSourceInfo = (file: string): SourceInfo => {
     bad(file, '"prepareOutput" must be a string');
   }
 
+  const dead = (doc as { "dead-end"?: unknown })["dead-end"];
+  if (dead != null && typeof dead !== "boolean") {
+    bad(file, '"dead-end" must be a boolean');
+  }
+
   // Several items ship image/thumbnail tarballs that dwarf the text: rbt-asia
   // is 1.5TB of which ~39GB is the actual dumps. Patterns here keep those out
   // of the download rather than making every ingest wait on them.
@@ -215,6 +227,7 @@ export const readSourceInfo = (file: string): SourceInfo => {
     prepare: steps,
     prepareOutput: output ?? "out",
     downloadExclude,
+    deadEnd: dead === true,
   };
 };
 
