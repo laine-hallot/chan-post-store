@@ -1,0 +1,41 @@
+{
+  "dir": "Memetic Sociology/Datasets/4chan/installgentoo-net",
+  "source": {
+    "type": "internet-archive",
+    "name": "installgentoo.net (4chan Archiver)",
+    "link": "https://archive.org/details/installgentoo-net",
+    "short-desc": "installgentoo.net was one of the earliest Fuuka archivers, with posts dating back to 2011. Obtained from RebeccaBlackTech for the Bibliotheca Anonoma from an unknown source, and uploaded to the Internet Archive in November 2015. The dump was sanitized before release: password hashes are all 'hunter2' and IP addresses are all 0.0.0.0, but the thread data is unchanged.",
+    "capture": "25GB, of which only the 2.4GB installgentoo-mysql-2014-02-22.tar.xz is text; archive-2-22-14.tar.gz (22.7GB) is thumbnails and is excluded. TWO NAMING TRAPS in that one file. First, the item description calls it 'installgentoo-2014-02-22.tar.xz' — that name does not exist in the item, it is the name of the .sql INSIDE. Second, and the one that breaks prepare steps written from the filename: despite the .tar.xz extension the file is BZIP2, magic 'BZh9', which is why IA reports its format as Unknown and why `tar xJf` fails on it. Plain `tar xf` auto-detects and works. It unpacks to TWO mysqldumps, not one: installgentoo-2014-02-22.sql (9.98GB, database `fuuka`, the posts) and installgentoo-admin-2014-02-22.sql (16KB, database `fuuka_admin` — banlist, loginattempts, modlog, reports, staff). The admin dump holds no post tables, so an adapter's column test skips it and staging both is harmless. THREE BOARDS ONLY: diy, g, sci, each with the Fuuka side tables (_daily, _images, _threads, _users), plus index_counters. THE ADAPTER IS NOT fuuka-sql, despite this being a Fuuka archive — this is why ingest.adapter is null. fuuka-sql is written for the Asagi/FoolFuuka schema and recognises board tables by requiring num, subnum, thread_num, timestamp, comment. This dump is ORIGINAL Fuuka, whose board tables carry `parent` where Asagi has `thread_num`, with no thread_num column at all: doc_id, id, num, subnum, parent, timestamp, preview, preview_w, preview_h, media, media_w, media_h, media_size, media_hash, media_filename, spoiler, deleted, capcode, email, name, trip, title, comment, delpass, sticky. Running fuuka-sql over a 300MB slice accepted zero tables and ingested zero posts — it does not error, it silently does nothing, which is exactly how this would slip past a run judged by exit code. laza-4chan-archive, also called 'Fuuka', is really Asagi (`thread_num`), so installgentoo is the first true-Fuuka-schema source in the registry and needs either its own adapter or a deliberate `parent` alias in fuuka-sql. Timestamps are still New-York wall time, so whatever reads it needs nyWallToUtc as usual."
+  },
+  "download": {
+    "exclude": [
+      "^archive-2-22-14\\.tar\\.gz$"
+    ]
+  },
+  "prepare": [
+    {
+      "name": "unpack the mysqldump (bzip2 despite the .tar.xz name, so no -J)",
+      "run": "mkdir -p extracted && ls extracted/*.sql >/dev/null 2>&1 || tar xf source/installgentoo-mysql-2014-02-22.tar.xz -C extracted"
+    },
+    {
+      "name": "stage for ingest",
+      "run": "rm -rf out && mkdir -p out && for f in extracted/*.sql; do [ -e \"$f\" ] || continue; (cp -al \"$f\" out/ 2>/dev/null || cp -a \"$f\" out/); done"
+    }
+  ],
+  "ingest": {
+    "adapter": null,
+    "path": "Memetic Sociology/Datasets/4chan/installgentoo-net/out",
+    "site": "4chan"
+  },
+  "files": {
+    "source": "./source",
+    "extract": {
+      "path": "./extracted",
+      "script": ""
+    },
+    "out": {
+      "path": "./out",
+      "script": ""
+    }
+  }
+}
