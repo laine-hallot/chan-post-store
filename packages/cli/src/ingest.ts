@@ -1,4 +1,4 @@
-import type { DatabaseSync, StatementSync } from "node:sqlite";
+import type { Pool } from "pg";
 
 export interface PostRow {
   site: string;
@@ -22,64 +22,207 @@ interface StatCell {
   maxTs: number | null;
 }
 
-/** Writes normalized posts into `posts` + `posts_fts`, skipping any post
- * already in the store -- whichever archive contributed it. */
+// 2000 rows * 13 columns = 26000 bound params, comfortably under Postgres's
+// 65535-param ceiling (floor(65535/13) = 5041 is the hard cap) while cutting
+// per-row round trips to a NAS-hosted server by 2000x.
+const BATCH_SIZE = 2000;
+
+const COLUMNS = [
+  "source_id",
+  "site",
+  "board",
+  "thread_no",
+  "post_no",
+  "is_op",
+  "ts_utc",
+  "name",
+  "tripcode",
+  "subject",
+  "body_text",
+  "media_filename",
+  "media_md5",
+];
+
+const keyOf = (site: string, board: string, postNo: number): string =>
+  `${site}\t${board}\t${postNo}`;
+
+// Postgres's text type flatly rejects a lone NUL code point (error: invalid
+// byte sequence for encoding UTF8). Some archives' source data genuinely
+// contains one -- a decoded JSON escape or an unescaped mysqldump literal
+// can both produce it. Because a flush is one multi-row INSERT, a single row
+// carrying a NUL fails the *entire* batch and, since nothing retries with
+// the offending row removed, aborts the whole source deterministically: the
+// same row fails identically on every retry. Stripped once here rather than
+// per adapter, since any text field can carry one.
+const NUL = String.fromCharCode(0);
+const stripNulls = (s: string | null): string | null =>
+  s == null ? s : s.split(NUL).join("");
+
+/**
+ * Collects one `insert()` call's completion promise into an adapter's
+ * `pending` array for later `Promise.all` draining at its next checkpoint.
+ *
+ * Immediately attaches a no-op `.catch()` so a flush failure can't crash the
+ * whole process: `pending.push(...)` alone doesn't attach a handler, and a
+ * rejection sitting unhandled that long risks Node's unhandled-rejection
+ * detector firing (which throws by default) before the adapter's own
+ * `Promise.all(pending)` ever gets a chance to observe and report it. The
+ * no-op here only protects this specific promise reference from being
+ * flagged early; the rejection itself is untouched, so `Promise.all(pending)`
+ * still sees and propagates it normally.
+ */
+export const collectPending = (pending: Promise<void>[], p: Promise<void>): void => {
+  p.catch(() => {});
+  pending.push(p);
+};
+
+/** Writes normalized posts into `posts`, batching rows into a single
+ * multi-row INSERT per flush rather than one round trip per row, and skips
+ * any post already in the store -- whichever archive contributed it. */
 export class PostInserter {
-  #post: StatementSync;
-  #fts: StatementSync;
+  #pool: Pool;
   #sourceId: number;
-  #db: DatabaseSync;
+  #buffer: PostRow[] = [];
+  #waiters: ((ok: boolean) => void)[] = [];
+  #flushing: Promise<void> | null = null;
   /** Per-(site, board, year) tallies, flushed to post_stats by `finish()`. */
   #stats = new Map<string, StatCell>();
 
-  constructor(db: DatabaseSync, sourceId: number) {
-    this.#db = db;
+  constructor(pool: Pool, sourceId: number) {
+    this.#pool = pool;
     this.#sourceId = sourceId;
-    this.#post = db.prepare(`
-      INSERT INTO posts (
-        source_id, site, board, thread_no, post_no, is_op, ts_utc,
-        name, tripcode, subject, body_text, media_filename, media_md5
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT (site, board, post_no) DO NOTHING
-      RETURNING id
-    `);
-    this.#fts = db.prepare(
-      "INSERT INTO posts_fts (rowid, subject, body_text) VALUES (?, ?, ?)",
-    );
   }
 
   /**
-   * Returns true if the post was stored, false if it was already present.
+   * Buffers the row and returns a promise that resolves to whether it was
+   * newly stored, once its batch actually flushes.
    *
-   * "Already present" spans archives, not just this source: `posts` is keyed
-   * (site, board, post_no), so a post another archive supplied first is
-   * skipped here. Adapters counting these as "duplicates" are counting
-   * overlap with the rest of the corpus as well as with earlier runs of
-   * themselves.
+   * Do NOT `await` this call inline inside a tight insert loop -- the
+   * promise only resolves when the buffer reaches BATCH_SIZE (or `finish()`
+   * is called), so awaiting each call one at a time would stop the buffer
+   * from ever growing past 1 and the promise would never resolve. Collect
+   * the returned promises in an array and resolve them together
+   * (`Promise.all`) at whatever periodic checkpoint the caller already uses
+   * for progress reporting / crash-safety.
    */
-  insert(p: PostRow): boolean {
-    const row = this.#post.get(
-      this.#sourceId,
-      p.site,
-      p.board,
-      p.threadNo,
-      p.postNo,
-      p.isOp ? 1 : 0,
-      p.tsUtc,
-      p.name,
-      p.tripcode,
-      p.subject,
-      p.bodyText,
-      p.mediaFilename,
-      p.mediaMd5,
-    ) as { id: number } | undefined;
-    if (!row) return false;
-    this.#fts.run(row.id, p.subject, p.bodyText);
+  async insert(p: PostRow): Promise<boolean> {
+    const promise = new Promise<boolean>((resolve) => this.#waiters.push(resolve));
+    this.#buffer.push({
+      ...p,
+      name: stripNulls(p.name),
+      tripcode: stripNulls(p.tripcode),
+      subject: stripNulls(p.subject),
+      bodyText: stripNulls(p.bodyText),
+      mediaFilename: stripNulls(p.mediaFilename),
+      mediaMd5: stripNulls(p.mediaMd5),
+    });
+    if (this.#buffer.length >= BATCH_SIZE) await this.#flush();
+    return promise;
+  }
 
-    // Tally in memory: an upsert per post would dominate the insert cost,
-    // and a run only touches a handful of (board, year) combinations.
-    const year =
-      p.tsUtc == null ? null : new Date(p.tsUtc * 1000).getUTCFullYear();
+  /**
+   * Drains the buffer, coalescing concurrent callers onto whichever drain is
+   * already running instead of letting each run its own loop.
+   *
+   * Adapters fire thousands of un-awaited `insert()` calls between
+   * checkpoints (the SQL ones go 50,000 rows before draining `pending`), and
+   * every call past BATCH_SIZE lands here. An earlier version had each of
+   * those callers spin its own `while (buffer.length || flushing)` loop, so
+   * one 2000-row flush woke *every* waiting caller to re-check and re-await --
+   * O(callers) wakeups per flush. Benchmarking put that at roughly a 2x cost,
+   * not the orders of magnitude it looks like it should be, so this is a
+   * modest win rather than a critical fix; it is kept because one drainer with
+   * many cheap awaiters is also easier to reason about than N racing loops.
+   */
+  async #flush(): Promise<void> {
+    if (this.#flushing) {
+      await this.#flushing;
+      return;
+    }
+    this.#flushing = this.#drain();
+    try {
+      await this.#flushing;
+    } finally {
+      this.#flushing = null;
+    }
+  }
+
+  /** Flushes BATCH_SIZE-sized slices until the buffer is empty. Slicing (as
+   * opposed to taking the whole buffer) is what keeps a batch under
+   * Postgres's bind-parameter ceiling: draining everything that piled up
+   * during an in-flight flush once produced a single oversized statement and
+   * corrupted the wire protocol ("bind message has 51058 parameter formats
+   * but 0 parameters"). */
+  async #drain(): Promise<void> {
+    while (this.#buffer.length > 0) {
+      const batch = this.#buffer.splice(0, BATCH_SIZE);
+      const waiters = this.#waiters.splice(0, BATCH_SIZE);
+      await this.#runFlush(batch, waiters);
+    }
+  }
+
+  async #runFlush(batch: PostRow[], waiters: ((ok: boolean) => void)[]): Promise<void> {
+    const params: unknown[] = [];
+    const values = batch
+      .map((r, i) => {
+        params.push(
+          this.#sourceId,
+          r.site,
+          r.board,
+          r.threadNo,
+          r.postNo,
+          r.isOp,
+          r.tsUtc,
+          r.name,
+          r.tripcode,
+          r.subject,
+          r.bodyText,
+          r.mediaFilename,
+          r.mediaMd5,
+        );
+        const base = i * COLUMNS.length;
+        return `(${COLUMNS.map((_, j) => `$${base + j + 1}`).join(",")})`;
+      })
+      .join(",");
+
+    const { rows } = await this.#pool.query<{
+      site: string;
+      board: string;
+      post_no: number;
+    }>(
+      `INSERT INTO posts (${COLUMNS.join(", ")})
+       VALUES ${values}
+       ON CONFLICT (site, board, post_no) DO NOTHING
+       RETURNING site, board, post_no`,
+      params,
+    );
+
+    // RETURNING order isn't guaranteed to match the VALUES order, so
+    // correlate by key rather than position. The same (site, board, post_no)
+    // can legitimately appear twice in one batch (e.g. a board-index page
+    // and a full thread page landing in the same flush) -- ON CONFLICT DO
+    // NOTHING against the row this same statement just inserted silently
+    // drops the second occurrence rather than erroring, so each key must be
+    // claimed at most once, in buffer order, to avoid crediting both.
+    const returned = new Set(rows.map((r) => keyOf(r.site, r.board, r.post_no)));
+    const claimed = new Set<string>();
+    for (let i = 0; i < batch.length; i++) {
+      const row = batch[i]!;
+      const key = keyOf(row.site, row.board, row.postNo);
+      const ok = returned.has(key) && !claimed.has(key);
+      // Tally only rows confirmed stored -- tallying at buffer time (before
+      // the flush confirms whether ON CONFLICT DO NOTHING skipped it) would
+      // silently overcount post_stats for duplicates.
+      if (ok) {
+        claimed.add(key);
+        this.#tally(row);
+      }
+      waiters[i]!(ok);
+    }
+  }
+
+  #tally(p: PostRow): void {
+    const year = p.tsUtc == null ? null : new Date(p.tsUtc * 1000).getUTCFullYear();
     // Tab-separated: neither a site nor a board name contains one, so the
     // key round-trips unambiguously when it is split apart in finish().
     const key = `${p.site}\t${p.board}\t${year ?? ""}`;
@@ -93,11 +236,11 @@ export class PostInserter {
     } else {
       this.#stats.set(key, { posts: 1, minTs: p.tsUtc, maxTs: p.tsUtc });
     }
-    return true;
   }
 
   /**
-   * Folds the tallies accumulated so far into `post_stats`.
+   * Flushes any partially-filled buffer, then folds the tallies accumulated
+   * so far into `post_stats`.
    *
    * Counts are added to whatever is already stored, so this is safe to call
    * repeatedly: each call contributes only what has been counted since the
@@ -105,31 +248,41 @@ export class PostInserter {
    * flush at the end means an interrupted run loses every tally it had
    * accumulated, leaving post_stats short of `posts` until a full rebuild.
    */
-  finish(): void {
-    const up = this.#db.prepare(`
-      INSERT INTO post_stats (source_id, site, board, year, posts, min_ts, max_ts)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT (source_id, site, board, year) DO UPDATE SET
-        posts  = posts + excluded.posts,
-        min_ts = CASE
-                   WHEN min_ts IS NULL THEN excluded.min_ts
-                   WHEN excluded.min_ts IS NULL THEN min_ts
-                   ELSE MIN(min_ts, excluded.min_ts) END,
-        max_ts = CASE
-                   WHEN max_ts IS NULL THEN excluded.max_ts
-                   WHEN excluded.max_ts IS NULL THEN max_ts
-                   ELSE MAX(max_ts, excluded.max_ts) END
-    `);
+  async finish(): Promise<void> {
+    // Loop, because a coalesced #flush() only guarantees the drain that was
+    // already in flight finished -- rows buffered after that drain's last
+    // buffer check are still pending, and returning with any of them
+    // unflushed would leave their waiters uncalled and hang the caller's
+    // `Promise.all(pending)` forever. Looping here is safe (and not the
+    // thundering herd #flush() avoids): finish() is called once per
+    // checkpoint, and its caller is awaiting it, so nothing new is arriving.
+    while (this.#buffer.length > 0 || this.#flushing) {
+      await this.#flush();
+    }
     for (const [key, c] of this.#stats) {
       const [site, board, year] = key.split("\t");
-      up.run(
-        this.#sourceId,
-        site,
-        board,
-        year === "" ? null : Number(year),
-        c.posts,
-        c.minTs,
-        c.maxTs,
+      await this.#pool.query(
+        `INSERT INTO post_stats (source_id, site, board, year, posts, min_ts, max_ts)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         ON CONFLICT (source_id, site, board, COALESCE(year, -1)) DO UPDATE SET
+           posts  = post_stats.posts + excluded.posts,
+           min_ts = CASE
+                      WHEN post_stats.min_ts IS NULL THEN excluded.min_ts
+                      WHEN excluded.min_ts IS NULL THEN post_stats.min_ts
+                      ELSE LEAST(post_stats.min_ts, excluded.min_ts) END,
+           max_ts = CASE
+                      WHEN post_stats.max_ts IS NULL THEN excluded.max_ts
+                      WHEN excluded.max_ts IS NULL THEN post_stats.max_ts
+                      ELSE GREATEST(post_stats.max_ts, excluded.max_ts) END`,
+        [
+          this.#sourceId,
+          site,
+          board,
+          year === "" ? null : Number(year),
+          c.posts,
+          c.minTs,
+          c.maxTs,
+        ],
       );
     }
     this.#stats.clear();

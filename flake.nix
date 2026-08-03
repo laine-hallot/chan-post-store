@@ -22,6 +22,7 @@
             sshfs
             # for poking at the post database by hand
             sqlite
+            postgresql
             # rasterizes the analysis charts (SVG -> PNG) without pulling a
             # native npm dependency into the build
             resvg

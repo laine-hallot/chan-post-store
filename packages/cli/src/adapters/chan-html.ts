@@ -1,11 +1,12 @@
-import type { DatabaseSync } from "node:sqlite";
+import type { Pool } from "pg";
 
 import { parse, type HTMLElement } from "node-html-parser";
 import { readFileSync } from "node:fs";
 
 import { listHtmlPages } from "../html-tree.ts";
 import { cleanBodyText } from "../html.ts";
-import { PostInserter } from "../ingest.ts";
+import { collectPending, PostInserter } from "../ingest.ts";
+import { makeBar } from "../progress.ts";
 
 /**
  * Ingests saved 4chan board/thread pages in the site's own HTML — the markup
@@ -158,10 +159,10 @@ const threadIdentity = (
   return null;
 };
 
-export const ingestChanHtml = (
-  db: DatabaseSync,
+export const ingestChanHtml = async (
+  db: Pool,
   opts: { root: string; sourceId: number; site: string; boards?: string[] },
-): IngestStats => {
+): Promise<IngestStats> => {
   const inserter = new PostInserter(db, opts.sourceId);
   const stats: IngestStats = {
     files: 0,
@@ -173,87 +174,103 @@ export const ingestChanHtml = (
   };
 
   const pages = listHtmlPages(opts.root, opts.boards);
+  const pending: Promise<void>[] = [];
+  const bar = makeBar({ max: pages.length });
+  bar.start(`ingesting ${pages.length} page(s)`);
 
-  db.exec("BEGIN");
-  try {
-    for (const page of pages) {
-      // A page that cannot even be opened must not end the run. Handmade
-      // archives carry filenames with bytes that are not valid UTF-8, and such
-      // a name survives readdir but cannot be passed back to open() -- one of
-      // them killed an entire 23k-page pass before this guard existed.
-      let raw: string;
-      try {
-        raw = readFileSync(page.path, "utf8");
-      } catch {
-        stats.badFiles++;
-        continue;
-      }
-      const doc = parse(raw);
-      // In a nested tree the directory names the board, which beats anything
-      // inferable from the filename; a flat tree has no directory to consult
-      // and falls back to the filename or the page's canonical link.
-      const id =
-        page.board !== null
-          ? { board: page.board, threadNo: threadNoFromName(page.name) }
-          : threadIdentity(page.name, doc);
-      if (!id) {
-        // Not a recognizable board/thread page: a stylesheet, an error page,
-        // or a capture of something else entirely.
-        stats.badFiles++;
-        continue;
-      }
-      if (opts.boards && !opts.boards.includes(id.board)) continue;
-
-      // No postContainer means this is not 4chan's own markup: a third-party
-      // mirror's rendered template, an error page, or something else. Counted
-      // separately rather than as an empty success, because a directory can
-      // legitimately hold both (fybertech's crawl mixes 20 native pages in
-      // with 617 of its own) and each adapter must skip the other's files.
-      if (!doc.querySelector(".postContainer")) {
-        stats.skippedForeign++;
-        continue;
-      }
-      stats.files++;
-      if (id.threadNo != null) stats.threads++;
-
-      let currentThread = id.threadNo;
-      for (const container of doc.querySelectorAll(".postContainer")) {
-        const isOp = container.classList.contains("opContainer");
-        const provisional = Number((container.getAttribute("id") ?? "").replace(/^pc/, ""));
-        if (isOp) currentThread = id.threadNo ?? provisional;
-        const p = readPost(container);
-        if (!p) {
-          stats.badFiles++;
-          continue;
-        }
-        const ok = inserter.insert({
-          site: opts.site,
-          board: id.board,
-          // A reply with no OP above it would be orphaned; fall back to its own
-          // number so thread_no is never bogus.
-          threadNo: currentThread ?? p.postNo,
-          postNo: p.postNo,
-          isOp: p.isOp,
-          tsUtc: p.tsUtc,
-          name: p.name,
-          tripcode: p.tripcode,
-          subject: p.subject,
-          bodyText: p.bodyText,
-          mediaFilename: p.mediaFilename,
-          mediaMd5: p.mediaMd5,
-        });
-        if (ok) stats.posts++;
-        else stats.skippedDup++;
-      }
-      process.stderr.write(`\r/${id.board}/ files=${stats.files} posts=${stats.posts}   `);
+  for (const page of pages) {
+    // Advance unconditionally, before any recognize/skip logic below, so the
+    // bar's total advance always equals pages.length regardless of how many
+    // pages get skipped -- otherwise a tree with lots of skipped/foreign
+    // pages would leave the bar stalled short of 100%.
+    bar.advance(1, `files=${stats.files} posts=${stats.posts}`);
+    // A page that cannot even be opened must not end the run. Handmade
+    // archives carry filenames with bytes that are not valid UTF-8, and such
+    // a name survives readdir but cannot be passed back to open() -- one of
+    // them killed an entire 23k-page pass before this guard existed.
+    let raw: string;
+    try {
+      raw = readFileSync(page.path, "utf8");
+    } catch {
+      stats.badFiles++;
+      continue;
     }
-    // Flush tallies inside the same transaction as the posts they describe.
-    inserter.finish();
-    db.exec("COMMIT");
-  } catch (err) {
-    db.exec("ROLLBACK");
-    throw err;
+    const doc = parse(raw);
+    // In a nested tree the directory names the board, which beats anything
+    // inferable from the filename; a flat tree has no directory to consult
+    // and falls back to the filename or the page's canonical link.
+    const id =
+      page.board !== null
+        ? { board: page.board, threadNo: threadNoFromName(page.name) }
+        : threadIdentity(page.name, doc);
+    if (!id) {
+      // Not a recognizable board/thread page: a stylesheet, an error page,
+      // or a capture of something else entirely.
+      stats.badFiles++;
+      continue;
+    }
+    if (opts.boards && !opts.boards.includes(id.board)) continue;
+
+    // No postContainer means this is not 4chan's own markup: a third-party
+    // mirror's rendered template, an error page, or something else. Counted
+    // separately rather than as an empty success, because a directory can
+    // legitimately hold both (fybertech's crawl mixes 20 native pages in
+    // with 617 of its own) and each adapter must skip the other's files.
+    if (!doc.querySelector(".postContainer")) {
+      stats.skippedForeign++;
+      continue;
+    }
+    stats.files++;
+    if (id.threadNo != null) stats.threads++;
+
+    let currentThread = id.threadNo;
+    for (const container of doc.querySelectorAll(".postContainer")) {
+      const isOp = container.classList.contains("opContainer");
+      const provisional = Number((container.getAttribute("id") ?? "").replace(/^pc/, ""));
+      if (isOp) currentThread = id.threadNo ?? provisional;
+      const p = readPost(container);
+      if (!p) {
+        stats.badFiles++;
+        continue;
+      }
+      collectPending(
+        pending,
+        inserter
+          .insert({
+            site: opts.site,
+            board: id.board,
+            // A reply with no OP above it would be orphaned; fall back to its
+            // own number so thread_no is never bogus.
+            threadNo: currentThread ?? p.postNo,
+            postNo: p.postNo,
+            isOp: p.isOp,
+            tsUtc: p.tsUtc,
+            name: p.name,
+            tripcode: p.tripcode,
+            subject: p.subject,
+            bodyText: p.bodyText,
+            mediaFilename: p.mediaFilename,
+            mediaMd5: p.mediaMd5,
+          })
+          .then((ok) => {
+            if (ok) stats.posts++;
+            else stats.skippedDup++;
+          }),
+      );
+    }
+    bar.message(`/${id.board}/ files=${stats.files} posts=${stats.posts}`);
+    // No periodic checkpoint existed here under SQLite (one transaction for
+    // the whole run) -- a crash lost every tally since the process started.
+    // Flushing every 25 files bounds that loss the same way the other HTML
+    // adapter already does.
+    if (stats.files % 25 === 0) {
+      await inserter.finish();
+      await Promise.all(pending);
+      pending.length = 0;
+    }
   }
-  process.stderr.write("\n");
+  await inserter.finish();
+  await Promise.all(pending);
+  bar.stop(`${stats.posts} posts from ${stats.files} page(s)`);
   return stats;
 };

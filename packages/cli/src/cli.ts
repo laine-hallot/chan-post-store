@@ -1,3 +1,6 @@
+import { log } from "@clack/prompts";
+import type { Pool } from "pg";
+
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -15,8 +18,7 @@ import {
   humanBytes,
   identifierFromLink,
 } from "./archive-org.ts";
-import { openDb, getOrCreateSource, isLockedError } from "./db.ts";
-import { dedupePosts, needsDedupe } from "./dedupe.ts";
+import { openDb, getOrCreateSource } from "./db.ts";
 import {
   ingestInputs,
   listManifestIds,
@@ -26,6 +28,7 @@ import {
   readSourceInfo,
   SOURCES_DIR,
 } from "./manifest.ts";
+import type { Manifest } from "./manifest.ts";
 import { runPrepare } from "./prepare.ts";
 import { makeRunner, shQuote } from "./runner.ts";
 import { boardList, hasStats, refreshPostStats } from "./stats.ts";
@@ -57,9 +60,9 @@ const USAGE = `Usage:
   cli.ts prepare <source> [--remote <host>] [--local] [--dry-run] [--force]
   cli.ts warc-extract --warc <file.warc[.gz]> --out <dir> [--host <regex>]
   cli.ts ingest <source> --db <file> [--board <b> ...]
+  cli.ts ingest-all --db <file> [--dry-run] [--exclude <source> ...]
   cli.ts boards --db <file>
   cli.ts refresh-stats --db <file>
-  cli.ts dedupe --db <file> --yes
   cli.ts count --db <file> --phrase <text> [--board <b>] [--site 4chan] [--from <date>] [--to <date>] [--by month|day|year|total]
   cli.ts search --db <file> --phrase <text> [--board <b>] [--site 4chan] [--from <date>] [--to <date>] [--limit 20]
   cli.ts list boards|sites|sources|manifests --db <file> [--site <s>]
@@ -81,28 +84,6 @@ const fail: (msg: string) => never = (msg) => {
   console.error();
   console.error(USAGE);
   process.exit(1);
-};
-
-/**
- * Runs `fn`, turning SQLite's write-lock error into a plain explanation.
- *
- * Only one writer at a time is allowed, and ingests hold the lock for hours,
- * so a second one hitting it is an ordinary situation rather than a bug —
- * it should not surface as a stack trace.
- */
-const onLockedFail = <T>(dbPath: string | undefined, fn: () => T): T => {
-  try {
-    return fn();
-  } catch (e) {
-    if (isLockedError(e)) {
-      fail(
-        `${dbPath} is locked by another writer.\n` +
-          `An ingest or refresh-stats is probably already running against it —\n` +
-          `SQLite allows one writer at a time, so wait for that to finish.`,
-      );
-    }
-    throw e;
-  }
 };
 
 /** Parse a date bound; returns epoch seconds. End bounds are advanced by one
@@ -344,6 +325,79 @@ const cmdWarcExtract = async (argv: string[]): Promise<void> => {
   }
 };
 
+/**
+ * Runs one manifest's adapter and returns a formatted summary line, shared
+ * by `cmdIngest` (single source, given on the command line) and
+ * `cmdIngestAll` (every `ready` source, run in sequence).
+ */
+const ingestOne = async (
+  db: Pool,
+  manifest: Manifest,
+  sourceId: number,
+  inputs: string[],
+  boards: string[] | undefined,
+): Promise<{ posts: number; summary: string }> => {
+  const t0 = Date.now();
+
+  if (manifest.adapter === "json-api") {
+    const stats = await ingestJsonApi(db, { root: inputs[0], sourceId, site: manifest.site, boards });
+    const secs = ((Date.now() - t0) / 1000).toFixed(1);
+    return {
+      posts: stats.posts,
+      summary:
+        `ingested ${stats.posts} posts from ${stats.threads} threads in ${secs}s` +
+        ` (${stats.skippedPosts} posts already present/skipped, ${stats.badFiles} unreadable files)`,
+    };
+  } else if (manifest.adapter === "chan-html") {
+    const stats = await ingestChanHtml(db, { root: inputs[0], sourceId, site: manifest.site, boards });
+    const secs = ((Date.now() - t0) / 1000).toFixed(1);
+    return {
+      posts: stats.posts,
+      summary:
+        `ingested ${stats.posts} posts from ${stats.files} page(s)` +
+        ` (${stats.threads} thread page(s)) in ${secs}s` +
+        ` (${stats.skippedDup} already present, ${stats.badFiles} unrecognized` +
+        (stats.skippedForeign > 0 ? `, ${stats.skippedForeign} not in 4chan's own markup` : "") +
+        `)`,
+    };
+  } else if (manifest.adapter === "fybertech-html") {
+    const stats = await ingestFybertechHtml(db, { root: inputs[0], sourceId, site: manifest.site, boards });
+    const secs = ((Date.now() - t0) / 1000).toFixed(1);
+    return {
+      posts: stats.posts,
+      summary:
+        `ingested ${stats.posts} posts from ${stats.files} thread page(s) in ${secs}s` +
+        ` (${stats.skippedDup} already present, ${stats.badFiles} with no posts,` +
+        ` ${stats.skippedNative} in 4chan's own markup — ingest those with chan-html)`,
+    };
+  } else {
+    const ingest = manifest.adapter === "fuuka-sql" ? ingestFuukaSql : ingestWarosuSql;
+    let posts = 0;
+    const tables: string[] = [];
+    for (const file of inputs) {
+      // warosu backups ship one dump per board, so a source can be several
+      // files; each is streamed in turn into the same source id.
+      if (inputs.length > 1) console.log(`  ${file}`);
+      const stats = await ingest(db, {
+        file,
+        sourceId,
+        site: manifest.site,
+        boards,
+        fileSize: statSync(file).size,
+      });
+      posts += stats.posts;
+      tables.push(...stats.tables);
+    }
+    const secs = ((Date.now() - t0) / 1000).toFixed(1);
+    return {
+      posts,
+      summary:
+        `ingested ${posts} posts from tables [${tables.join(", ")}]` +
+        ` across ${inputs.length} file(s) in ${secs}s`,
+    };
+  }
+};
+
 const cmdIngest = async (argv: string[]): Promise<void> => {
   const id = argv[0];
   if (!id || id.startsWith("-")) {
@@ -376,83 +430,129 @@ const cmdIngest = async (argv: string[]): Promise<void> => {
     fail(String((e as Error).message));
   }
 
-  const db = onLockedFail(values.db, () => openDb(values.db!));
+  const db = await openDb(values.db);
   try {
-    const sourceId = onLockedFail(values.db, () =>
-      getOrCreateSource(db, manifest.name, manifest.link),
-    );
-    const t0 = Date.now();
+    const sourceId = await getOrCreateSource(db, manifest.name, manifest.link);
     console.log(`ingesting ${manifest.name} [${manifest.adapter}] from ${manifest.path}`);
+    const { summary } = await ingestOne(db, manifest, sourceId, inputs, values.board);
+    console.log(summary);
+  } finally {
+    await db.end();
+  }
+};
 
-    if (manifest.adapter === "json-api") {
-      const stats = ingestJsonApi(db, {
-        root: inputs[0],
-        sourceId,
-        site: manifest.site,
-        boards: values.board,
-      });
-      const secs = ((Date.now() - t0) / 1000).toFixed(1);
-      console.log(
-        `ingested ${stats.posts} posts from ${stats.threads} threads in ${secs}s` +
-          ` (${stats.skippedPosts} posts already present/skipped, ${stats.badFiles} unreadable files)`,
-      );
-    } else if (manifest.adapter === "chan-html") {
-      const stats = ingestChanHtml(db, {
-        root: inputs[0],
-        sourceId,
-        site: manifest.site,
-        boards: values.board,
-      });
-      const secs = ((Date.now() - t0) / 1000).toFixed(1);
-      console.log(
-        `ingested ${stats.posts} posts from ${stats.files} page(s)` +
-          ` (${stats.threads} thread page(s)) in ${secs}s` +
-          ` (${stats.skippedDup} already present, ${stats.badFiles} unrecognized` +
-          (stats.skippedForeign > 0
-            ? `, ${stats.skippedForeign} not in 4chan's own markup`
-            : "") +
-          `)`,
-      );
-    } else if (manifest.adapter === "fybertech-html") {
-      const stats = ingestFybertechHtml(db, {
-        root: inputs[0],
-        sourceId,
-        site: manifest.site,
-        boards: values.board,
-      });
-      const secs = ((Date.now() - t0) / 1000).toFixed(1);
-      console.log(
-        `ingested ${stats.posts} posts from ${stats.files} thread page(s) in ${secs}s` +
-          ` (${stats.skippedDup} already present, ${stats.badFiles} with no posts,` +
-          ` ${stats.skippedNative} in 4chan's own markup — ingest those with chan-html)`,
-      );
-    } else {
-      const ingest = manifest.adapter === "fuuka-sql" ? ingestFuukaSql : ingestWarosuSql;
-      let posts = 0;
-      const tables: string[] = [];
-      for (const file of inputs) {
-        // warosu backups ship one dump per board, so a source can be several
-        // files; each is streamed in turn into the same source id.
-        if (inputs.length > 1) console.log(`  ${file}`);
-        const stats = await ingest(db, {
-          file,
-          sourceId,
-          site: manifest.site,
-          boards: values.board,
-          fileSize: statSync(file).size,
-        });
-        posts += stats.posts;
-        tables.push(...stats.tables);
+/** A source whose manifest resolves to something ingestible. */
+interface ReadySource {
+  id: string;
+  manifest: Manifest;
+  inputs: string[];
+}
+
+/**
+ * Every manifest that `readManifest` + `ingestInputs` resolve without
+ * throwing `PendingSourceError` -- the same "ready" definition `list
+ * manifests` reports, but derived directly rather than re-deriving it from
+ * the s/e/o stage probe (which goes through the runner and is about staging,
+ * not about whether ingest itself can run).
+ */
+const readySources = (): ReadySource[] => {
+  const out: ReadySource[] = [];
+  for (const id of listManifestIds(PROJECT_ROOT)) {
+    try {
+      const manifest = readManifest(manifestPath(id, PROJECT_ROOT), PROJECT_ROOT);
+      const inputs = ingestInputs(manifest);
+      out.push({ id, manifest, inputs });
+    } catch (e) {
+      if (e instanceof PendingSourceError) continue; // not staged, or a dead end
+      throw e; // a real problem with an otherwise-ready manifest
+    }
+  }
+  return out;
+};
+
+/**
+ * Ingests every source `list manifests` would report as `ready`, one at a
+ * time so each adapter's live progress bar/spinner stays legible.
+ *
+ * Unlike single-source `ingest` -- which is expected to be babysat -- a
+ * failure in one source here must not abort the rest of an unattended,
+ * possibly hours-long run: each source is wrapped in its own try/catch and
+ * recorded, and the run only exits non-zero at the end if something failed.
+ */
+const cmdIngestAll = async (argv: string[]): Promise<void> => {
+  const { values } = parseArgs({
+    args: argv,
+    options: {
+      db: { type: "string" },
+      "dry-run": { type: "boolean" },
+      exclude: { type: "string", multiple: true },
+    },
+  });
+
+  let ready: ReadySource[];
+  try {
+    ready = readySources();
+  } catch (e) {
+    fail(String((e as Error).message));
+  }
+  if (ready.length === 0) {
+    console.log("no ready sources — run `list manifests` to see what's pending");
+    return;
+  }
+
+  // Stopgap for resuming a partial run: skip sources already known to be
+  // done. A typo here silently re-ingests something you meant to skip (which
+  // is slow but not wrong, since ingest is idempotent), so unmatched names
+  // are called out rather than ignored.
+  const excluded = new Set(values.exclude ?? []);
+  const unknown = [...excluded].filter((id) => !ready.some((r) => r.id === id));
+  if (unknown.length) {
+    fail(`--exclude names no ready source: ${unknown.join(", ")}`);
+  }
+  if (excluded.size) {
+    ready = ready.filter((r) => !excluded.has(r.id));
+    console.log(`excluding ${excluded.size} source(s): ${[...excluded].join(", ")}`);
+  }
+
+  if (values["dry-run"]) {
+    console.log(`${ready.length} source(s) would be ingested:`);
+    for (const { id, manifest } of ready) {
+      console.log(`  ${id} [${manifest.adapter}] <- ${manifest.path}`);
+    }
+    return;
+  }
+
+  if (!values.db) fail("ingest-all requires --db");
+
+  const results: { name: string; ok: boolean; posts: number; secs: number }[] = [];
+  const db = await openDb(values.db);
+  try {
+    for (const { id, manifest, inputs } of ready) {
+      log.step(`${id} [${manifest.adapter}] <- ${manifest.path}`);
+      const t0 = Date.now();
+      try {
+        const sourceId = await getOrCreateSource(db, manifest.name, manifest.link);
+        const { posts, summary } = await ingestOne(db, manifest, sourceId, inputs, undefined);
+        const secs = (Date.now() - t0) / 1000;
+        log.success(summary);
+        results.push({ name: id, ok: true, posts, secs });
+      } catch (e) {
+        const secs = (Date.now() - t0) / 1000;
+        const msg = String((e as Error).message);
+        log.error(`${id} failed: ${msg}`);
+        results.push({ name: id, ok: false, posts: 0, secs });
       }
-      const secs = ((Date.now() - t0) / 1000).toFixed(1);
-      console.log(
-        `ingested ${posts} posts from tables [${tables.join(", ")}]` +
-          ` across ${inputs.length} file(s) in ${secs}s`,
-      );
     }
   } finally {
-    db.close();
+    await db.end();
   }
+
+  console.log();
+  printTable(
+    ["source", "status", "posts", "seconds"],
+    results.map((r) => [r.name, r.ok ? "ok" : "FAILED", r.posts, Math.round(r.secs * 10) / 10]),
+  );
+  if (results.some((r) => !r.ok)) process.exit(1);
 };
 
 /**
@@ -526,12 +626,6 @@ const cmdListManifests = async (argv: string[]): Promise<void> => {
 };
 
 /**
- * Rebuilds the post_stats summary table.
- *
- * Ingest keeps it current, so this is for backfilling a store that predates
- * the table. One full pass over `posts`.
- */
-/**
  * Board list from the summary table.
  *
  * Distinct from `list boards`, which dedupes post/thread numbers across
@@ -540,15 +634,15 @@ const cmdListManifests = async (argv: string[]): Promise<void> => {
  * boards exist and when is their data from" immediately; the counts are raw
  * per-archive contributions and can double-count a post held twice.
  */
-const cmdBoards = (argv: string[]): void => {
+const cmdBoards = async (argv: string[]): Promise<void> => {
   const { values } = parseArgs({ args: argv, options: { db: { type: "string" } } });
   if (!values.db) fail("boards requires --db");
-  const db = openDb(values.db);
+  const db = await openDb(values.db);
   try {
-    if (!hasStats(db)) {
+    if (!(await hasStats(db))) {
       fail("post_stats is empty — run: cli.ts refresh-stats --db <file>");
     }
-    const rows = boardList(db);
+    const rows = await boardList(db);
     if (rows.length === 0) {
       console.log("no boards recorded");
       return;
@@ -570,54 +664,27 @@ const cmdBoards = (argv: string[]): void => {
         : undefined,
     );
   } finally {
-    db.close();
+    await db.end();
   }
 };
 
-const cmdRefreshStats = (argv: string[]): void => {
+/**
+ * Rebuilds the post_stats summary table.
+ *
+ * Ingest keeps it current, so this is for backfilling a store that predates
+ * the table. One full pass over `posts`.
+ */
+const cmdRefreshStats = async (argv: string[]): Promise<void> => {
   const { values } = parseArgs({ args: argv, options: { db: { type: "string" } } });
   if (!values.db) fail("refresh-stats requires --db");
-  const db = openDb(values.db);
+  const db = await openDb(values.db);
   try {
     console.log("rebuilding post_stats (one full pass over posts) ...");
     const t0 = Date.now();
-    const rows = refreshPostStats(db);
+    const rows = await refreshPostStats(db);
     console.log(`wrote ${rows} rows in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
   } finally {
-    db.close();
-  }
-};
-
-const cmdDedupe = (argv: string[]): void => {
-  const { values } = parseArgs({
-    args: argv,
-    options: { db: { type: "string" }, yes: { type: "boolean" } },
-  });
-  if (!values.db) fail("dedupe requires --db");
-  const db = openDb(values.db);
-  try {
-    if (!needsDedupe(db)) {
-      console.log("posts is already keyed (site, board, post_no) — nothing to do");
-      return;
-    }
-    if (!values.yes) {
-      fail(
-        "dedupe rewrites the store: duplicate posts are deleted and which\n" +
-          "archives held them is lost for good. Re-run with --yes to proceed.",
-      );
-    }
-    const t0 = Date.now();
-    const r = dedupePosts(db, (stage, detail) =>
-      console.log(`  ${stage}${detail ? ` ${detail}` : ""} ...`),
-    );
-    console.log(
-      `\n${r.before.toLocaleString()} rows -> ${r.after.toLocaleString()} ` +
-        `(${r.removed.toLocaleString()} duplicates removed) ` +
-        `in ${((Date.now() - t0) / 1000 / 60).toFixed(1)} min`,
-    );
-    console.log("post_stats is now stale — run refresh-stats next.");
-  } finally {
-    db.close();
+    await db.end();
   }
 };
 
@@ -643,33 +710,30 @@ const phraseFilters = (values: FilterValues): {
   where: string;
   params: (string | number)[];
 } => {
-  const where: string[] = ["posts_fts MATCH ?", "p.site = ?"];
-  const params: (string | number)[] = [
-    `"${values.phrase!.replaceAll('"', '""')}"`,
-    values.site,
-  ];
+  const where: string[] = ["p.search_vector @@ phraseto_tsquery('simple', $1)", "p.site = $2"];
+  const params: (string | number)[] = [values.phrase!, values.site];
   if (values.board) {
-    where.push("p.board = ?");
     params.push(values.board);
+    where.push(`p.board = $${params.length}`);
   }
   if (values.from) {
-    where.push("p.ts_utc >= ?");
     params.push(parseBound(values.from, false));
+    where.push(`p.ts_utc >= $${params.length}`);
   }
   if (values.to) {
-    where.push("p.ts_utc < ?");
     params.push(parseBound(values.to, true));
+    where.push(`p.ts_utc < $${params.length}`);
   }
   return { where: where.join(" AND "), params };
 };
 
 const BUCKET_FORMATS: Record<string, string> = {
-  day: "%Y-%m-%d",
-  month: "%Y-%m",
-  year: "%Y",
+  day: "YYYY-MM-DD",
+  month: "YYYY-MM",
+  year: "YYYY",
 };
 
-const cmdCount = (argv: string[]): void => {
+const cmdCount = async (argv: string[]): Promise<void> => {
   const { values } = parseArgs({
     args: argv,
     options: { ...FILTER_OPTIONS, by: { type: "string", default: "month" } },
@@ -687,20 +751,19 @@ const cmdCount = (argv: string[]): void => {
   const bucketExpr =
     values.by === "total"
       ? "'total'"
-      : `strftime('${BUCKET_FORMATS[values.by]}', p.ts_utc, 'unixepoch')`;
+      : `to_char(to_timestamp(p.ts_utc) AT TIME ZONE 'UTC', '${BUCKET_FORMATS[values.by]}')`;
   const sql = `
     SELECT ${bucketExpr} AS bucket,
            COUNT(*) AS posts
-    FROM posts_fts
-    JOIN posts p ON p.id = posts_fts.rowid
+    FROM posts p
     WHERE ${where}
     GROUP BY bucket
     ORDER BY bucket
   `;
 
-  const db = openDb(values.db);
+  const db = await openDb(values.db);
   try {
-    const rows = db.prepare(sql).all(...params) as { bucket: string | null; posts: number }[];
+    const { rows } = await db.query<{ bucket: string | null; posts: number }>(sql, params);
     if (rows.length === 0) {
       console.log("no matches");
       return;
@@ -712,11 +775,11 @@ const cmdCount = (argv: string[]): void => {
     }
     if (values.by !== "total") console.log(`total\t${total}`);
   } finally {
-    db.close();
+    await db.end();
   }
 };
 
-const cmdSearch = (argv: string[]): void => {
+const cmdSearch = async (argv: string[]): Promise<void> => {
   const { values } = parseArgs({
     args: argv,
     options: { ...FILTER_OPTIONS, limit: { type: "string", default: "20" } },
@@ -733,16 +796,14 @@ const cmdSearch = (argv: string[]): void => {
   const sql = `
     SELECT p.board, p.thread_no, p.post_no, p.is_op, p.ts_utc,
            p.name, p.tripcode, p.subject, p.body_text
-    FROM posts_fts
-    JOIN posts p ON p.id = posts_fts.rowid
+    FROM posts p
     WHERE ${where}
     ORDER BY p.ts_utc, p.post_no
-    LIMIT ?
+    LIMIT $${params.length + 1}
   `;
   const totalSql = `
     SELECT COUNT(*) AS n
-    FROM posts_fts
-    JOIN posts p ON p.id = posts_fts.rowid
+    FROM posts p
     WHERE ${where}
   `;
 
@@ -750,7 +811,7 @@ const cmdSearch = (argv: string[]): void => {
     board: string;
     thread_no: number;
     post_no: number;
-    is_op: number;
+    is_op: boolean;
     ts_utc: number | null;
     name: string | null;
     tripcode: string | null;
@@ -758,9 +819,9 @@ const cmdSearch = (argv: string[]): void => {
     body_text: string | null;
   }
 
-  const db = openDb(values.db);
+  const db = await openDb(values.db);
   try {
-    const rows = db.prepare(sql).all(...params, limit) as unknown as Hit[];
+    const { rows } = await db.query<Hit>(sql, [...params, limit]);
     if (rows.length === 0) {
       console.log("no matches");
       return;
@@ -781,12 +842,13 @@ const cmdSearch = (argv: string[]): void => {
       }
       console.log();
     }
-    const total = (db.prepare(totalSql).get(...params) as { n: number }).n;
+    const { rows: totalRows } = await db.query<{ n: number }>(totalSql, params);
+    const total = totalRows[0]!.n;
     if (total > rows.length) {
       console.log(`(showing ${rows.length} of ${total} matching posts; raise --limit for more)`);
     }
   } finally {
-    db.close();
+    await db.end();
   }
 };
 
@@ -861,8 +923,8 @@ const LIST_QUERIES: Record<
       SELECT p.site, p.board,
              COUNT(*) AS posts,
              COUNT(DISTINCT p.thread_no) AS threads,
-             date(MIN(p.ts_utc), 'unixepoch') AS first,
-             date(MAX(p.ts_utc), 'unixepoch') AS last
+             to_char(to_timestamp(MIN(p.ts_utc)) AT TIME ZONE 'UTC', 'YYYY-MM-DD') AS first,
+             to_char(to_timestamp(MAX(p.ts_utc)) AT TIME ZONE 'UTC', 'YYYY-MM-DD') AS last
       FROM posts p {WHERE}
       GROUP BY p.site, p.board
       ORDER BY p.site, p.board`,
@@ -874,8 +936,8 @@ const LIST_QUERIES: Record<
       SELECT p.site,
              COUNT(DISTINCT p.board) AS boards,
              COUNT(*) AS posts,
-             date(MIN(p.ts_utc), 'unixepoch') AS first,
-             date(MAX(p.ts_utc), 'unixepoch') AS last
+             to_char(to_timestamp(MIN(p.ts_utc)) AT TIME ZONE 'UTC', 'YYYY-MM-DD') AS first,
+             to_char(to_timestamp(MAX(p.ts_utc)) AT TIME ZONE 'UTC', 'YYYY-MM-DD') AS last
       FROM posts p {WHERE}
       GROUP BY p.site
       ORDER BY p.site`,
@@ -889,8 +951,8 @@ const LIST_QUERIES: Record<
       SELECT s.name,
              COUNT(p.id) AS posts,
              COUNT(DISTINCT p.site || '/' || p.board) AS boards,
-             date(MIN(p.ts_utc), 'unixepoch') AS first,
-             date(MAX(p.ts_utc), 'unixepoch') AS last,
+             to_char(to_timestamp(MIN(p.ts_utc)) AT TIME ZONE 'UTC', 'YYYY-MM-DD') AS first,
+             to_char(to_timestamp(MAX(p.ts_utc)) AT TIME ZONE 'UTC', 'YYYY-MM-DD') AS last,
              s.link
       FROM sources s
       LEFT JOIN posts p ON p.source_id = s.id {WHERE}
@@ -922,17 +984,14 @@ const cmdList = async (argv: string[]): Promise<void> => {
   const params: string[] = [];
   let where = "";
   if (values.site) {
-    where = "WHERE p.site = ?";
+    where = "WHERE p.site = $1";
     params.push(values.site);
   }
   const sql = query.sql.replace("{WHERE}", where);
 
-  const db = openDb(values.db);
+  const db = await openDb(values.db);
   try {
-    const rows = db.prepare(sql).all(...params) as Record<
-      string,
-      string | number | null
-    >[];
+    const { rows } = await db.query<Record<string, string | number | null>>(sql, params);
     if (rows.length === 0) {
       console.log("database is empty");
       return;
@@ -942,7 +1001,7 @@ const cmdList = async (argv: string[]): Promise<void> => {
     const footer = body.length > 1 ? totalsRow(query.totals, body) : undefined;
     printTable(query.headers, body, footer);
   } finally {
-    db.close();
+    await db.end();
   }
 };
 
@@ -960,20 +1019,20 @@ switch (cmd) {
   case "ingest":
     await cmdIngest(rest);
     break;
+  case "ingest-all":
+    await cmdIngestAll(rest);
+    break;
   case "boards":
-    cmdBoards(rest);
+    await cmdBoards(rest);
     break;
   case "refresh-stats":
-    cmdRefreshStats(rest);
-    break;
-  case "dedupe":
-    cmdDedupe(rest);
+    await cmdRefreshStats(rest);
     break;
   case "count":
-    cmdCount(rest);
+    await cmdCount(rest);
     break;
   case "search":
-    cmdSearch(rest);
+    await cmdSearch(rest);
     break;
   case "list":
     await cmdList(rest);

@@ -1,10 +1,11 @@
-import type { DatabaseSync } from "node:sqlite";
+import type { Pool } from "pg";
 
 import { existsSync, opendirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { stripHtml } from "../html.ts";
-import { PostInserter } from "../ingest.ts";
+import { collectPending, PostInserter } from "../ingest.ts";
+import { makeBar } from "../progress.ts";
 
 /**
  * Ingests thread dumps in the 4chan JSON read API format
@@ -82,78 +83,88 @@ const listBoards = (root: string, only?: string[]): string[] => {
   return boards.sort();
 };
 
-export const ingestJsonApi = (
-  db: DatabaseSync,
+export const ingestJsonApi = async (
+  db: Pool,
   opts: { root: string; sourceId: number; site: string; boards?: string[] },
-): IngestStats => {
+): Promise<IngestStats> => {
   const inserter = new PostInserter(db, opts.sourceId);
 
   const stats: IngestStats = { threads: 0, posts: 0, skippedPosts: 0, badFiles: 0 };
-  const BATCH = 500;
+  // BATCH bounds how long a crash could lose tallies for, and forces a flush
+  // so stats.posts (only incremented once a buffered insert's promise
+  // resolves) doesn't lag far behind the on-disk state -- kept well under
+  // PostInserter's own 2000-row auto-flush so the displayed message stays
+  // current rather than jumping in one big leap when that auto-flush lands.
+  // Accumulates across boards (not reset per board) so a source with many
+  // small boards still flushes/refreshes regularly.
+  const BATCH = 100;
+  let inTx = 0;
+  const pending: Promise<void>[] = [];
+  // No total available without an extra directory walk (threadFiles is a
+  // per-board generator over an unknown-length listing), so no bar -- just
+  // a spinner that proves liveness on its own timer between updates.
+  const bar = makeBar({});
+  bar.start("ingesting");
 
   for (const board of listBoards(opts.root, opts.boards)) {
     const boardDir = join(opts.root, board);
-    let inTx = 0;
-    db.exec("BEGIN");
-    try {
-      for (const { path: file, threadNo } of threadFiles(boardDir, board)) {
-        let posts: ApiPost[];
-        try {
-          const { posts: parsed } = JSON.parse(readFileSync(file, "utf8"));
-          if (!Array.isArray(parsed)) throw new Error("no posts array");
-          posts = parsed;
-        } catch {
-          stats.badFiles++;
+    for (const { path: file, threadNo } of threadFiles(boardDir, board)) {
+      let posts: ApiPost[];
+      try {
+        const { posts: parsed } = JSON.parse(readFileSync(file, "utf8"));
+        if (!Array.isArray(parsed)) throw new Error("no posts array");
+        posts = parsed;
+      } catch {
+        stats.badFiles++;
+        continue;
+      }
+
+      for (const p of posts) {
+        if (typeof p.no !== "number") {
+          stats.skippedPosts++;
           continue;
         }
-
-        for (const p of posts) {
-          if (typeof p.no !== "number") {
-            stats.skippedPosts++;
-            continue;
-          }
-          const ok = inserter.insert({
-            site: opts.site,
-            board,
-            threadNo,
-            postNo: p.no,
-            isOp: p.resto === 0 || p.no === threadNo,
-            tsUtc: p.time ?? null,
-            name: p.name ?? null,
-            tripcode: p.trip ?? null,
-            subject: p.sub ? stripHtml(p.sub) : null,
-            bodyText: p.com ? stripHtml(p.com) : null,
-            mediaFilename: p.filename != null ? `${p.filename}${p.ext ?? ""}` : null,
-            mediaMd5: p.md5 ?? null,
-          });
-          if (ok) stats.posts++;
-          else stats.skippedPosts++;
-        }
-
-        stats.threads++;
-        if (++inTx >= BATCH) {
-          // Flush the stats tallies alongside the posts they describe, so an
-          // interrupted run leaves post_stats consistent with what landed
-          // instead of losing every tally since the run began.
-          inserter.finish();
-          db.exec("COMMIT");
-          db.exec("BEGIN");
-          inTx = 0;
-          process.stderr.write(
-            `\r/${board}/ threads=${stats.threads} posts=${stats.posts}`,
-          );
-        }
+        collectPending(
+          pending,
+          inserter
+            .insert({
+              site: opts.site,
+              board,
+              threadNo,
+              postNo: p.no,
+              isOp: p.resto === 0 || p.no === threadNo,
+              tsUtc: p.time ?? null,
+              name: p.name ?? null,
+              tripcode: p.trip ?? null,
+              subject: p.sub ? stripHtml(p.sub) : null,
+              bodyText: p.com ? stripHtml(p.com) : null,
+              mediaFilename: p.filename != null ? `${p.filename}${p.ext ?? ""}` : null,
+              mediaMd5: p.md5 ?? null,
+            })
+            .then((ok) => {
+              if (ok) stats.posts++;
+              else stats.skippedPosts++;
+            }),
+        );
       }
-      db.exec("COMMIT");
-    } catch (err) {
-      db.exec("ROLLBACK");
-      throw err;
+
+      stats.threads++;
+      // Cheap -- just updates the displayed text, not I/O -- so refresh it
+      // every thread rather than gating it behind the flush checkpoint below.
+      bar.message(`/${board}/ threads=${stats.threads} posts=${stats.posts}`);
+      if (++inTx >= BATCH) {
+        // Flush the stats tallies alongside the posts they describe, so an
+        // interrupted run leaves post_stats consistent with what landed
+        // instead of losing every tally since the run began.
+        await inserter.finish();
+        await Promise.all(pending);
+        pending.length = 0;
+        inTx = 0;
+      }
     }
-    process.stderr.write(
-      `\r/${board}/ threads=${stats.threads} posts=${stats.posts}\n`,
-    );
   }
-  // Fold this run's tallies into post_stats before reporting.
-  inserter.finish();
+  await inserter.finish();
+  await Promise.all(pending);
+  bar.stop(`${stats.posts} posts from ${stats.threads} thread(s)`);
   return stats;
 };

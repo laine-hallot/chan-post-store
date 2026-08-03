@@ -1,4 +1,4 @@
-import type { DatabaseSync } from "node:sqlite";
+import type { Pool } from "pg";
 
 /**
  * Rebuilds `post_stats` from `posts`.
@@ -7,25 +7,34 @@ import type { DatabaseSync } from "node:sqlite";
  * backfill rows that predate it (or after a manual edit). It is a single
  * full pass over the store — minutes on a large database — which is exactly
  * the cost the table exists to avoid paying per query.
+ *
+ * Runs on a single checked-out connection rather than the pool directly:
+ * a Pool's separate `.query()` calls can each land on a different pooled
+ * connection, so DELETE then INSERT via `pool.query()` would not be atomic.
  */
-export const refreshPostStats = (db: DatabaseSync): number => {
-  db.exec("BEGIN");
+export const refreshPostStats = async (db: Pool): Promise<number> => {
+  const client = await db.connect();
   try {
-    db.exec("DELETE FROM post_stats");
-    db.exec(`
+    await client.query("BEGIN");
+    await client.query("DELETE FROM post_stats");
+    await client.query(`
       INSERT INTO post_stats (source_id, site, board, year, posts, min_ts, max_ts)
       SELECT source_id, site, board,
-             CAST(strftime('%Y', ts_utc, 'unixepoch') AS INTEGER) AS year,
+             EXTRACT(YEAR FROM to_timestamp(ts_utc) AT TIME ZONE 'UTC')::int AS year,
              COUNT(*), MIN(ts_utc), MAX(ts_utc)
         FROM posts
        GROUP BY source_id, site, board, year
     `);
-    const n = db.prepare("SELECT COUNT(*) AS n FROM post_stats").get() as { n: number };
-    db.exec("COMMIT");
-    return n.n;
+    const { rows } = await client.query<{ n: number }>(
+      "SELECT COUNT(*) AS n FROM post_stats",
+    );
+    await client.query("COMMIT");
+    return rows[0]!.n;
   } catch (e) {
-    db.exec("ROLLBACK");
+    await client.query("ROLLBACK");
     throw e;
+  } finally {
+    client.release();
   }
 };
 
@@ -38,38 +47,37 @@ export interface BoardStat {
 }
 
 /** Every board in the store, from the summary table rather than `posts`. */
-export const boardList = (db: DatabaseSync): BoardStat[] => {
-  return db
-    .prepare(
-      `SELECT site, board,
-              SUM(posts) AS posts,
-              MIN(year)  AS firstYear,
-              MAX(year)  AS lastYear
-         FROM post_stats
-        GROUP BY site, board
-        ORDER BY site, board`,
-    )
-    .all() as unknown as BoardStat[];
+export const boardList = async (db: Pool): Promise<BoardStat[]> => {
+  const { rows } = await db.query<BoardStat>(`
+    SELECT site, board,
+           SUM(posts)::bigint AS posts,
+           MIN(year)  AS "firstYear",
+           MAX(year)  AS "lastYear"
+      FROM post_stats
+     GROUP BY site, board
+     ORDER BY site, board
+  `);
+  return rows;
 };
 
 /** Posts per year for one board, summed across archives. */
-export const boardYears = (
-  db: DatabaseSync,
+export const boardYears = async (
+  db: Pool,
   site: string,
   board: string,
-): { year: number; posts: number }[] => {
-  return db
-    .prepare(
-      `SELECT year, SUM(posts) AS posts
-         FROM post_stats
-        WHERE site = ? AND board = ? AND year IS NOT NULL
-        GROUP BY year ORDER BY year`,
-    )
-    .all(site, board) as unknown as { year: number; posts: number }[];
+): Promise<{ year: number; posts: number }[]> => {
+  const { rows } = await db.query<{ year: number; posts: number }>(
+    `SELECT year, SUM(posts)::bigint AS posts
+       FROM post_stats
+      WHERE site = $1 AND board = $2 AND year IS NOT NULL
+      GROUP BY year ORDER BY year`,
+    [site, board],
+  );
+  return rows;
 };
 
 /** True when the summary table has been populated. */
-export const hasStats = (db: DatabaseSync): boolean => {
-  const r = db.prepare("SELECT COUNT(*) AS n FROM post_stats").get() as { n: number };
-  return r.n > 0;
+export const hasStats = async (db: Pool): Promise<boolean> => {
+  const { rows } = await db.query<{ n: number }>("SELECT COUNT(*) AS n FROM post_stats");
+  return rows[0]!.n > 0;
 };

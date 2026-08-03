@@ -1,11 +1,12 @@
-import type { DatabaseSync } from "node:sqlite";
+import type { Pool } from "pg";
 
 import { parse, type HTMLElement, type Node } from "node-html-parser";
 import { readFileSync } from "node:fs";
 
 import { listHtmlPages } from "../html-tree.ts";
 import { cleanBodyText } from "../html.ts";
-import { PostInserter } from "../ingest.ts";
+import { collectPending, PostInserter } from "../ingest.ts";
+import { makeBar } from "../progress.ts";
 import { nyWallToUtc } from "../mysqldump.ts";
 
 /**
@@ -251,10 +252,10 @@ const readClassic = (doc: HTMLElement, threadNo: number): ParsedPost[] => {
   return out;
 };
 
-export const ingestFybertechHtml = (
-  db: DatabaseSync,
+export const ingestFybertechHtml = async (
+  db: Pool,
   opts: { root: string; sourceId: number; site: string; boards?: string[] },
-): IngestStats => {
+): Promise<IngestStats> => {
   const inserter = new PostInserter(db, opts.sourceId);
   const stats: IngestStats = {
     files: 0,
@@ -264,114 +265,126 @@ export const ingestFybertechHtml = (
     badFiles: 0,
     skippedNative: 0,
   };
+  const pending: Promise<void>[] = [];
+  const pages = listHtmlPages(opts.root, opts.boards);
+  const bar = makeBar({ max: pages.length });
+  bar.start(`ingesting ${pages.length} page(s)`);
 
-  db.exec("BEGIN");
-  try {
-    for (const page of listHtmlPages(opts.root, opts.boards)) {
-      // Two layouts reach this adapter. Flat: fybertech's own crawl names
-      // pages <board>_<threadno>.html, and the same directory holds its
-      // index.cgi listing pages, which have no posts and no board to derive.
-      // Nested: a mirrored site puts <threadno>.html inside a board directory,
-      // so the board is the directory and the number is the filename.
-      let board: string;
-      let threadNoFromFile: number | null;
-      const { board: pageBoard } = page;
-      if (pageBoard !== null) {
-        const m = /^(\d+)/.exec(page.name);
-        if (!m) {
-          stats.badFiles++;
-          continue;
-        }
-        board = pageBoard;
-        threadNoFromFile = Number(m[1]);
-      } else {
-        const m = /^([a-z0-9]+)_(\d+)\.html?$/i.exec(page.name);
-        if (!m) continue; // index.cgi and friends: not a thread page at all
-        board = m[1];
-        threadNoFromFile = Number(m[2]);
-        if (opts.boards && !opts.boards.includes(board)) continue;
-      }
-
-      // An unopenable page must not end the run: handmade archives carry
-      // filenames whose bytes are not valid UTF-8, and such a name survives
-      // readdir but cannot be passed back to open().
-      let raw: string;
-      try {
-        raw = readFileSync(page.path, "utf8");
-      } catch {
+  for (const page of pages) {
+    // Advance unconditionally, before any recognize/skip logic below, so the
+    // bar's total advance always equals pages.length regardless of how many
+    // pages get skipped.
+    bar.advance(1, `files=${stats.files} posts=${stats.posts}`);
+    // Two layouts reach this adapter. Flat: fybertech's own crawl names
+    // pages <board>_<threadno>.html, and the same directory holds its
+    // index.cgi listing pages, which have no posts and no board to derive.
+    // Nested: a mirrored site puts <threadno>.html inside a board directory,
+    // so the board is the directory and the number is the filename.
+    let board: string;
+    let threadNoFromFile: number | null;
+    const { board: pageBoard } = page;
+    if (pageBoard !== null) {
+      const m = /^(\d+)/.exec(page.name);
+      if (!m) {
         stats.badFiles++;
         continue;
       }
-      const doc = parse(raw);
-
-      // 4chan's own markup: chan-html's job, not this adapter's.
-      if (doc.querySelector(".postContainer")) {
-        stats.skippedNative++;
-        continue;
-      }
-
-      // The page's own `nothread<id>` beats the filename. Handmade archives
-      // annotate names -- `8 216.htm`, `1861111 2.htm` -- and a leading-digits
-      // regex reads those as thread 8 and thread 1861111, which then collide
-      // with, or misattribute, real threads. The markup is authoritative;
-      // fall back to the filename only when the page carries no id.
-      const idInMarkup = doc
-        .querySelectorAll("span[id]")
-        .map((s) => /^nothread(\d+)$/.exec(s.getAttribute("id") ?? "")?.[1])
-        .find((v) => v != null);
-      const threadNo = idInMarkup ? Number(idInMarkup) : threadNoFromFile;
-      if (threadNo == null || !Number.isInteger(threadNo) || threadNo <= 0) {
-        stats.badFiles++;
-        continue;
-      }
-
-      const posts = doc.querySelector(".post_com")
-        ? readLater(doc)
-        : doc.querySelector("td.reply, span.postername")
-          ? readClassic(doc, threadNo)
-          : [];
-      if (posts.length === 0) {
-        stats.badFiles++;
-        continue;
-      }
-
-      // The OP's own post number is the thread number, by definition. Prefer it
-      // over anything derived from the filename, which the handmade archives
-      // annotate.
-      const opNo = posts.find((p) => p.isOp)?.postNo;
-      const realThreadNo = opNo ?? threadNo;
-
-      stats.files++;
-      stats.threads++;
-      for (const p of posts) {
-        const ok = inserter.insert({
-          site: opts.site,
-          board,
-          threadNo: realThreadNo,
-          postNo: p.postNo,
-          isOp: p.isOp,
-          tsUtc: p.tsUtc,
-          name: p.name,
-          tripcode: p.tripcode,
-          subject: p.subject,
-          bodyText: p.bodyText,
-          mediaFilename: p.mediaFilename,
-          mediaMd5: null, // fybertech's pages do not carry file hashes
-        });
-        if (ok) stats.posts++;
-        else stats.skippedDup++;
-      }
-      if (stats.files % 25 === 0) {
-        process.stderr.write(`\rfiles=${stats.files} posts=${stats.posts}   `);
-      }
+      board = pageBoard;
+      threadNoFromFile = Number(m[1]);
+    } else {
+      const m = /^([a-z0-9]+)_(\d+)\.html?$/i.exec(page.name);
+      if (!m) continue; // index.cgi and friends: not a thread page at all
+      board = m[1];
+      threadNoFromFile = Number(m[2]);
+      if (opts.boards && !opts.boards.includes(board)) continue;
     }
-    // Flush tallies inside the same transaction as the posts they describe.
-    inserter.finish();
-    db.exec("COMMIT");
-  } catch (err) {
-    db.exec("ROLLBACK");
-    throw err;
+
+    // An unopenable page must not end the run: handmade archives carry
+    // filenames whose bytes are not valid UTF-8, and such a name survives
+    // readdir but cannot be passed back to open().
+    let raw: string;
+    try {
+      raw = readFileSync(page.path, "utf8");
+    } catch {
+      stats.badFiles++;
+      continue;
+    }
+    const doc = parse(raw);
+
+    // 4chan's own markup: chan-html's job, not this adapter's.
+    if (doc.querySelector(".postContainer")) {
+      stats.skippedNative++;
+      continue;
+    }
+
+    // The page's own `nothread<id>` beats the filename. Handmade archives
+    // annotate names -- `8 216.htm`, `1861111 2.htm` -- and a leading-digits
+    // regex reads those as thread 8 and thread 1861111, which then collide
+    // with, or misattribute, real threads. The markup is authoritative;
+    // fall back to the filename only when the page carries no id.
+    const idInMarkup = doc
+      .querySelectorAll("span[id]")
+      .map((s) => /^nothread(\d+)$/.exec(s.getAttribute("id") ?? "")?.[1])
+      .find((v) => v != null);
+    const threadNo = idInMarkup ? Number(idInMarkup) : threadNoFromFile;
+    if (threadNo == null || !Number.isInteger(threadNo) || threadNo <= 0) {
+      stats.badFiles++;
+      continue;
+    }
+
+    const posts = doc.querySelector(".post_com")
+      ? readLater(doc)
+      : doc.querySelector("td.reply, span.postername")
+        ? readClassic(doc, threadNo)
+        : [];
+    if (posts.length === 0) {
+      stats.badFiles++;
+      continue;
+    }
+
+    // The OP's own post number is the thread number, by definition. Prefer it
+    // over anything derived from the filename, which the handmade archives
+    // annotate.
+    const opNo = posts.find((p) => p.isOp)?.postNo;
+    const realThreadNo = opNo ?? threadNo;
+
+    stats.files++;
+    stats.threads++;
+    for (const p of posts) {
+      collectPending(
+        pending,
+        inserter
+          .insert({
+            site: opts.site,
+            board,
+            threadNo: realThreadNo,
+            postNo: p.postNo,
+            isOp: p.isOp,
+            tsUtc: p.tsUtc,
+            name: p.name,
+            tripcode: p.tripcode,
+            subject: p.subject,
+            bodyText: p.bodyText,
+            mediaFilename: p.mediaFilename,
+            mediaMd5: null, // fybertech's pages do not carry file hashes
+          })
+          .then((ok) => {
+            if (ok) stats.posts++;
+            else stats.skippedDup++;
+          }),
+      );
+    }
+    // Cheap -- just updates the displayed text, not I/O -- so refresh it
+    // every page rather than gating it behind the flush checkpoint below.
+    bar.message(`files=${stats.files} posts=${stats.posts}`);
+    if (stats.files % 25 === 0) {
+      await inserter.finish();
+      await Promise.all(pending);
+      pending.length = 0;
+    }
   }
-  process.stderr.write(`\rfiles=${stats.files} posts=${stats.posts}   \n`);
+  await inserter.finish();
+  await Promise.all(pending);
+  bar.stop(`${stats.posts} posts from ${stats.files} page(s)`);
   return stats;
 };
