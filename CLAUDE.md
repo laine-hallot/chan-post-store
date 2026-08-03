@@ -98,19 +98,39 @@ Things that will bite you here:
   Stage checks go through `runner.exec` for this reason. `ingest` is the
   exception — adapters read files directly, so it needs the archives visible
   locally.
-- **The local mount is sshfs, not SMB.** gvfs/SMB dropped repeatedly
+- **The local mount is NFS, not SMB or sshfs.** gvfs/SMB dropped repeatedly
   ("Transport endpoint is not connected", plus a stale "already mounted"
-  state that survived unmounting). sshfs reuses the same key as the runner,
-  so there is one auth path rather than two:
+  state that survived unmounting). sshfs (FUSE, over the same SSH key as the
+  runner) replaced it and mostly worked, but every FUSE operation round-trips
+  through a userspace daemon, and that daemon occasionally never got a reply
+  to a `readdir`/`open` request — the request sat forever (kernel wchan
+  `request_wait_answer`), degrading to an unkillable D-state process, for no
+  reason visible on either end (the remote `sftp-server` was healthy, a fresh
+  `ls` on the same path immediately after always worked). NFS replaced sshfs
+  for this reason: it's a kernel-native client with no userspace relay, and
+  its mount options make "give up and error" an explicit, tunable choice
+  instead of an unsolved FUSE mystery.
 
   ```sh
-  sshfs -o IdentityFile=~/.ssh/id_4chan_nas,IdentitiesOnly=yes,IdentityAgent=none,reconnect,ServerAliveInterval=15 \
+  sudo mount -t nfs4 -o soft,timeo=100,retrans=3,vers=4.1,rsize=1048576,wsize=1048576 \
     <host>:/path/to/share ~/mnt/laines_data
   ```
 
-  `IdentityAgent=none` is required, not optional: sshfs shells out to `ssh`,
-  which picks up the `Host *` agent config and then offers the wrong keys.
-  The `Memetic Sociology` symlink points at this mount.
+  Requires the NAS to have that share's NFS export enabled (Unraid: Settings
+  → NFS, then toggle export on the share) and requires `sudo` on this end —
+  unlike sshfs's FUSE mount, a kernel NFS mount needs `CAP_SYS_ADMIN`, so it
+  can't be done from an unprivileged agent session; run it in a real
+  terminal. `soft` is the option that matters: NFS defaults to `hard`, which
+  retries a stuck request forever (the exact same hang class sshfs had, by
+  design). `soft` gives up after `retrans` tries and returns an error instead
+  — safe here because this mount is read-only for ingest. `hard` is usually
+  recommended specifically because a `soft` mount can silently corrupt data
+  on a write that times out mid-flight; that risk doesn't apply to a
+  read-only workload. The `Memetic Sociology` symlink points at this mount.
+
+  Unmounting: `fusermount -u` doesn't apply to NFS. Use `sudo umount
+  ~/mnt/laines_data`, or `sudo umount -l` (lazy) if something still has it
+  busy.
 
 ### post_stats, the summary table
 
@@ -234,6 +254,22 @@ Also: `source: original` vs `derivative` does not cleanly separate payload
 from bookkeeping (`_files.xml` is marked `original`), and IA reports a stale
 md5 and size 0 for `<id>_files.xml` because it cannot contain its own
 checksum — it is excluded from verification in `packages/cli/src/archive-org.ts`.
+
+## Known gaps
+
+**`ingest-all` cannot tell what it already finished.** It re-runs every ready
+source from the top, so resuming an interrupted pass means re-reading tens of
+GB that will only be discarded by `ON CONFLICT DO NOTHING`. The `--exclude
+<source>` flag is a hand-driven stopgap; the fix is a `completed_at` column on
+`sources`, set when a source's adapter returns normally, and skipped by
+default on the next run.
+
+Record completion, **not** progress: a source can get a long way in and still
+abort (`4chan-threads` failed 13.5M posts deep on a NUL byte), so "this source
+has rows" is not the same as "this source is done" and would wrongly mark that
+one finished. Only a clean adapter return counts. Note also that a source
+being complete is not permanent — re-staging an archive, or fixing an adapter
+bug that silently dropped rows, has to clear it again.
 
 ## Conventions
 
