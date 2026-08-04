@@ -60,7 +60,21 @@ CREATE INDEX IF NOT EXISTS idx_posts_stats
 
 CREATE INDEX IF NOT EXISTS idx_posts_src_ts ON posts (source_id, ts_utc);
 
-CREATE INDEX IF NOT EXISTS idx_posts_search ON posts USING GIN (search_vector);
+-- GIN buffers new entries in a "pending list" and periodically merges it into
+-- the index proper. At the default 4MB that merge runs constantly and touches
+-- scattered pages, and it dominates everything else during a bulk ingest:
+-- measured mid-run at 225M rows, this one index accounted for 1.01 billion of
+-- the 1.02 billion index blocks read from disk (99.4%), sitting at a 74.9%
+-- cache hit rate while every other index on posts held 99-100%. A larger
+-- pending list trades fewer, larger, more sequential merges for slower
+-- searches while the list is unmerged -- the right side of that trade here,
+-- since ingest is write-heavy and searches happen afterwards.
+--
+-- NOTE: IF NOT EXISTS means this clause does NOT reach an index that already
+-- exists. On a store created before this line, apply it by hand:
+--   ALTER INDEX idx_posts_search SET (gin_pending_list_limit = 262144);
+CREATE INDEX IF NOT EXISTS idx_posts_search ON posts USING GIN (search_vector)
+  WITH (gin_pending_list_limit = 262144);  -- kB, i.e. 256MB
 
 -- Rolled-up post counts, maintained during ingest.
 --
@@ -96,6 +110,32 @@ CREATE UNIQUE INDEX IF NOT EXISTS post_stats_key
 CREATE INDEX IF NOT EXISTS idx_post_stats_board
   ON post_stats (site, board, year);
 `;
+
+/**
+ * Server-level settings that matter for ingest, recorded here because no
+ * amount of DDL can express them -- they are cluster-wide, not schema, so
+ * `openDb` cannot apply them and a fresh store will NOT pick them up.
+ * Apply once per server, as a superuser:
+ *
+ *   ALTER SYSTEM SET max_wal_size = 16384;              -- MB
+ *   ALTER SYSTEM SET checkpoint_completion_target = 0.9;
+ *   SELECT pg_reload_conf();                            -- no restart needed
+ *
+ *   ALTER SYSTEM SET shared_buffers = '4GB';            -- needs a RESTART
+ *
+ * At the stock Docker defaults (max_wal_size 1GB, shared_buffers 128MB) a
+ * bulk ingest blows through the WAL budget every few seconds and forces a
+ * checkpoint: measured mid-run, 2355 *requested* checkpoints against 18
+ * scheduled ones, with backends stalling on LWLock:WALWrite. Raising
+ * max_wal_size stopped the storm outright (zero forced checkpoints in the
+ * next four minutes).
+ *
+ * Be aware it bought only ~7% throughput (5.88M -> 6.30M rows/hour): the
+ * checkpoint storm was real but was not the bottleneck. That turned out to
+ * be GIN pending-list merges -- see the note on idx_posts_search above.
+ * Recorded so the next person does not re-run the same experiment and
+ * conclude, wrongly, that checkpointing is where the time goes.
+ */
 
 export const openDb = async (connectionString: string): Promise<Pool> => {
   const pool = new PgPool({

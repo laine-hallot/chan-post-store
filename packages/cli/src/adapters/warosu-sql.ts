@@ -14,9 +14,16 @@ import { nyWallToUtc, parseTuples } from "../mysqldump.ts";
  *   - `parent` (0 for OPs) instead of `thread_num` + `op`
  *   - the poster's original filename is in `media`; `media_filename` holds
  *     the server's timestamp name
- *   - one INSERT statement per row instead of extended inserts
  * `timestamp` is New-York-shifted like all Fuuka descendants and is
  * normalized to true UTC on ingest.
+ *
+ * The statement layout is NOT stable across dumps: 2023-03-15 emits one
+ * INSERT per row, 2025-08-15 uses extended inserts (many rows per statement).
+ * The tuple parser handles both, but nothing that counts or sizes a dump may
+ * assume either -- `grep -c '^INSERT INTO'` is a row count on the 2023 dump
+ * and a statement count on the 2025 one, off by three orders of magnitude
+ * (4,502,532 vs 1,393 for `cgl`), and file sizes are likewise not comparable
+ * between the two.
  */
 
 const REQUIRED_COLS = ["num", "subnum", "parent", "timestamp", "comment", "media"];
