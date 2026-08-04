@@ -22,7 +22,6 @@ import {
   openDb,
   getOrCreateSource,
   markSourceCompleted,
-  clearSourceCompleted,
   completedSources,
 } from "./db.ts";
 import {
@@ -66,7 +65,7 @@ const USAGE = `Usage:
   cli.ts prepare <source> [--remote <host>] [--local] [--dry-run] [--force]
   cli.ts warc-extract --warc <file.warc[.gz]> --out <dir> [--host <regex>]
   cli.ts ingest <source> --db <file> [--board <b> ...]
-  cli.ts ingest-all --db <file> [--dry-run] [--exclude <source> ...] [--redo <source> ...] [--all]
+  cli.ts ingest-all --db <file> [--dry-run] [--exclude <source> ...] [--redo <source> ...] [--force]
   cli.ts boards --db <file>
   cli.ts refresh-stats --db <file>
   cli.ts count --db <file> --phrase <text> [--board <b>] [--site 4chan] [--from <date>] [--to <date>] [--by month|day|year|total]
@@ -83,8 +82,9 @@ given), so the transfer goes straight there; --local forces this machine.
 
 ingest-all skips sources whose last run finished cleanly, so an interrupted
 pass resumes instead of re-reading tens of GB that ON CONFLICT would discard.
-Re-staging an archive or fixing an adapter bug invalidates that: use --redo
-<source> to clear one source's completion, or --all to ignore it entirely.
+Re-staging an archive or fixing an adapter bug invalidates that: --redo
+<source> re-ingests one anyway, --force re-ingests every one. Both refresh
+completed_at when the run finishes.
 
 Dates are YYYY, YYYY-MM, or YYYY-MM-DD (UTC). --from/--to are both inclusive:
 --to 2018-09 means "through the end of September 2018".`;
@@ -513,7 +513,7 @@ const cmdIngestAll = async (argv: string[]): Promise<void> => {
       "dry-run": { type: "boolean" },
       exclude: { type: "string", multiple: true },
       redo: { type: "string", multiple: true },
-      all: { type: "boolean" },
+      force: { type: "boolean" },
     },
   });
 
@@ -565,11 +565,12 @@ const cmdIngestAll = async (argv: string[]): Promise<void> => {
   const results: { name: string; ok: boolean; posts: number; secs: number }[] = [];
   const db = await openDb(values.db);
   try {
-    const done = values.all ? new Map<string, Date>() : await completedSources(db);
-    // --redo means "treat as never done", which is just a deletion from the
-    // set the skip check consults. The database is only written on a real
-    // run: a dry run that cleared completion would leave the store changed by
-    // a command whose whole contract is that it changes nothing.
+    const done = values.force ? new Map<string, Date>() : await completedSources(db);
+    // --redo and --force only decide what the skip check below sees; neither
+    // writes. A re-run that succeeds refreshes completed_at through the same
+    // markSourceCompleted call every other run uses, and a re-run that fails
+    // leaves the previous timestamp alone rather than destroying the record
+    // of when the source last did finish.
     for (const { id, manifest } of ready) {
       if (redo.has(id)) done.delete(manifest.name);
     }
@@ -589,17 +590,11 @@ const cmdIngestAll = async (argv: string[]): Promise<void> => {
       return;
     }
 
-    // Clear before running, not after: if the re-run itself fails, the stale
-    // timestamp must not survive to tell the next run this source is done.
-    for (const { id, manifest } of ready) {
-      if (redo.has(id)) await clearSourceCompleted(db, manifest.name);
-    }
-
     if (skipped.length) {
       console.log(
         `skipping ${skipped.length} already-complete source(s): ` +
           `${skipped.map((r) => r.id).join(", ")}\n` +
-          `  (re-run one with --redo <source>, or all of them with --all)`,
+          `  (re-run one with --redo <source>, or every one with --force)`,
       );
     }
     if (ready.length === 0) {

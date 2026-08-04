@@ -272,9 +272,16 @@ doesn't mark either: it covers part of the source by construction.
 
 Completion is not permanent — re-staging an archive, or fixing an adapter bug
 that silently dropped rows, means the mark no longer describes what a run
-would produce. `--redo <source>` clears one, `--all` ignores the column for a
-run. `--redo` writes only on a real run; under `--dry-run` it reports the
-effect without touching the store.
+would produce. `--redo <source>` re-ingests one anyway, `--force` re-ingests
+every one; both refresh `completed_at` through the same call every other run
+uses. Neither *clears* the column up front, so a re-run that fails leaves the
+record of when the source last did finish intact — at the cost that a failed
+`--redo` will be skipped by the next plain run unless you repeat the flag.
+
+`--force` rather than `--all` deliberately: `ingest-all` is already a command
+name, and `download --all` means something else entirely (include the files
+`download.exclude` filters out). `--force` matches how `download` and
+`prepare` already spell "re-run what would otherwise be skipped".
 
 `--exclude <source>` still exists for skipping a source you don't want on a
 particular run, which is a different question from whether it finished.
