@@ -286,14 +286,32 @@ name, and `download --all` means something else entirely (include the files
 `--exclude <source>` still exists for skipping a source you don't want on a
 particular run, which is a different question from whether it finished.
 
-## Known gaps
+### Two schemas: what ingest needs vs what queries need
 
-**The schema in `db.ts` and the live database can diverge, and `openDb`
-silently reconciles them in the wrong direction.** `openDb` runs the whole
-`SCHEMA` string on every connect, so any index dropped by hand — e.g. to bulk
-load without paying index maintenance per row — is recreated by the next
-command that opens a pool, on a table with hundreds of millions of rows. There
-is no "ingest-only schema" concept; adding one is the fix.
+`openDb` runs `SCHEMA` on every connect, so everything in it must be cheap to
+re-assert on a store with hundreds of millions of rows. That rules out the
+query-time indexes on `posts`, which live in `QUERY_INDEXES` instead and are
+managed explicitly by `indexes build|drop|status`.
+
+The split is not just about connect cost. Ingest needs exactly one index —
+the `UNIQUE (site, board, post_no)` that `ON CONFLICT` targets — and pays for
+every other one on every insert while getting nothing back. On the current
+corpus that is ~72GB of write amplification, and GIN pending-list merges alone
+accounted for 1.01 billion of the 1.02 billion index blocks read from disk
+(99.4%) during the last full pass. Building an index from a finished table is
+a sort; maintaining it during load is hundreds of millions of random updates.
+
+So a bulk load is `indexes drop` → `ingest-all` → `indexes build`.
+`ingest-all` warns (does not act) when it finds them present.
+
+`indexes build` raises `maintenance_work_mem` for its own session
+(`--memory`, default 4GB) rather than relying on the global, which stays at
+256MB because `autovacuum_work_mem` inherits it and three autovacuum workers
+each claiming several GB during an ingest is not the trade being made.
+
+These indexes land in the default tablespace (the SSD); the `posts` heap is in
+the `slow` tablespace on the array. Index access is random and wants the SSD.
+Heap writes during ingest are sequential appends and do not.
 
 ## Conventions
 

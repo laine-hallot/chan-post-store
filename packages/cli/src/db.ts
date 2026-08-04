@@ -66,30 +66,9 @@ CREATE TABLE IF NOT EXISTS posts (
   UNIQUE (site, board, post_no)
 );
 
-CREATE INDEX IF NOT EXISTS idx_posts_board_ts ON posts (site, board, ts_utc);
-
--- covering index for the list/stats queries: distinct post/thread counts and
--- date spans per board without touching the (body-text-heavy) table rows
-CREATE INDEX IF NOT EXISTS idx_posts_stats
-  ON posts (site, board, post_no, thread_no, ts_utc);
-
-CREATE INDEX IF NOT EXISTS idx_posts_src_ts ON posts (source_id, ts_utc);
-
--- GIN buffers new entries in a "pending list" and periodically merges it into
--- the index proper. At the default 4MB that merge runs constantly and touches
--- scattered pages, and it dominates everything else during a bulk ingest:
--- measured mid-run at 225M rows, this one index accounted for 1.01 billion of
--- the 1.02 billion index blocks read from disk (99.4%), sitting at a 74.9%
--- cache hit rate while every other index on posts held 99-100%. A larger
--- pending list trades fewer, larger, more sequential merges for slower
--- searches while the list is unmerged -- the right side of that trade here,
--- since ingest is write-heavy and searches happen afterwards.
---
--- NOTE: IF NOT EXISTS means this clause does NOT reach an index that already
--- exists. On a store created before this line, apply it by hand:
---   ALTER INDEX idx_posts_search SET (gin_pending_list_limit = 262144);
-CREATE INDEX IF NOT EXISTS idx_posts_search ON posts USING GIN (search_vector)
-  WITH (gin_pending_list_limit = 262144);  -- kB, i.e. 256MB
+-- NOTE: the query-time indexes on posts are deliberately NOT here -- see
+-- QUERY_INDEXES below. What remains is only what ingest itself needs: the
+-- primary key, and the UNIQUE constraint that ON CONFLICT targets.
 
 -- Rolled-up post counts, maintained during ingest.
 --
@@ -127,6 +106,76 @@ CREATE INDEX IF NOT EXISTS idx_post_stats_board
 `;
 
 /**
+ * Indexes that only queries need, kept out of `SCHEMA` on purpose.
+ *
+ * `openDb` runs `SCHEMA` on every connect, which is fine for cheap DDL but
+ * catastrophic for these: on a 288M-row store they are ~72GB, and any command
+ * that opened a pool would silently rebuild whatever had been dropped. Worse,
+ * ingest pays for them on *every insert* while getting nothing back -- only
+ * the UNIQUE constraint matters to ON CONFLICT. Measured on the last full
+ * pass, GIN pending-list merges alone accounted for 1.01 billion of the 1.02
+ * billion index blocks read from disk (99.4%).
+ *
+ * So the lifecycle is explicit: `indexes drop`, ingest, `indexes build`.
+ * Building from a finished table is a sort, not 500M random index updates.
+ *
+ * These land in the database's default tablespace, which is the SSD -- the
+ * `posts` heap lives in the `slow` tablespace on the array. Index reads are
+ * random and want the SSD; heap writes during ingest are sequential appends
+ * and do not.
+ */
+export const QUERY_INDEXES: { name: string; sql: string }[] = [
+  {
+    name: "idx_posts_board_ts",
+    sql: "CREATE INDEX IF NOT EXISTS idx_posts_board_ts ON posts (site, board, ts_utc)",
+  },
+  {
+    // covering index for the list/stats queries: distinct post/thread counts
+    // and date spans per board without touching the (body-text-heavy) rows
+    name: "idx_posts_stats",
+    sql: "CREATE INDEX IF NOT EXISTS idx_posts_stats ON posts (site, board, post_no, thread_no, ts_utc)",
+  },
+  {
+    name: "idx_posts_src_ts",
+    sql: "CREATE INDEX IF NOT EXISTS idx_posts_src_ts ON posts (source_id, ts_utc)",
+  },
+  {
+    // gin_pending_list_limit is in kB (262144 = 256MB), not a unit string.
+    // GIN buffers new entries in a pending list and periodically merges it
+    // into the index proper; at the default 4MB that merge runs constantly
+    // over scattered pages. A larger list trades fewer, larger, more
+    // sequential merges for slower searches while the list is unmerged --
+    // the right side of that trade, since searches happen after ingest.
+    //
+    // IF NOT EXISTS means this does NOT reach an index that already exists.
+    // On a store built before this setting, apply it by hand:
+    //   ALTER INDEX idx_posts_search SET (gin_pending_list_limit = 262144);
+    name: "idx_posts_search",
+    sql:
+      "CREATE INDEX IF NOT EXISTS idx_posts_search ON posts USING GIN (search_vector)" +
+      " WITH (gin_pending_list_limit = 262144)",
+  },
+];
+
+/** Which query indexes currently exist, with their on-disk sizes. */
+export const queryIndexStatus = async (
+  db: Pool,
+): Promise<{ name: string; exists: boolean; bytes: number }[]> => {
+  const { rows } = await db.query<{ relname: string; bytes: number }>(
+    `SELECT c.relname, pg_relation_size(c.oid)::bigint AS bytes
+       FROM pg_class c
+      WHERE c.relkind = 'i' AND c.relname = ANY($1)`,
+    [QUERY_INDEXES.map((i) => i.name)],
+  );
+  const found = new Map(rows.map((r) => [r.relname, r.bytes]));
+  return QUERY_INDEXES.map((i) => ({
+    name: i.name,
+    exists: found.has(i.name),
+    bytes: found.get(i.name) ?? 0,
+  }));
+};
+
+/**
  * Server-level settings that matter for ingest, recorded here because no
  * amount of DDL can express them -- they are cluster-wide, not schema, so
  * `openDb` cannot apply them and a fresh store will NOT pick them up.
@@ -136,7 +185,12 @@ CREATE INDEX IF NOT EXISTS idx_post_stats_board
  *   ALTER SYSTEM SET checkpoint_completion_target = 0.9;
  *   SELECT pg_reload_conf();                            -- no restart needed
  *
- *   ALTER SYSTEM SET shared_buffers = '4GB';            -- needs a RESTART
+ *   ALTER SYSTEM SET shared_buffers = '16GB';           -- needs a RESTART
+ *
+ * maintenance_work_mem stays modest globally (256MB) because autovacuum_work_mem
+ * inherits it, and three autovacuum workers each claiming several GB is not
+ * what you want running alongside an ingest. `indexes build` raises it for its
+ * own session instead, which is where it actually matters.
  *
  * At the stock Docker defaults (max_wal_size 1GB, shared_buffers 128MB) a
  * bulk ingest blows through the WAL budget every few seconds and forces a

@@ -23,6 +23,8 @@ import {
   getOrCreateSource,
   markSourceCompleted,
   completedSources,
+  QUERY_INDEXES,
+  queryIndexStatus,
 } from "./db.ts";
 import {
   ingestInputs,
@@ -35,6 +37,7 @@ import {
 } from "./manifest.ts";
 import type { Manifest } from "./manifest.ts";
 import { runPrepare } from "./prepare.ts";
+import { makeBar } from "./progress.ts";
 import { makeRunner, shQuote } from "./runner.ts";
 import { boardList, hasStats, refreshPostStats } from "./stats.ts";
 import { htmlPages, uriToFilename } from "./warc.ts";
@@ -66,6 +69,7 @@ const USAGE = `Usage:
   cli.ts warc-extract --warc <file.warc[.gz]> --out <dir> [--host <regex>]
   cli.ts ingest <source> --db <file> [--board <b> ...]
   cli.ts ingest-all --db <file> [--dry-run] [--exclude <source> ...] [--redo <source> ...] [--force]
+  cli.ts indexes build|drop|status --db <file> [--memory 4GB]
   cli.ts boards --db <file>
   cli.ts refresh-stats --db <file>
   cli.ts count --db <file> --phrase <text> [--board <b>] [--site 4chan] [--from <date>] [--to <date>] [--by month|day|year|total]
@@ -85,6 +89,12 @@ pass resumes instead of re-reading tens of GB that ON CONFLICT would discard.
 Re-staging an archive or fixing an adapter bug invalidates that: --redo
 <source> re-ingests one anyway, --force re-ingests every one. Both refresh
 completed_at when the run finishes.
+
+The query-time indexes on posts are NOT created on connect — ingest only
+needs the UNIQUE constraint, and maintaining the rest per-insert costs far
+more than sorting them once at the end. A bulk load is therefore:
+  indexes drop  ->  ingest-all  ->  indexes build
+"indexes status" says which are present. Queries want them; ingest does not.
 
 Dates are YYYY, YYYY-MM, or YYYY-MM-DD (UTC). --from/--to are both inclusive:
 --to 2018-09 means "through the end of September 2018".`;
@@ -460,6 +470,103 @@ const cmdIngest = async (argv: string[]): Promise<void> => {
   }
 };
 
+/** Elapsed since `t0`, as a human duration. Index builds run into hours. */
+const fmtSecs = (t0: number): string => {
+  const s = (Date.now() - t0) / 1000;
+  if (s < 90) return `${s.toFixed(1)}s`;
+  if (s < 5400) return `${(s / 60).toFixed(1)}m`;
+  return `${(s / 3600).toFixed(2)}h`;
+};
+
+/**
+ * Build, drop, or report the query-time indexes on `posts`.
+ *
+ * These are not part of the connect-time schema, so they have to be managed
+ * on purpose. The cycle for a bulk load is `indexes drop`, ingest, `indexes
+ * build`: maintaining them per-insert costs far more than sorting them once
+ * at the end, and on the current corpus they are ~72GB of write amplification
+ * that ingest gets nothing from.
+ */
+const cmdIndexes = async (argv: string[]): Promise<void> => {
+  const action = argv[0];
+  if (!action || !["build", "drop", "status"].includes(action)) {
+    fail("indexes requires one of: build, drop, status");
+  }
+  const { values } = parseArgs({
+    args: argv.slice(1),
+    options: { db: { type: "string" }, memory: { type: "string" } },
+  });
+  if (!values.db) fail("indexes requires --db");
+
+  const db = await openDb(values.db);
+  try {
+    const before = await queryIndexStatus(db);
+
+    if (action === "status") {
+      printTable(
+        ["index", "present", "size"],
+        before.map((i) => [i.name, i.exists ? "yes" : "no", i.exists ? humanBytes(i.bytes) : "-"]),
+      );
+      return;
+    }
+
+    if (action === "drop") {
+      const present = before.filter((i) => i.exists);
+      if (!present.length) {
+        console.log("no query indexes present — nothing to drop");
+        return;
+      }
+      for (const i of present) {
+        const t0 = Date.now();
+        await db.query(`DROP INDEX IF EXISTS ${i.name}`);
+        log.success(`dropped ${i.name} (${humanBytes(i.bytes)}) in ${fmtSecs(t0)}`);
+      }
+      console.log(`freed ${humanBytes(present.reduce((n, i) => n + i.bytes, 0))}`);
+      return;
+    }
+
+    // build. maintenance_work_mem is set per session rather than cluster-wide
+    // because autovacuum_work_mem inherits the global, and three autovacuum
+    // workers each holding several GB alongside an ingest is not the trade
+    // being made here.
+    const memory = values.memory ?? "4GB";
+    const missing = before.filter((i) => !i.exists);
+    if (!missing.length) {
+      console.log("all query indexes already present — nothing to build");
+      return;
+    }
+    console.log(
+      `building ${missing.length} index(es) with maintenance_work_mem=${memory}\n` +
+        `  each takes an ACCESS EXCLUSIVE lock on posts; queries against it will block`,
+    );
+    for (const i of missing) {
+      const spec = QUERY_INDEXES.find((q) => q.name === i.name);
+      if (!spec) continue;
+      const bar = makeBar({});
+      bar.start(`${i.name}`);
+      const t0 = Date.now();
+      // A dedicated client: SET is per-session, and a pooled query could
+      // otherwise land on a connection that never saw it.
+      const client = await db.connect();
+      try {
+        await client.query(`SET maintenance_work_mem = '${memory}'`);
+        await client.query(spec.sql);
+      } finally {
+        client.release();
+      }
+      bar.stop(`${i.name} built in ${fmtSecs(t0)}`);
+    }
+
+    const after = await queryIndexStatus(db);
+    printTable(
+      ["index", "size"],
+      after.filter((i) => i.exists).map((i) => [i.name, humanBytes(i.bytes)]),
+    );
+  } finally {
+    await db.end();
+  }
+};
+
 /** A source whose manifest resolves to something ingestible. */
 interface ReadySource {
   id: string;
@@ -588,6 +695,19 @@ const cmdIngestAll = async (argv: string[]): Promise<void> => {
         console.log(`  run   ${id} [${manifest.adapter}] <- ${manifest.path}`);
       }
       return;
+    }
+
+    // Not an error and not auto-fixed -- dropping an index is the user's
+    // call, and rebuilding one costs hours. But a long unattended run that
+    // is silently paying for them is worth one line up front.
+    const present = (await queryIndexStatus(db)).filter((i) => i.exists);
+    if (present.length) {
+      log.warn(
+        `${present.length} query index(es) present ` +
+          `(${humanBytes(present.reduce((n, i) => n + i.bytes, 0))}) — ingest maintains ` +
+          `these per row for no benefit.\n  \`indexes drop\` first, \`indexes build\` after, ` +
+          `if this is a bulk load.`,
+      );
     }
 
     if (skipped.length) {
@@ -1100,6 +1220,9 @@ switch (cmd) {
     break;
   case "ingest-all":
     await cmdIngestAll(rest);
+    break;
+  case "indexes":
+    await cmdIndexes(rest);
     break;
   case "boards":
     await cmdBoards(rest);
