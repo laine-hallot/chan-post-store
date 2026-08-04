@@ -1,5 +1,6 @@
 {
   "dir": "Memetic Sociology/Datasets/4chan/desuarchive_201903_g_1",
+  "dead-end": true,
   "source": {
     "type": "internet-archive",
     "name": "Desuarchive /g/ images (2019-03, part 1)",
