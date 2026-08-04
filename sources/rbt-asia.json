@@ -4,13 +4,14 @@
     "type": "internet-archive",
     "name": "RebeccaBlackTech 4chan Archiver Backups",
     "link": "https://archive.org/details/rbt-asia",
-    "short-desc": "RebeccaBlackTech's Archive of /soc/, database."
+    "short-desc": "RebeccaBlackTech's Archive of /soc/, database.",
+    "capture": "1.4TB item, of which only 34.9GB is post data — 106 files, 92 of them image or thumbnail payloads. Surveyed against archive.org/metadata/rbt-asia (not a directory listing).\n\nDESPITE THE SHORT-DESC IT IS NOT ONLY /soc/. IA subject tags list /soc/, /g/, /mu/, /qa/, /w/. The bulk is `4klaani_20170407.zip` (10.8GB) plus four `daily_4klaani_*.sql.gz` (5.5-6.6GB each); 4klaani is RBT's database name, so those are near-certainly the full multi-board DB. Only soc and w have their own dedicated dumps (soc-db.tar.gz 324MB, w-20160213.sql.gz 49MB), plus qa and con as .sql.tar.xz. Whether /g/ is actually inside the 4klaani dumps is UNVERIFIED and can only be settled by downloading one.\n\nDATE RANGE: 2012-11-13 (IA `date`, when the archive began) through 2017-04-08, which is the newest filename date in the entire item. Added to IA 2015-10-14. This does NOT reach 2018+ — the site kept running but nothing later was ever uploaded here.\n\nEXCLUDE PATTERN TRAPS. `-thumbs?-` was wrong and leaked soc-thumb.tar.gz (1.1GB), because that one file uses a period rather than a hyphen after the token; `-thumbs?[-.]` covers both. Two near-miss pairs make lazier patterns dangerous: soc-db.tar.gz (KEEP) vs soc-thumb.tar.gz (SKIP), and w-20160213.sql.gz (KEEP) vs w-thumb-20160214.tar.gz (SKIP) — the latter differ by ONE DAY in the date, so anything keyed on `w-2016` would silently eat a dump. Names are also nested: the 71 mu image volumes are `mu-img-20161127/0327.tar.gz`, so patterns must match against the full path.\n\nSTILL BROKEN, DO NOT TRUST THE prepare STEPS: they were written for an item shape that does not exist. `files.source` points at ./rbt-asia.zip and prepare runs `7z x source/rbt-asia.zip`, but the item ships no such single zip — it is individual files in four different formats (.zip, .sql.gz, .tar.gz, .sql.tar.xz). Rewrite prepare after the download, once the archives' internal layout is visible.\n\nADAPTER UNVERIFIED: ingest.adapter is set to fuuka-sql, but that was assumed, not tested. installgentoo-net is the cautionary case — it is genuinely original-Fuuka schema (`parent`, no `thread_num`), which fuuka-sql silently accepts zero tables from rather than erroring, and it needed warosu-sql instead. Check the CREATE TABLE before trusting a clean exit code."
   },
   "download": {
     "exclude": [
       "-images?-",
       "-img-",
-      "-thumbs?-"
+      "-thumbs?[-.]"
     ]
   },
   "prepare": [
