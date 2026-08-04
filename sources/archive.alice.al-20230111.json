@@ -1,0 +1,42 @@
+{
+  "dir": "Memetic Sociology/Datasets/4chan/archive.alice.al-20230111",
+  "source": {
+    "type": "internet-archive",
+    "name": "archive.alice.al (2023-01-11)",
+    "link": "https://archive.org/details/archive.alice.al-20230111",
+    "short-desc": "Board dumps and images from archive.alice.al, January 2023",
+    "capture": "2.2TB item of which only 6.9GB is post data. 67 files across THREE nested prefixes: archive.alice.al-20230111-image/ (20 files, 2.2TB), archive.alice.al-20230111-thumb/ (21 files, 27.5GB) and archive.alice.al-20230111-sql/ (20 board mysqldumps as .sql.bz2, plus a meta dump and a README). Surveyed against archive.org/metadata.\n\nNAMES ARE NESTED, which is what the exclude patterns key on. THERE ARE THREE PREFIXES, NOT TWO — excluding only `-image/` still pulls 27.5GB of thumbnails, because -thumb/ is a separate top-level directory and is easy to miss when scanning the file list by size (its largest entry is 8.5GB, far below the image tarballs). Both `-image/` and `-thumb/` are required. Verified with --dry-run: 67 files / 2.2TB reduces to 26 files / 6.9GB.\n\nBOARDS (20): vp (2.2GB), vt (1.9), bant (1.0), toy (342MB), out (199), pw (195), c (163), wg (158), p (121), news (103), wsr (100), e (100), vst (95), n (76), vmg (68), qst (61), w (55), vip (7.3), i (4.4), con (0.4).\n\nNO /g/ AND NO /r9k/ — this is the alternative-board set, so it does not touch either of the two gaps currently driving the corpus. Its real value is /vt/ and /vp/ at 2023-01, and boards like bant, vst, vmg, pw and qst that no other source in the registry carries at all.\n\nNOTE THE DATE SKEW inside the item: most dumps are stamped 20230111 but vp and vt are 20230114, three days later than the item name. Harmless, but it means filename dates are not uniform and nothing should key on them.\n\nADAPTER UNVERIFIED. fuuka-sql is set on the assumption that alice.al runs Asagi/FoolFuuka like most of this generation of archive, but nothing in the item states the schema and it has not been checked. fuuka-sql silently accepts zero tables when the schema does not match rather than erroring — see installgentoo-net, which turned out to need warosu-sql — so read the CREATE TABLE before trusting a clean run. archive.alice.al-20230111-sql/README.md (925 bytes) is the first thing to read after download."
+  },
+  "download": {
+    "exclude": [
+      "-image/",
+      "-thumb/"
+    ]
+  },
+  "prepare": [
+    {
+      "name": "decompress the bzip2 per-board dumps",
+      "run": "mkdir -p extracted && find . -name '*.sql.bz2' -not -path './out/*' -not -path './extracted/*' | while read -r f; do b=$(basename \"${f%.bz2}\"); [ -e \"extracted/$b\" ] || [ -e \"out/$b\" ] || bunzip2 -c \"$f\" > \"extracted/$b\"; done"
+    },
+    {
+      "name": "stage the .sql dumps for ingest",
+      "run": "mkdir -p out && find extracted -name '*.sql' -exec sh -c 'cp -al \"$1\" out/ 2>/dev/null || cp -a \"$1\" out/' _ {} ';'"
+    }
+  ],
+  "ingest": {
+    "adapter": "fuuka-sql",
+    "path": "Memetic Sociology/Datasets/4chan/archive.alice.al-20230111/out",
+    "site": "4chan"
+  },
+  "files": {
+    "source": "./source",
+    "extract": {
+      "path": "./extracted",
+      "script": ""
+    },
+    "out": {
+      "path": "./out",
+      "script": ""
+    }
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "dir": "Memetic Sociology/Datasets/4chan/warosu-database-backup-2026-07-15",
+  "source": {
+    "type": "internet-archive",
+    "name": "Warosu Database Backup 2026-07-15",
+    "link": "https://archive.org/details/warosu-database-backup-2026-07-15",
+    "short-desc": "Database backup of warosu.org on 2026-07-15 in mysqldump (SQL statements) format",
+    "capture": "12 per-board mysqldumps as .sql.zst (3, biz, cgl, ck, diy, fa, ic, jp, lit, sci, vr, vt), 16.7GB compressed — the same board set as the 2023-03-15 and 2025-08-15 dumps, and the newest warosu backup on IA as of writing. Surveyed against archive.org/metadata: 16 files, 12 of them board dumps, no image payloads at all, so no download.exclude is needed.\n\nDO NOT ASSUME THIS SUPERSEDES THE EARLIER DUMPS. Diffing 2023-03-15 against 2025-08-15 showed the newer one ADDED 83,238,889 posts but also LOST 178,739 that the older one had (jp 116,122, lit 42,661, sci 18,630, fa 1,326), invisible at board level because all 12 boards still appear. Warosu demonstrably drops content between snapshots. Until this dump is diffed the same way against 2025-08-15, all three must stay ingested, and none may be deleted on the strength of being older.\n\nSTATEMENT FORMAT IS NOT STABLE ACROSS WAROSU DUMPS and must be checked rather than assumed: 2023-03-15 emits one INSERT per row, 2025-08-15 uses extended inserts. That difference makes `grep -c '^INSERT INTO'` a row count on one and a statement count on the other (4,502,532 vs 1,393 for cgl), and makes file sizes non-comparable between dumps. Which form this one uses is UNVERIFIED.\n\nThe adapter is warosu-sql, which is the original-Fuuka adapter (`parent`, no `thread_num`) and has handled every warosu dump so far; timestamps are New-York wall time and are converted on ingest. Ghost posts (subnum != 0, replies made on warosu itself rather than 4chan) are skipped."
+  },
+  "prepare": [
+    {
+      "name": "unpack the zip, if the item was fetched in that form",
+      "run": "mkdir -p extracted && if [ -z \"$(ls out/*.sql 2>/dev/null)\" ] && ! ls extracted/*.sql.zst extracted/*.sql >/dev/null 2>&1 && [ -z \"$(find . -maxdepth 3 -name '*.sql.zst' -not -path './extracted/*' -print -quit)\" ]; then z=$(find . -maxdepth 3 -name '*.zip' -print -quit); [ -n \"$z\" ] && 7z x -aos -o./extracted \"$z\"; fi; true"
+    },
+    {
+      "name": "decompress the zstd per-board dumps",
+      "run": "mkdir -p extracted && find . -name '*.sql.zst' -not -path './out/*' | while read -r f; do b=$(basename \"${f%.zst}\"); [ -e \"extracted/$b\" ] || [ -e \"out/$b\" ] || unzstd -q -o \"extracted/$b\" \"$f\"; done"
+    },
+    {
+      "name": "stage the .sql dumps for ingest",
+      "run": "mkdir -p out && find extracted -name '*.sql' -exec sh -c 'cp -al \"$1\" out/ 2>/dev/null || cp -a \"$1\" out/' _ {} ';'"
+    }
+  ],
+  "ingest": {
+    "adapter": "warosu-sql",
+    "path": "Memetic Sociology/Datasets/4chan/warosu-database-backup-2026-07-15/out",
+    "site": "4chan"
+  },
+  "files": {
+    "source": "./source",
+    "extract": {
+      "path": "./extracted",
+      "script": ""
+    },
+    "out": {
+      "path": "./out",
+      "script": ""
+    }
+  }
+}

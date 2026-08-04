@@ -1,0 +1,36 @@
+{
+  "dir": "Memetic Sociology/Datasets/4chan/archive_ten_billion_patched",
+  "source": {
+    "type": "internet-archive",
+    "name": "Patched 4chan Archive Ten Billion (repaired & updated)",
+    "link": "https://archive.org/details/archive_ten_billion_patched",
+    "short-desc": "Repaired re-dump of the text-only 'Ten Billion' 4chan thread archive, 2005-2008",
+    "capture": "One 7.8GB payload, chanarchive_dump_v2.sql.gz, plus IA bookkeeping and two thumbnails. Surveyed against archive.org/metadata: 8 files, no image payloads, so no download.exclude is needed.\n\nWHAT IT COVERS: the uploader describes it as a patch/re-dump of the 'Ten Billion' text-only 4chan thread archive — 10.8 million threads and 162 million posts from 2005-2008, originally scraped by an anonymous source, packaged in 2009 and later served by old.sage.moe. That date range is earlier than almost anything else in the registry: the corpus currently has only a few thousand posts before 2008.\n\nRELATIONSHIP TO 4chan_threads_archive_10_billion — THESE ARE TWO RENDERINGS OF THE SAME CORPUS, NOT TWO CORPORA. That manifest holds the XML rendering (22GB across three formats, of which the 4.5GB threads/xml/<board>.tar.gz is the ingestible part, 42 boards, one <thread> file per thread) and still has no adapter because nothing here reads XML. This item is the MySQL rendering of the same data, and is 'patched' — the uploader's word — meaning it repairs faults in the original. Prefer this one if it ingests cleanly: an existing SQL adapter is cheaper than a new XML adapter, and a repaired dump beats an unrepaired one. Do not ingest both without diffing first; overlapping post numbers will simply be rejected by the UNIQUE constraint, but the wasted read is hours.\n\nSCHEMA IS UNKNOWN, WHICH IS WHY ingest.adapter IS NULL. The dump is named chanarchive_dump_v2, not any Fuuka/Asagi convention, and predates both — a 2009 packaging of a 2005-2008 scrape is unlikely to use either schema. Do not guess an adapter: read the CREATE TABLE after download and decide then. fuuka-sql and warosu-sql both recognise board tables by required columns and SILENTLY ACCEPT ZERO TABLES when those are absent, so pointing an existing adapter at this and seeing exit code 0 would prove nothing.\n\nTimestamp handling is also unresolved: the Fuuka family stores America/New_York wall time and needs nyWallToUtc, but whether this dump does the same is unknown and must be checked against known post dates rather than assumed."
+  },
+  "prepare": [
+    {
+      "name": "decompress the gzipped mysqldump",
+      "run": "mkdir -p extracted && find . -name '*.sql.gz' -not -path './out/*' -not -path './extracted/*' | while read -r f; do b=$(basename \"${f%.gz}\"); [ -e \"extracted/$b\" ] || [ -e \"out/$b\" ] || gunzip -c \"$f\" > \"extracted/$b\"; done"
+    },
+    {
+      "name": "stage the .sql dump for ingest",
+      "run": "mkdir -p out && find extracted -name '*.sql' -exec sh -c 'cp -al \"$1\" out/ 2>/dev/null || cp -a \"$1\" out/' _ {} ';'"
+    }
+  ],
+  "ingest": {
+    "adapter": null,
+    "path": "Memetic Sociology/Datasets/4chan/archive_ten_billion_patched/out",
+    "site": "4chan"
+  },
+  "files": {
+    "source": "./source",
+    "extract": {
+      "path": "./extracted",
+      "script": ""
+    },
+    "out": {
+      "path": "./out",
+      "script": ""
+    }
+  }
+}

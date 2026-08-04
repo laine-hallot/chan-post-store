@@ -1,0 +1,36 @@
+{
+  "dir": "Memetic Sociology/Datasets/4chan/desuarchive_mlp_1_42799493_20251114215436",
+  "source": {
+    "type": "internet-archive",
+    "name": "Desuarchive /mlp/ yearly export 1-42799493 (2025)",
+    "link": "https://archive.org/details/desuarchive_mlp_1_42799493_20251114215436",
+    "short-desc": "Desuarchive /mlp/ post export as newline-delimited JSON, uploaded 2025-11-14",
+    "capture": "One 6.8GB payload, base_1_42799493.ndjson.gz, plus IA bookkeeping. No image payloads, so no download.exclude is needed. Surveyed against archive.org/metadata (5 files).\n\nFORMAT IS NDJSON — NEWLINE-DELIMITED JSON — WHICH NOTHING IN THIS REGISTRY READS. Every existing adapter takes either mysqldump SQL (fuuka-sql, warosu-sql), 4chan's JSON API thread files (json-api), or rendered HTML (chan-html, fybertech-html). One JSON object per line is none of those. json-api in particular is NOT a near-miss: it walks <board>/<threadno>/<threadno>.json trees and expects 4chan's API thread envelope, not a flat stream of per-post records. This needs a new adapter, which is why ingest.adapter is null.\n\nThe title 'yearly_1_42799493 (2025)' and the identifier suggest a post-number range export (posts 1 through 42,799,493) rather than a calendar year, so the name is misleading — treat the range as covering /mlp/ from the start of Desuarchive's coverage up to that post number, and verify against the actual records rather than the title.\n\nSCOPE: /mlp/ only. That board is currently absent from the corpus, so this adds a board rather than deepening one, but it does nothing for the /g/ post-2017 gap or the /r9k/ single-year problem that are currently driving source selection.\n\nBEFORE WRITING AN ADAPTER, check whether Desuarchive publishes the same export for other boards. A per-board NDJSON series would make the new adapter worth far more than one board — and desuarchive_db_201909, already in the registry, is the same archive in mysqldump form and may cover /mlp/ too, in which case this item may be redundant. Diff the two before ingesting both."
+  },
+  "prepare": [
+    {
+      "name": "decompress the ndjson export",
+      "run": "mkdir -p extracted && find . -name '*.ndjson.gz' -not -path './out/*' -not -path './extracted/*' | while read -r f; do b=$(basename \"${f%.gz}\"); [ -e \"extracted/$b\" ] || [ -e \"out/$b\" ] || gunzip -c \"$f\" > \"extracted/$b\"; done"
+    },
+    {
+      "name": "stage the ndjson for ingest",
+      "run": "mkdir -p out && find extracted -name '*.ndjson' -exec sh -c 'cp -al \"$1\" out/ 2>/dev/null || cp -a \"$1\" out/' _ {} ';'"
+    }
+  ],
+  "ingest": {
+    "adapter": null,
+    "path": "Memetic Sociology/Datasets/4chan/desuarchive_mlp_1_42799493_20251114215436/out",
+    "site": "4chan"
+  },
+  "files": {
+    "source": "./source",
+    "extract": {
+      "path": "./extracted",
+      "script": ""
+    },
+    "out": {
+      "path": "./out",
+      "script": ""
+    }
+  }
+}
