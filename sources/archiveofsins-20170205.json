@@ -1,5 +1,6 @@
 {
   "dir": "Memetic Sociology/Datasets/4chan/archiveofsins-20170205",
+  "dead-end": true,
   "source": {
     "type": "internet-archive",
     "name": "Archive of Sins /soc/ images (2017-02-05)",

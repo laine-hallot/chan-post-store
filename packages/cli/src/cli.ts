@@ -2,7 +2,7 @@ import { log } from "@clack/prompts";
 import type { Pool } from "pg";
 
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { gunzipSync } from "node:zlib";
@@ -793,26 +793,44 @@ const cmdListManifests = async (argv: string[]): Promise<void> => {
         const base = runner.path(
           runner.rootIsDatasets ? info.dirFromDatasets : info.dir,
         );
-        // One shell round-trip per source: which stage dirs are non-empty.
-        const probe = await runner.exec(
-          ["source", "extracted", "out"]
-            .map(
-              (s) =>
-                `if [ -n "$(ls -A ${shQuote(`${base}/${s}`)} 2>/dev/null)" ]; then printf '${s[0]}'; else printf '-'; fi`,
-            )
-            .join("; "),
-        );
-        stages = probe.stdout.trim();
+
+        // Read the manifest before probing, so the probe can also ask about
+        // the real ingest input rather than only the conventional stage dirs.
+        let ingestRel: string | null = null;
         try {
-          ({ adapter } = readManifest(manifestPath(id, PROJECT_ROOT), PROJECT_ROOT));
+          const m = readManifest(manifestPath(id, PROJECT_ROOT), PROJECT_ROOT);
+          adapter = m.adapter;
+          // manifest.path is absolute once resolved; express it relative to
+          // the dataset dir so it works through a datasets-rooted runner too.
+          const rel = relative(resolve(PROJECT_ROOT, info.dir), m.path) || ".";
+          if (!rel.startsWith("..")) ingestRel = rel;
         } catch {
           adapter = "-";
         }
-        // "ready" means out/ has content and an adapter is declared. A dead
-        // end outranks both: it is not waiting on anything, so listing it as
-        // "pending" would invite someone to survey the item all over again.
+
+        const nonEmpty = (p: string, yes: string, no: string): string =>
+          `if [ -n "$(ls -A ${shQuote(p)} 2>/dev/null)" ]; then printf '${yes}'; else printf '${no}'; fi`;
+        // Still one shell round-trip per source: the three stage dirs, plus
+        // the ingest input when we know where it is.
+        const cmds = ["source", "extracted", "out"].map((s) =>
+          nonEmpty(`${base}/${s}`, s[0], "-"),
+        );
+        if (ingestRel) cmds.push(nonEmpty(`${base}/${ingestRel}`, "y", "n"));
+        const probe = await runner.exec(cmds.join("; "));
+        const outv = probe.stdout.trim();
+        stages = outv.slice(0, 3);
+
+        // "ready" means the ingest input actually holds something and an
+        // adapter is declared. Testing out/ specifically was wrong: ingest.path
+        // does not have to be out/ -- 4chan-threads points at a directory
+        // inside dir -- so a fully ingested source reported "pending" and
+        // invited someone to download it all over again. Fall back to the out/
+        // test only when the manifest could not be read at all.
+        const hasInput = ingestRel ? outv.slice(3) === "y" : stages.endsWith("o");
+        // A dead end outranks both: it is not waiting on anything, so listing
+        // it as "pending" would invite a repeat survey of the item.
         if (info.deadEnd) status = "dead-end";
-        else status = stages.endsWith("o") && adapter !== "-" ? "ready" : "pending";
+        else status = hasInput && adapter !== "-" ? "ready" : "pending";
       } catch (e) {
         status = e instanceof PendingSourceError ? "pending" : "error";
       }
