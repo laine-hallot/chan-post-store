@@ -8,6 +8,7 @@ import { parseArgs } from "node:util";
 import { gunzipSync } from "node:zlib";
 
 import { ingestChanHtml } from "./adapters/chan-html.ts";
+import { ingestDesuarchiveSql } from "./adapters/desuarchive-sql.ts";
 import { ingestFuukaSql } from "./adapters/fuuka-sql.ts";
 import { ingestFybertechHtml } from "./adapters/fybertech-html.ts";
 import { ingestJsonApi } from "./adapters/json-api.ts";
@@ -392,7 +393,12 @@ const ingestOne = async (
         ` ${stats.skippedNative} in 4chan's own markup — ingest those with chan-html)`,
     };
   } else {
-    const ingest = manifest.adapter === "fuuka-sql" ? ingestFuukaSql : ingestWarosuSql;
+    const ingest =
+      manifest.adapter === "fuuka-sql"
+        ? ingestFuukaSql
+        : manifest.adapter === "desuarchive-sql"
+          ? ingestDesuarchiveSql
+          : ingestWarosuSql;
     let posts = 0;
     const tables: string[] = [];
     for (const file of inputs) {

@@ -86,6 +86,79 @@ export const insertColumns = (
   return out.length > 0 ? out : null;
 };
 
+/**
+ * Split a buffer into complete `(...)` tuples plus whatever is left over.
+ *
+ * Needed because `mysqlchump` does NOT escape newlines inside string
+ * literals: a post whose comment contains a line break is written across as
+ * many physical lines, so a tuple's extent cannot be decided a line at a time.
+ * Reading such a dump line-wise silently produces garbage rather than
+ * failing -- a continuation line that happens to begin with "(" parses as a
+ * whole tuple, and 4.2% of "rows" in a sample slice were fragments of
+ * somebody's paragraph.
+ *
+ * Quote state is therefore tracked across the whole buffer: a tuple ends only
+ * at a ")" seen outside a string literal. Anything after the last complete
+ * tuple is returned as `rest`, to be prepended to the next chunk. The caller
+ * must join lines with "\n", because that newline is part of the post text.
+ */
+export const takeCompleteTuples = (
+  buf: string,
+): { tuples: string[]; rest: string } => {
+  const out: string[] = [];
+  const n = buf.length;
+  let i = 0;
+  let consumed = 0;
+
+  while (i < n) {
+    while (i < n && buf[i] !== "(") i++;
+    if (i >= n) break;
+    const start = i;
+    i++;
+    let depth = 1;
+    let closed = false;
+
+    while (i < n) {
+      const c = buf[i];
+      if (c === "'") {
+        i++;
+        let ended = false;
+        while (i < n) {
+          if (buf[i] === "\\") {
+            i += 2; // backslash escape, including \' and \\
+            continue;
+          }
+          if (buf[i] === "'") {
+            if (buf[i + 1] === "'") {
+              i += 2; // '' is a literal quote
+              continue;
+            }
+            i++;
+            ended = true;
+            break;
+          }
+          i++;
+        }
+        if (!ended) break; // literal runs past the end of what we have
+        continue;
+      }
+      if (c === "(") depth++;
+      else if (c === ")" && --depth === 0) {
+        i++;
+        closed = true;
+        break;
+      }
+      i++;
+    }
+
+    if (!closed) break; // incomplete: leave it in `rest` for the next chunk
+    out.push(buf.slice(start, i));
+    consumed = i;
+  }
+
+  return { tuples: out, rest: buf.slice(consumed) };
+};
+
 export const parseTuples = function* (
   line: string,
   start: number,
@@ -98,6 +171,14 @@ export const parseTuples = function* (
     i++;
     const vals: (string | null)[] = [];
     for (;;) {
+      // Skip whitespace before the value. mysqldump writes `,` with nothing
+      // after it, but mysqlchump writes `, ` -- and without this the space
+      // means the opening quote is never recognised, so a quoted value falls
+      // into the bare-value branch below and any comma INSIDE the string
+      // splits it into extra fields. That corrupts silently: a post whose
+      // comment contains a comma yields more values than the table has
+      // columns, shifting everything after it.
+      while (i < n && (line[i] === " " || line[i] === "\t")) i++;
       if (line[i] === "'") {
         i++;
         let out = "";
@@ -129,7 +210,7 @@ export const parseTuples = function* (
         let j = i;
         while (j < n && line[j] !== "," && line[j] !== ")") j++;
         if (j >= n) throw new Error("unterminated tuple");
-        const tok = line.slice(i, j);
+        const tok = line.slice(i, j).trim();
         vals.push(tok === "NULL" ? null : tok);
         i = j;
       }

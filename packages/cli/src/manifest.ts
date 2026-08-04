@@ -8,6 +8,7 @@ export const ADAPTERS = [
   "json-api",
   "fuuka-sql",
   "warosu-sql",
+  "desuarchive-sql",
   "chan-html",
   "fybertech-html",
 ] as const;

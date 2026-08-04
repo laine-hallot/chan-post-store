@@ -160,6 +160,34 @@ separate even when formats look similar.
 store `timestamp` as America/New_York wall time, not UTC, so it is converted
 back on ingest.
 
+**A mysqldump is not a format — the producing tool matters more than the
+schema.** `desuarchive-sql` exists because the 2019 Desuarchive/RBT dumps have
+the *same Asagi schema* `fuuka-sql` already reads, and are still unreadable by
+it. They were written by `mysqlchump`, not mysqldump, which differs in four
+ways, each independently fatal:
+
+- `CREATE TABLE IF NOT EXISTS` — a pattern anchored on the plain form never
+  registers the table.
+- an explicit INSERT column list that **omits** columns the CREATE TABLE
+  declares, so table order is not tuple order.
+- values separated by `, ` rather than `,`. This one is the nastiest: a parser
+  testing `line[i] === "'"` never sees the opening quote, treats the string as
+  a bare value, and every comma *inside a comment* becomes a field separator.
+  Silent corruption, not an error.
+- **statements spanning many lines**, because comments carry literal
+  unescaped newlines. Tuple extent is only knowable with quote state carried
+  across lines (`takeCompleteTuples`), and a continuation line can itself
+  start with `(`, so line-wise reading parses fragments of prose as rows —
+  4.2% of "rows" in a sample slice.
+
+Every one of those failed *silently*. Pointed at these dumps `fuuka-sql`
+reported `0 posts from tables []`, and after a partial fix `0 posts from
+tables [g]` — a table accepted, yielding nothing, indistinguishable from a
+source whose posts were all already present. **Never judge an SQL ingest by
+exit code; check the post count, the OP count and the timestamp nulls.** OPs
+were 0 and multi-line bodies were 0 for a while after the rows started
+landing, both from the same `, ` bug.
+
 `chan-html` reads pages in 4chan's *own* markup — what whole-page archivers
 (perma.cc, Wayback) capture. Three things about that format:
 
