@@ -255,21 +255,38 @@ from bookkeeping (`_files.xml` is marked `original`), and IA reports a stale
 md5 and size 0 for `<id>_files.xml` because it cannot contain its own
 checksum — it is excluded from verification in `packages/cli/src/archive-org.ts`.
 
+### Resuming an ingest
+
+`sources.completed_at` records that a source's adapter returned normally, and
+`ingest-all` skips those by default, so an interrupted pass resumes instead of
+restarting. Re-reading a finished source is harmless but not free — one
+resumed run spent hours re-parsing `4chan-threads` to insert zero rows, every
+one rejected by `ON CONFLICT DO NOTHING`.
+
+It records completion, **not** progress. A source can get a long way in and
+still abort (`4chan-threads` failed 13.5M posts deep on a NUL byte), so "this
+source has rows" is not the same as "this source is done". Only a clean
+adapter return marks it, which is why `markSourceCompleted` is called by the
+*caller* of the adapter and never from inside one. An `ingest --board` run
+doesn't mark either: it covers part of the source by construction.
+
+Completion is not permanent — re-staging an archive, or fixing an adapter bug
+that silently dropped rows, means the mark no longer describes what a run
+would produce. `--redo <source>` clears one, `--all` ignores the column for a
+run. `--redo` writes only on a real run; under `--dry-run` it reports the
+effect without touching the store.
+
+`--exclude <source>` still exists for skipping a source you don't want on a
+particular run, which is a different question from whether it finished.
+
 ## Known gaps
 
-**`ingest-all` cannot tell what it already finished.** It re-runs every ready
-source from the top, so resuming an interrupted pass means re-reading tens of
-GB that will only be discarded by `ON CONFLICT DO NOTHING`. The `--exclude
-<source>` flag is a hand-driven stopgap; the fix is a `completed_at` column on
-`sources`, set when a source's adapter returns normally, and skipped by
-default on the next run.
-
-Record completion, **not** progress: a source can get a long way in and still
-abort (`4chan-threads` failed 13.5M posts deep on a NUL byte), so "this source
-has rows" is not the same as "this source is done" and would wrongly mark that
-one finished. Only a clean adapter return counts. Note also that a source
-being complete is not permanent — re-staging an archive, or fixing an adapter
-bug that silently dropped rows, has to clear it again.
+**The schema in `db.ts` and the live database can diverge, and `openDb`
+silently reconciles them in the wrong direction.** `openDb` runs the whole
+`SCHEMA` string on every connect, so any index dropped by hand — e.g. to bulk
+load without paying index maintenance per row — is recreated by the next
+command that opens a pool, on a table with hundreds of millions of rows. There
+is no "ingest-only schema" concept; adding one is the fix.
 
 ## Conventions
 
