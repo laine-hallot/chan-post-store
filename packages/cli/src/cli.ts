@@ -18,7 +18,13 @@ import {
   humanBytes,
   identifierFromLink,
 } from "./archive-org.ts";
-import { openDb, getOrCreateSource } from "./db.ts";
+import {
+  openDb,
+  getOrCreateSource,
+  markSourceCompleted,
+  clearSourceCompleted,
+  completedSources,
+} from "./db.ts";
 import {
   ingestInputs,
   listManifestIds,
@@ -60,7 +66,7 @@ const USAGE = `Usage:
   cli.ts prepare <source> [--remote <host>] [--local] [--dry-run] [--force]
   cli.ts warc-extract --warc <file.warc[.gz]> --out <dir> [--host <regex>]
   cli.ts ingest <source> --db <file> [--board <b> ...]
-  cli.ts ingest-all --db <file> [--dry-run] [--exclude <source> ...]
+  cli.ts ingest-all --db <file> [--dry-run] [--exclude <source> ...] [--redo <source> ...] [--all]
   cli.ts boards --db <file>
   cli.ts refresh-stats --db <file>
   cli.ts count --db <file> --phrase <text> [--board <b>] [--site 4chan] [--from <date>] [--to <date>] [--by month|day|year|total]
@@ -74,6 +80,11 @@ The manifest supplies the source name, link, adapter, and input path;
 download stages an archive.org item into the source's files.source dir.
 It runs on the NAS when NAS_HOST/NAS_ROOT are set in .env (or --remote is
 given), so the transfer goes straight there; --local forces this machine.
+
+ingest-all skips sources whose last run finished cleanly, so an interrupted
+pass resumes instead of re-reading tens of GB that ON CONFLICT would discard.
+Re-staging an archive or fixing an adapter bug invalidates that: use --redo
+<source> to clear one source's completion, or --all to ignore it entirely.
 
 Dates are YYYY, YYYY-MM, or YYYY-MM-DD (UTC). --from/--to are both inclusive:
 --to 2018-09 means "through the end of September 2018".`;
@@ -436,6 +447,14 @@ const cmdIngest = async (argv: string[]): Promise<void> => {
     console.log(`ingesting ${manifest.name} [${manifest.adapter}] from ${manifest.path}`);
     const { summary } = await ingestOne(db, manifest, sourceId, inputs, values.board);
     console.log(summary);
+    // A --board run covers part of the source, so it is progress, not
+    // completion -- leaving completed_at null keeps ingest-all honest about
+    // the boards this run never looked at.
+    if (values.board?.length) {
+      console.log("not marked complete: --board ingests only part of the source");
+    } else {
+      await markSourceCompleted(db, sourceId);
+    }
   } finally {
     await db.end();
   }
@@ -478,6 +497,13 @@ const readySources = (): ReadySource[] => {
  * failure in one source here must not abort the rest of an unattended,
  * possibly hours-long run: each source is wrapped in its own try/catch and
  * recorded, and the run only exits non-zero at the end if something failed.
+ *
+ * Sources that already completed are skipped, so an interrupted pass resumes
+ * where it stopped rather than restarting from the top. That matters because
+ * re-reading a done source is not free even though it is harmless: a resumed
+ * run once spent hours re-parsing 4chan-threads to insert zero rows, every
+ * one of them rejected by ON CONFLICT. Only a clean adapter return marks a
+ * source done -- see markSourceCompleted.
  */
 const cmdIngestAll = async (argv: string[]): Promise<void> => {
   const { values } = parseArgs({
@@ -486,6 +512,8 @@ const cmdIngestAll = async (argv: string[]): Promise<void> => {
       db: { type: "string" },
       "dry-run": { type: "boolean" },
       exclude: { type: "string", multiple: true },
+      redo: { type: "string", multiple: true },
+      all: { type: "boolean" },
     },
   });
 
@@ -514,8 +542,18 @@ const cmdIngestAll = async (argv: string[]): Promise<void> => {
     console.log(`excluding ${excluded.size} source(s): ${[...excluded].join(", ")}`);
   }
 
-  if (values["dry-run"]) {
-    console.log(`${ready.length} source(s) would be ingested:`);
+  const redo = new Set(values.redo ?? []);
+  const unknownRedo = [...redo].filter((id) => !ready.some((r) => r.id === id));
+  if (unknownRedo.length) {
+    fail(`--redo names no ready source: ${unknownRedo.join(", ")}`);
+  }
+
+  // Completion lives in the database, so a dry run can only report what will
+  // actually be skipped when it has one. Without --db it still lists the ready
+  // set, but says plainly that it cannot see completion rather than implying
+  // every source listed would run.
+  if (values["dry-run"] && !values.db) {
+    console.log(`${ready.length} ready source(s) (no --db: cannot tell which are already complete):`);
     for (const { id, manifest } of ready) {
       console.log(`  ${id} [${manifest.adapter}] <- ${manifest.path}`);
     }
@@ -527,12 +565,58 @@ const cmdIngestAll = async (argv: string[]): Promise<void> => {
   const results: { name: string; ok: boolean; posts: number; secs: number }[] = [];
   const db = await openDb(values.db);
   try {
+    const done = values.all ? new Map<string, Date>() : await completedSources(db);
+    // --redo means "treat as never done", which is just a deletion from the
+    // set the skip check consults. The database is only written on a real
+    // run: a dry run that cleared completion would leave the store changed by
+    // a command whose whole contract is that it changes nothing.
+    for (const { id, manifest } of ready) {
+      if (redo.has(id)) done.delete(manifest.name);
+    }
+
+    const skipped = ready.filter((r) => done.has(r.manifest.name));
+    ready = ready.filter((r) => !done.has(r.manifest.name));
+
+    if (values["dry-run"]) {
+      for (const { id, manifest } of skipped) {
+        const at = done.get(manifest.name)?.toISOString().replace("T", " ").slice(0, 19);
+        console.log(`  skip  ${id} — completed ${at}`);
+      }
+      console.log(`${ready.length} source(s) would be ingested:`);
+      for (const { id, manifest } of ready) {
+        console.log(`  run   ${id} [${manifest.adapter}] <- ${manifest.path}`);
+      }
+      return;
+    }
+
+    // Clear before running, not after: if the re-run itself fails, the stale
+    // timestamp must not survive to tell the next run this source is done.
+    for (const { id, manifest } of ready) {
+      if (redo.has(id)) await clearSourceCompleted(db, manifest.name);
+    }
+
+    if (skipped.length) {
+      console.log(
+        `skipping ${skipped.length} already-complete source(s): ` +
+          `${skipped.map((r) => r.id).join(", ")}\n` +
+          `  (re-run one with --redo <source>, or all of them with --all)`,
+      );
+    }
+    if (ready.length === 0) {
+      console.log("nothing left to ingest — every ready source is already complete");
+      return;
+    }
+
     for (const { id, manifest, inputs } of ready) {
       log.step(`${id} [${manifest.adapter}] <- ${manifest.path}`);
       const t0 = Date.now();
       try {
         const sourceId = await getOrCreateSource(db, manifest.name, manifest.link);
         const { posts, summary } = await ingestOne(db, manifest, sourceId, inputs, undefined);
+        // Only a normal return counts. A source that threw has still written
+        // rows, and marking it here would make the next run skip a source
+        // that never finished.
+        await markSourceCompleted(db, sourceId);
         const secs = (Date.now() - t0) / 1000;
         log.success(summary);
         results.push({ name: id, ok: true, posts, secs });
