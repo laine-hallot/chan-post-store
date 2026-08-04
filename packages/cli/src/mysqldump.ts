@@ -45,6 +45,47 @@ const ESCAPES: Record<string, string> = {
   b: "\b",
 };
 
+/**
+ * Matches a CREATE TABLE header, with or without IF NOT EXISTS.
+ *
+ * mysqldump writes `CREATE TABLE \`t\` (`, but dumps produced by other tools
+ * do not: the 2019 desuarchive/RBT dumps (made with `mysqlchump`) write
+ * `CREATE TABLE IF NOT EXISTS \`g\` (`. A pattern anchored on the plain form
+ * simply never registers those tables, and since a table that was never
+ * registered cannot be accepted, the adapter reports zero tables and zero
+ * posts and exits 0 -- indistinguishable from a dump that held nothing.
+ */
+export const CREATE_TABLE_RE = /^CREATE TABLE (?:IF NOT EXISTS )?`([^`]+)` \($/;
+
+/**
+ * The column names listed in an INSERT statement, or null when it has none.
+ *
+ * `INSERT INTO \`t\` VALUES (...)` carries no list, and tuple order is then
+ * the CREATE TABLE order -- which is what every warosu and Asagi dump in this
+ * registry does. But `mysqlchump` emits
+ * `INSERT INTO \`g\` (\`num\`, \`subnum\`, ...) VALUES (...)` and OMITS
+ * columns: the desuarchive dumps declare doc_id, media_id and poster_ip in the
+ * CREATE TABLE and then never insert them. Where such a list exists it, not
+ * the CREATE TABLE, defines tuple order, and reading positions from the table
+ * definition instead shifts every field by however many columns were dropped.
+ *
+ * `from` is the index just past the table name's closing backtick; `valuesAt`
+ * is the index of the " VALUES " that follows.
+ */
+export const insertColumns = (
+  line: string,
+  from: number,
+  valuesAt: number,
+): string[] | null => {
+  const between = line.slice(from, valuesAt).trim();
+  if (!between.startsWith("(") || !between.endsWith(")")) return null;
+  const out: string[] = [];
+  const re = /`([^`]+)`/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(between)) !== null) out.push(m[1]);
+  return out.length > 0 ? out : null;
+};
+
 export const parseTuples = function* (
   line: string,
   start: number,

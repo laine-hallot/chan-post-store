@@ -5,7 +5,12 @@ import { createInterface } from "node:readline";
 
 import { collectPending, PostInserter } from "../ingest.ts";
 import { makeBar } from "../progress.ts";
-import { nyWallToUtc, parseTuples } from "../mysqldump.ts";
+import {
+  CREATE_TABLE_RE,
+  insertColumns,
+  nyWallToUtc,
+  parseTuples,
+} from "../mysqldump.ts";
 
 /**
  * Ingests the warosu.org database backups: one mysqldump per board, in the
@@ -74,7 +79,13 @@ export const ingestWarosuSql = async (
 
   const tableCols = new Map<string, string[]>();
   let creating: string | null = null;
-  let accept: { board: string; idx: Record<string, number> } | null = null;
+  let accept: {
+    board: string;
+    idx: Record<string, number>;
+    /** Last INSERT column list seen, and the order it implies. See below. */
+    listKey?: string;
+    listIdx?: Record<string, number> | null;
+  } | null = null;
   let acceptFor = "";
 
   const COMMIT_EVERY = 50_000;
@@ -92,7 +103,7 @@ export const ingestWarosuSql = async (
       continue;
     }
 
-    const create = /^CREATE TABLE `([^`]+)` \($/.exec(line);
+    const create = CREATE_TABLE_RE.exec(line);
     if (create) {
       creating = create[1];
       tableCols.set(creating, []);
@@ -120,9 +131,33 @@ export const ingestWarosuSql = async (
     }
     if (!accept) continue;
 
-    const { board, idx } = accept;
+    const { board } = accept;
     const valuesAt = line.indexOf(" VALUES ", tick);
     if (valuesAt < 0) continue;
+
+    // An explicit column list on the INSERT overrides the CREATE TABLE order,
+    // because it is what the tuples actually follow. Cached on the accept
+    // entry: the list is identical on every statement for a table, so this
+    // rebuilds the map once rather than millions of times.
+    let idx = accept.idx;
+    const listed = insertColumns(line, tick + 1, valuesAt);
+    if (listed) {
+      const key = listed.join(",");
+      if (key !== accept.listKey) {
+        const m: Record<string, number> = {};
+        listed.forEach((c, i) => (m[c] = i));
+        // A dump may omit a column we need outright. Skipping the statement
+        // is better than reading a field that is not there, and badLines
+        // makes it visible instead of looking like an empty dump.
+        accept.listIdx = REQUIRED_COLS.every((c) => c in m) ? m : null;
+        accept.listKey = key;
+      }
+      if (!accept.listIdx) {
+        stats.badLines++;
+        continue;
+      }
+      idx = accept.listIdx;
+    }
 
     try {
       for (const vals of parseTuples(line, valuesAt + 8)) {
