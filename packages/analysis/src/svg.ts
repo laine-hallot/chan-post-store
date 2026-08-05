@@ -23,12 +23,12 @@ export interface ChartData {
 }
 
 const PAL = {
-  surface: "#fcfcfb",
-  textPrimary: "#0b0b0b",
-  textSecondary: "#52514e",
-  textMuted: "#84837c",
-  grid: "#e6e5e0",
-  axis: "#c9c8c1",
+  surface: '#fcfcfb',
+  textPrimary: '#0b0b0b',
+  textSecondary: '#52514e',
+  textMuted: '#84837c',
+  grid: '#e6e5e0',
+  axis: '#c9c8c1',
 };
 
 /**
@@ -57,7 +57,7 @@ const compact = (n: number): string => {
 };
 
 const esc = (s: string): string =>
-  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 export const renderChart = (d: ChartData): string => {
   // Bars are sized first and the row derived from them, so a bar is always a
@@ -76,10 +76,11 @@ export const renderChart = (d: ChartData): string => {
   // most years carry one or two archives -- and pushed each bar down to its
   // series index, so the year label no longer lined up with the bar it named.
   const rowsPresent = d.years.map((y) =>
-    d.series.filter((s) => (d.values.get(y)?.get(s.name) ?? 0) > 0),
+    d.series.filter((s) => (d.values.get(y)?.get(s.name) ?? 0) > 0)
   );
   const rowHeights = rowsPresent.map(
-    (present) => Math.max(present.length, 1) * (barH + barGap) - barGap + groupGap,
+    (present) =>
+      Math.max(present.length, 1) * (barH + barGap) - barGap + groupGap
   );
   const rowTops: number[] = [];
   {
@@ -96,8 +97,8 @@ export const renderChart = (d: ChartData): string => {
   const maxChars = Math.floor((plotW + padR) / 7.4);
   const subtitleLines: string[] = [];
   {
-    let line = "";
-    for (const word of d.subtitle.split(" ")) {
+    let line = '';
+    for (const word of d.subtitle.split(' ')) {
       if (line && `${line} ${word}`.length > maxChars) {
         subtitleLines.push(line);
         line = word;
@@ -123,7 +124,11 @@ export const renderChart = (d: ChartData): string => {
         legendRows.push([]);
         lx = 0;
       }
-      legendRows[legendRows.length - 1].push({ color: s.color, name: s.name, x: lx });
+      legendRows[legendRows.length - 1].push({
+        color: s.color,
+        name: s.name,
+        x: lx,
+      });
       lx += entryW;
     }
   }
@@ -137,7 +142,8 @@ export const renderChart = (d: ChartData): string => {
 
   let max = 0;
   for (const y of d.years) {
-    for (const s of d.series) max = Math.max(max, d.values.get(y)?.get(s.name) ?? 0);
+    for (const s of d.series)
+      max = Math.max(max, d.values.get(y)?.get(s.name) ?? 0);
   }
   const tv = ticks(max);
   const scale = (v: number): number => (v / tv[tv.length - 1]) * plotW;
@@ -147,16 +153,16 @@ export const renderChart = (d: ChartData): string => {
     // Concrete family names only: resvg resolves through fontconfig and
     // silently drops text when nothing matches, so CSS-generic stacks
     // (ui-sans-serif, system-ui) are not usable here.
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" font-family="DejaVu Sans, Liberation Sans, Noto Sans, sans-serif">`,
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" font-family="DejaVu Sans, Liberation Sans, Noto Sans, sans-serif">`
   );
   o.push(`<rect width="${w}" height="${h}" fill="${PAL.surface}"/>`);
 
   o.push(
-    `<text x="${padL}" y="40" font-size="21" font-weight="600" fill="${PAL.textPrimary}">${esc(d.title)}</text>`,
+    `<text x="${padL}" y="40" font-size="21" font-weight="600" fill="${PAL.textPrimary}">${esc(d.title)}</text>`
   );
   subtitleLines.forEach((l, i) => {
     o.push(
-      `<text x="${padL}" y="${63 + i * 18}" font-size="13" fill="${PAL.textSecondary}">${esc(l)}</text>`,
+      `<text x="${padL}" y="${63 + i * 18}" font-size="13" fill="${PAL.textSecondary}">${esc(l)}</text>`
     );
   });
 
@@ -168,10 +174,10 @@ export const renderChart = (d: ChartData): string => {
     const ly = padT - 26 - (legendRows.length - 1 - ri) * LEGEND_ROW_H;
     for (const e of row) {
       o.push(
-        `<rect x="${padL + e.x}" y="${ly - 9}" width="10" height="10" rx="2" fill="${e.color}"/>`,
+        `<rect x="${padL + e.x}" y="${ly - 9}" width="10" height="10" rx="2" fill="${e.color}"/>`
       );
       o.push(
-        `<text x="${padL + e.x + 15}" y="${ly}" font-size="12" fill="${PAL.textSecondary}">${esc(e.name)}</text>`,
+        `<text x="${padL + e.x + 15}" y="${ly}" font-size="12" fill="${PAL.textSecondary}">${esc(e.name)}</text>`
       );
     }
   });
@@ -180,14 +186,14 @@ export const renderChart = (d: ChartData): string => {
   for (const t of tv) {
     const x = padL + scale(t);
     o.push(
-      `<line x1="${x}" y1="${padT}" x2="${x}" y2="${padT + plotH}" stroke="${t === 0 ? PAL.axis : PAL.grid}" stroke-width="1"/>`,
+      `<line x1="${x}" y1="${padT}" x2="${x}" y2="${padT + plotH}" stroke="${t === 0 ? PAL.axis : PAL.grid}" stroke-width="1"/>`
     );
     o.push(
-      `<text x="${x}" y="${padT + plotH + 20}" font-size="11" fill="${PAL.textMuted}" text-anchor="middle">${compact(t)}</text>`,
+      `<text x="${x}" y="${padT + plotH + 20}" font-size="11" fill="${PAL.textMuted}" text-anchor="middle">${compact(t)}</text>`
     );
   }
   o.push(
-    `<text x="${padL + plotW / 2}" y="${padT + plotH + 44}" font-size="12" fill="${PAL.textSecondary}" text-anchor="middle">Posts</text>`,
+    `<text x="${padL + plotW / 2}" y="${padT + plotH + 44}" font-size="12" fill="${PAL.textSecondary}" text-anchor="middle">Posts</text>`
   );
 
   d.years.forEach((year, i) => {
@@ -198,7 +204,7 @@ export const renderChart = (d: ChartData): string => {
     // would have been.
     const barsH = Math.max(present.length, 1) * (barH + barGap) - barGap;
     o.push(
-      `<text x="${padL - 12}" y="${top + barsH / 2 + 4}" font-size="12" fill="${PAL.textPrimary}" text-anchor="end">${esc(year)}</text>`,
+      `<text x="${padL - 12}" y="${top + barsH / 2 + 4}" font-size="12" fill="${PAL.textPrimary}" text-anchor="end">${esc(year)}</text>`
     );
 
     present.forEach((s, j) => {
@@ -208,17 +214,17 @@ export const renderChart = (d: ChartData): string => {
       // 4px rounded data-end, square against the zero baseline.
       const r = Math.min(4, bw);
       o.push(
-        `<path d="M${padL} ${by} H${padL + bw - r} a${r} ${r} 0 0 1 ${r} ${r} V${by + barH - r} a${r} ${r} 0 0 1 -${r} ${r} H${padL} Z" fill="${s.color}"/>`,
+        `<path d="M${padL} ${by} H${padL + bw - r} a${r} ${r} 0 0 1 ${r} ${r} V${by + barH - r} a${r} ${r} 0 0 1 -${r} ${r} H${padL} Z" fill="${s.color}"/>`
       );
       // Label each bar with its own value rather than the row sum: a total
       // sitting beside per-source bars reads as if it were the longest bar,
       // and the axis is scaled to the largest single source, not the sum.
       o.push(
-        `<text x="${padL + bw + 8}" y="${by + barH - 2}" font-size="10" fill="${PAL.textMuted}">${compact(v)}</text>`,
+        `<text x="${padL + bw + 8}" y="${by + barH - 2}" font-size="10" fill="${PAL.textMuted}">${compact(v)}</text>`
       );
     });
   });
 
-  o.push("</svg>");
-  return o.join("\n");
+  o.push('</svg>');
+  return o.join('\n');
 };

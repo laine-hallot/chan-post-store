@@ -1,4 +1,4 @@
-import { progress, spinner } from "@clack/prompts";
+import { progress, spinner } from '@clack/prompts';
 
 /**
  * A progress display that cannot starve the work it reports on.

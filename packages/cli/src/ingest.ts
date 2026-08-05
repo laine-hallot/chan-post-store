@@ -1,4 +1,4 @@
-import type { Pool } from "pg";
+import type { Pool } from 'pg';
 
 export interface PostRow {
   site: string;
@@ -28,19 +28,19 @@ interface StatCell {
 const BATCH_SIZE = 2000;
 
 const COLUMNS = [
-  "source_id",
-  "site",
-  "board",
-  "thread_no",
-  "post_no",
-  "is_op",
-  "ts_utc",
-  "name",
-  "tripcode",
-  "subject",
-  "body_text",
-  "media_filename",
-  "media_md5",
+  'source_id',
+  'site',
+  'board',
+  'thread_no',
+  'post_no',
+  'is_op',
+  'ts_utc',
+  'name',
+  'tripcode',
+  'subject',
+  'body_text',
+  'media_filename',
+  'media_md5',
 ];
 
 const keyOf = (site: string, board: string, postNo: number): string =>
@@ -56,7 +56,7 @@ const keyOf = (site: string, board: string, postNo: number): string =>
 // per adapter, since any text field can carry one.
 const NUL = String.fromCharCode(0);
 const stripNulls = (s: string | null): string | null =>
-  s == null ? s : s.split(NUL).join("");
+  s == null ? s : s.split(NUL).join('');
 
 /**
  * Collects one `insert()` call's completion promise into an adapter's
@@ -71,7 +71,10 @@ const stripNulls = (s: string | null): string | null =>
  * flagged early; the rejection itself is untouched, so `Promise.all(pending)`
  * still sees and propagates it normally.
  */
-export const collectPending = (pending: Promise<void>[], p: Promise<void>): void => {
+export const collectPending = (
+  pending: Promise<void>[],
+  p: Promise<void>
+): void => {
   p.catch(() => {});
   pending.push(p);
 };
@@ -106,7 +109,9 @@ export class PostInserter {
    * for progress reporting / crash-safety.
    */
   async insert(p: PostRow): Promise<boolean> {
-    const promise = new Promise<boolean>((resolve) => this.#waiters.push(resolve));
+    const promise = new Promise<boolean>((resolve) =>
+      this.#waiters.push(resolve)
+    );
     this.#buffer.push({
       ...p,
       name: stripNulls(p.name),
@@ -161,7 +166,10 @@ export class PostInserter {
     }
   }
 
-  async #runFlush(batch: PostRow[], waiters: ((ok: boolean) => void)[]): Promise<void> {
+  async #runFlush(
+    batch: PostRow[],
+    waiters: ((ok: boolean) => void)[]
+  ): Promise<void> {
     const params: unknown[] = [];
     const values = batch
       .map((r, i) => {
@@ -178,23 +186,23 @@ export class PostInserter {
           r.subject,
           r.bodyText,
           r.mediaFilename,
-          r.mediaMd5,
+          r.mediaMd5
         );
         const base = i * COLUMNS.length;
-        return `(${COLUMNS.map((_, j) => `$${base + j + 1}`).join(",")})`;
+        return `(${COLUMNS.map((_, j) => `$${base + j + 1}`).join(',')})`;
       })
-      .join(",");
+      .join(',');
 
     const { rows } = await this.#pool.query<{
       site: string;
       board: string;
       post_no: number;
     }>(
-      `INSERT INTO posts (${COLUMNS.join(", ")})
+      `INSERT INTO posts (${COLUMNS.join(', ')})
        VALUES ${values}
        ON CONFLICT (site, board, post_no) DO NOTHING
        RETURNING site, board, post_no`,
-      params,
+      params
     );
 
     // RETURNING order isn't guaranteed to match the VALUES order, so
@@ -204,7 +212,9 @@ export class PostInserter {
     // NOTHING against the row this same statement just inserted silently
     // drops the second occurrence rather than erroring, so each key must be
     // claimed at most once, in buffer order, to avoid crediting both.
-    const returned = new Set(rows.map((r) => keyOf(r.site, r.board, r.post_no)));
+    const returned = new Set(
+      rows.map((r) => keyOf(r.site, r.board, r.post_no))
+    );
     const claimed = new Set<string>();
     for (let i = 0; i < batch.length; i++) {
       const row = batch[i]!;
@@ -222,10 +232,11 @@ export class PostInserter {
   }
 
   #tally(p: PostRow): void {
-    const year = p.tsUtc == null ? null : new Date(p.tsUtc * 1000).getUTCFullYear();
+    const year =
+      p.tsUtc == null ? null : new Date(p.tsUtc * 1000).getUTCFullYear();
     // Tab-separated: neither a site nor a board name contains one, so the
     // key round-trips unambiguously when it is split apart in finish().
-    const key = `${p.site}\t${p.board}\t${year ?? ""}`;
+    const key = `${p.site}\t${p.board}\t${year ?? ''}`;
     const cell = this.#stats.get(key);
     if (cell) {
       cell.posts++;
@@ -260,7 +271,7 @@ export class PostInserter {
       await this.#flush();
     }
     for (const [key, c] of this.#stats) {
-      const [site, board, year] = key.split("\t");
+      const [site, board, year] = key.split('\t');
       await this.#pool.query(
         `INSERT INTO post_stats (source_id, site, board, year, posts, min_ts, max_ts)
          VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -278,11 +289,11 @@ export class PostInserter {
           this.#sourceId,
           site,
           board,
-          year === "" ? null : Number(year),
+          year === '' ? null : Number(year),
           c.posts,
           c.minTs,
           c.maxTs,
-        ],
+        ]
       );
     }
     this.#stats.clear();

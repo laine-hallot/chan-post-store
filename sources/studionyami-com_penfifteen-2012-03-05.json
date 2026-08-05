@@ -8,11 +8,7 @@
     "capture": "1.4GB item, and it ships THE SAME CRAWL TWICE — penfifteen-00000.warc.gz (711.1MB) and studionyami-com_penfifteen-2012-03-05.7z (696.9MB). Matching sizes mean duplication, not that one is the other's extraction; this is the exact trap CLAUDE.md records from fybertech. download.exclude drops the .7z and keeps the WARC, because warc-extract already handles WARCs and nothing here reads a bare 7z of a crawl. Verify with --dry-run.\n\nThe rest is crawl bookkeeping: penfifteen.cdx (450KB), penfifteen-meta.warc.gz (172KB), and two .os.cdx.gz index files. penfifteen-meta.warc.gz is the crawler's own metadata records, not page content, and is excluded too.\n\nWHAT IT IS: per the uploader, Vyrd discovered in 2013 that an anon (a Finnish speaker) had been keeping an undocumented public archive of 'very, very early hand-archived threads from 4chan'. Hand-archived means small and idiosyncratic — expect a few hundred pages, not a corpus — but potentially covering 2004-2006, which is earlier than anything currently in the store. The crawl itself is dated 2012-03-05; the threads inside are far older.\n\nADAPTER NULL UNTIL THE EXTRACTED PAGES ARE SURVEYED. This is a rendered third-party archive, so it is NOT automatically chan-html: that adapter reads 4chan's own markup and keys on .postContainer, while a hand-made site of its own design almost certainly needs its own reader, the way fybertech-html did. Run warc-extract first, then survey the WHOLE tree before writing anything — fybertech's 638 pages turned out to hold three different markup generations, and a single sampled page missed two of them. Expect no data-utc; if dates are displayed as New-York wall time they need nyWallToUtc, and any date the page does not show must be recorded as null rather than guessed."
   },
   "download": {
-    "exclude": [
-      "\\.7z$",
-      "-meta\\.warc\\.gz$",
-      "\\.cdx(\\.gz|\\.idx)?$"
-    ]
+    "exclude": ["\\.7z$", "-meta\\.warc\\.gz$", "\\.cdx(\\.gz|\\.idx)?$"]
   },
   "prepare": [
     {

@@ -10,15 +10,18 @@
     "cli": "node packages/cli/src/cli.ts"
   },
   "devDependencies": {
-    "@types/node": "^24.0.0",
-    "typescript": "^6.0.0",
     "@eslint/js": "^9.39.4",
+    "@types/node": "^24.0.0",
     "eslint": "^9.39.4",
     "eslint-plugin-perfectionist": "^5.7.0",
+    "typescript": "^6.0.0",
     "typescript-eslint": "^8.65.0"
   },
   "workspaces": [
     "packages/cli",
     "packages/analysis"
-  ]
+  ],
+  "dependencies": {
+    "prettier": "^3.9.6"
+  }
 }

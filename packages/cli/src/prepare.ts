@@ -1,6 +1,6 @@
-import type { SourceInfo } from "./manifest.ts";
+import type { SourceInfo } from './manifest.ts';
 
-import { LocalRunner, shQuote, type Runner } from "./runner.ts";
+import { LocalRunner, shQuote, type Runner } from './runner.ts';
 
 /**
  * Runs a source's prepare steps.
@@ -29,7 +29,7 @@ export interface PrepareOptions {
  * They are marked with a `local:` prefix and run through a local shell with
  * the same variables, including the flags needed to reach the target.
  */
-const LOCAL_PREFIX = "local:";
+const LOCAL_PREFIX = 'local:';
 
 export interface PrepareResult {
   ran: number;
@@ -41,31 +41,37 @@ const pathExists = async (runner: Runner, path: string): Promise<boolean> => {
   return r.code === 0;
 };
 
-export const runPrepare = async (opts: PrepareOptions): Promise<PrepareResult> => {
+export const runPrepare = async (
+  opts: PrepareOptions
+): Promise<PrepareResult> => {
   const { info, dir, runner } = opts;
   if (info.prepare.length === 0) {
     throw new Error(
       `${info.file}: no "prepare" steps defined\n` +
-        `  add a prepare array of {name, run} shell commands`,
+        `  add a prepare array of {name, run} shell commands`
     );
   }
 
   const outPath = `${dir}/${info.prepareOutput}`;
   if (!opts.force && !opts.dryRun && (await pathExists(runner, outPath))) {
-    console.log(`${info.prepareOutput} already exists — nothing to do (use --force to re-run)`);
+    console.log(
+      `${info.prepareOutput} already exists — nothing to do (use --force to re-run)`
+    );
     return { ran: 0, skipped: true };
   }
 
   // Exported ahead of each command so steps can reference them.
   const exports = Object.entries(opts.vars ?? {})
     .map(([k, v]) => `export ${k}=${shQuote(v)}; `)
-    .join("");
+    .join('');
 
   let n = 0;
   for (const [i, step] of info.prepare.entries()) {
     const isLocal = step.run.startsWith(LOCAL_PREFIX);
-    const body = isLocal ? step.run.slice(LOCAL_PREFIX.length).trim() : step.run;
-    const label = `[${i + 1}/${info.prepare.length}] ${step.name}${isLocal ? " (local)" : ""}`;
+    const body = isLocal
+      ? step.run.slice(LOCAL_PREFIX.length).trim()
+      : step.run;
+    const label = `[${i + 1}/${info.prepare.length}] ${step.name}${isLocal ? ' (local)' : ''}`;
 
     if (opts.dryRun) {
       console.log(`${label}\n    ${body}`);
@@ -83,7 +89,7 @@ export const runPrepare = async (opts: PrepareOptions): Promise<PrepareResult> =
     if (r.code !== 0) {
       throw new Error(
         `prepare step "${step.name}" failed (exit ${r.code})\n  ${body}` +
-          (r.stderr.trim() ? `\n  ${r.stderr.trim()}` : ""),
+          (r.stderr.trim() ? `\n  ${r.stderr.trim()}` : '')
       );
     }
     n++;

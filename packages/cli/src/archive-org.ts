@@ -1,4 +1,4 @@
-import { shQuote, type Runner } from "./runner.ts";
+import { shQuote, type Runner } from './runner.ts';
 
 /**
  * Downloads Internet Archive items via the metadata API.
@@ -31,26 +31,30 @@ export const itemUrl = (id: string): string => {
 
 /** Pulls an archive.org identifier out of a details/download URL. */
 export const identifierFromLink = (link: string): string | undefined => {
-  return /archive\.org\/(?:details|download|metadata)\/([^/?#]+)/.exec(link)?.[1];
+  return /archive\.org\/(?:details|download|metadata)\/([^/?#]+)/.exec(
+    link
+  )?.[1];
 };
 
 export const fetchItem = async (id: string): Promise<IaItem> => {
   const url = `https://archive.org/metadata/${encodeURIComponent(id)}`;
   const res = await fetch(url);
-  if (!res.ok) throw new Error(`metadata fetch failed for ${id}: HTTP ${res.status}`);
+  if (!res.ok)
+    throw new Error(`metadata fetch failed for ${id}: HTTP ${res.status}`);
   const doc = (await res.json()) as {
     metadata?: { identifier?: string; title?: string };
     files?: Record<string, unknown>[];
   };
   // The API answers 200 with {} for an identifier that doesn't exist.
-  if (!doc.metadata || !doc.files) throw new Error(`no such item on archive.org: ${id}`);
+  if (!doc.metadata || !doc.files)
+    throw new Error(`no such item on archive.org: ${id}`);
 
   const files: IaFile[] = doc.files.map((f) => ({
     name: String(f.name),
     size: Number(f.size ?? 0),
-    md5: typeof f.md5 === "string" ? f.md5 : undefined,
-    format: typeof f.format === "string" ? f.format : undefined,
-    source: typeof f.source === "string" ? f.source : undefined,
+    md5: typeof f.md5 === 'string' ? f.md5 : undefined,
+    format: typeof f.format === 'string' ? f.format : undefined,
+    source: typeof f.source === 'string' ? f.source : undefined,
   }));
 
   return {
@@ -71,7 +75,7 @@ const md5IsTrustworthy = (item: IaItem, f: IaFile): boolean => {
 };
 
 export const humanBytes = (n: number): string => {
-  const u = ["B", "KB", "MB", "GB", "TB"];
+  const u = ['B', 'KB', 'MB', 'GB', 'TB'];
   let i = 0;
   while (n >= 1024 && i < u.length - 1) {
     n /= 1024;
@@ -93,14 +97,17 @@ export interface DownloadOptions {
 
 export interface FileOutcome {
   name: string;
-  status: "downloaded" | "skipped" | "failed";
+  status: 'downloaded' | 'skipped' | 'failed';
   detail?: string;
 }
 
 /** md5 of a remote/local path, or undefined when the file isn't there. */
-const md5Of = async (runner: Runner, path: string): Promise<string | undefined> => {
+const md5Of = async (
+  runner: Runner,
+  path: string
+): Promise<string | undefined> => {
   const r = await runner.exec(
-    `test -f ${shQuote(path)} && md5sum ${shQuote(path)} | cut -d' ' -f1`,
+    `test -f ${shQuote(path)} && md5sum ${shQuote(path)} | cut -d' ' -f1`
   );
   const out = r.stdout.trim();
   return r.code === 0 && /^[0-9a-f]{32}$/.test(out) ? out : undefined;
@@ -115,31 +122,34 @@ const md5Of = async (runner: Runner, path: string): Promise<string | undefined> 
  * checked afterwards, since a resumed transfer is exactly where corruption
  * would otherwise go unnoticed.
  */
-export const downloadItem = async (opts: DownloadOptions): Promise<FileOutcome[]> => {
+export const downloadItem = async (
+  opts: DownloadOptions
+): Promise<FileOutcome[]> => {
   const { item, dest, runner } = opts;
   const base = itemUrl(item.identifier);
   const results: FileOutcome[] = [];
 
   if (!opts.dryRun) {
     const mk = await runner.exec(`mkdir -p ${shQuote(dest)}`);
-    if (mk.code !== 0) throw new Error(`could not create ${dest}: ${mk.stderr.trim()}`);
+    if (mk.code !== 0)
+      throw new Error(`could not create ${dest}: ${mk.stderr.trim()}`);
   }
 
   // Item file names can themselves be nested (threads/xml/a.tar.gz), and curl
   // will not create the parent directory. Remembering which ones exist keeps
   // this to one mkdir per directory rather than one per file, which matters
   // when every exec is an SSH round-trip.
-  const made = new Set<string>([dest.replace(/\/$/, "")]);
+  const made = new Set<string>([dest.replace(/\/$/, '')]);
 
   let n = 0;
   for (const f of item.files) {
     n++;
-    const target = `${dest.replace(/\/$/, "")}/${f.name}`;
+    const target = `${dest.replace(/\/$/, '')}/${f.name}`;
     const label = `[${n}/${item.files.length}] ${f.name} (${humanBytes(f.size)})`;
 
     if (opts.dryRun) {
       console.log(`${label} -> ${target}`);
-      results.push({ name: f.name, status: "skipped", detail: "dry run" });
+      results.push({ name: f.name, status: 'skipped', detail: 'dry run' });
       continue;
     }
 
@@ -150,16 +160,17 @@ export const downloadItem = async (opts: DownloadOptions): Promise<FileOutcome[]
       const have = await md5Of(runner, target);
       if (have === f.md5) {
         console.log(`${label} — already present`);
-        results.push({ name: f.name, status: "skipped", detail: "md5 match" });
+        results.push({ name: f.name, status: 'skipped', detail: 'md5 match' });
         continue;
       }
     }
 
     console.log(label);
-    const parent = target.slice(0, target.lastIndexOf("/"));
+    const parent = target.slice(0, target.lastIndexOf('/'));
     if (!made.has(parent)) {
       const mk = await runner.exec(`mkdir -p ${shQuote(parent)}`);
-      if (mk.code !== 0) throw new Error(`could not create ${parent}: ${mk.stderr.trim()}`);
+      if (mk.code !== 0)
+        throw new Error(`could not create ${parent}: ${mk.stderr.trim()}`);
       made.add(parent);
     }
 
@@ -174,14 +185,22 @@ export const downloadItem = async (opts: DownloadOptions): Promise<FileOutcome[]
       if (r.code === 33) {
         const retry = await runner.exec(
           `curl -fL --retry 3 --progress-bar -o ${shQuote(target)} ${shQuote(url)}`,
-          { inherit: true },
+          { inherit: true }
         );
         if (retry.code !== 0) {
-          results.push({ name: f.name, status: "failed", detail: `curl exit ${retry.code}` });
+          results.push({
+            name: f.name,
+            status: 'failed',
+            detail: `curl exit ${retry.code}`,
+          });
           continue;
         }
       } else {
-        results.push({ name: f.name, status: "failed", detail: `curl exit ${r.code}` });
+        results.push({
+          name: f.name,
+          status: 'failed',
+          detail: `curl exit ${r.code}`,
+        });
         continue;
       }
     }
@@ -191,13 +210,13 @@ export const downloadItem = async (opts: DownloadOptions): Promise<FileOutcome[]
       if (got !== f.md5) {
         results.push({
           name: f.name,
-          status: "failed",
-          detail: `md5 mismatch (want ${f.md5}, got ${got ?? "none"})`,
+          status: 'failed',
+          detail: `md5 mismatch (want ${f.md5}, got ${got ?? 'none'})`,
         });
         continue;
       }
     }
-    results.push({ name: f.name, status: "downloaded" });
+    results.push({ name: f.name, status: 'downloaded' });
   }
 
   return results;

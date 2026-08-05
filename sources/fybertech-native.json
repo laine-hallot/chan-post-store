@@ -8,9 +8,7 @@
     "capture": "The 20 pages inside the fybertech crawl that are 4chan's own markup -- postContainer wrappers with data-utc timestamps -- rather than fybertech's rendered template, so chan-html reads them and fybertech-html skips them. Mostly /co/ and /v/, 2012-2014. Shares the staged out/ directory with the fybertech source: each adapter ignores what belongs to the other, so both can run over the same tree without double-counting. Unlike the rest of the crawl these carry real UTC epochs, so their timestamps are second-accurate."
   },
   "download": {
-    "exclude": [
-      "^fybertech-2015-02-16\\.7z$"
-    ]
+    "exclude": ["^fybertech-2015-02-16\\.7z$"]
   },
   "prepare": [
     {

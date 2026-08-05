@@ -1,11 +1,11 @@
-import type { Pool } from "pg";
+import type { Pool } from 'pg';
 
-import { existsSync, opendirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, opendirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
-import { stripHtml } from "../html.ts";
-import { collectPending, PostInserter } from "../ingest.ts";
-import { makeBar } from "../progress.ts";
+import { stripHtml } from '../html.ts';
+import { collectPending, PostInserter } from '../ingest.ts';
+import { makeBar } from '../progress.ts';
 
 /**
  * Ingests thread dumps in the 4chan JSON read API format
@@ -38,7 +38,7 @@ interface IngestStats {
 
 const threadFiles = function* (
   boardDir: string,
-  board: string,
+  board: string
 ): Generator<{ path: string; threadNo: number }> {
   const filePat = new RegExp(`^(?:${board} )?(\\d+)\\.(?:json|txt)$`);
   const dirPat = new RegExp(`^(?:${board} )?(\\d+)$`);
@@ -50,7 +50,7 @@ const threadFiles = function* (
       if (entry.isDirectory()) {
         const m = dirPat.exec(entry.name);
         if (!m) continue;
-        for (const ext of [".json", ".txt"]) {
+        for (const ext of ['.json', '.txt']) {
           const nested = join(path, entry.name + ext);
           if (existsSync(nested)) {
             yield { path: nested, threadNo: Number(m[1]) };
@@ -85,11 +85,16 @@ const listBoards = (root: string, only?: string[]): string[] => {
 
 export const ingestJsonApi = async (
   db: Pool,
-  opts: { root: string; sourceId: number; site: string; boards?: string[] },
+  opts: { root: string; sourceId: number; site: string; boards?: string[] }
 ): Promise<IngestStats> => {
   const inserter = new PostInserter(db, opts.sourceId);
 
-  const stats: IngestStats = { threads: 0, posts: 0, skippedPosts: 0, badFiles: 0 };
+  const stats: IngestStats = {
+    threads: 0,
+    posts: 0,
+    skippedPosts: 0,
+    badFiles: 0,
+  };
   // BATCH bounds how long a crash could lose tallies for, and forces a flush
   // so stats.posts (only incremented once a buffered insert's promise
   // resolves) doesn't lag far behind the on-disk state -- kept well under
@@ -104,15 +109,15 @@ export const ingestJsonApi = async (
   // per-board generator over an unknown-length listing), so no bar -- just
   // a spinner that proves liveness on its own timer between updates.
   const bar = makeBar({});
-  bar.start("ingesting");
+  bar.start('ingesting');
 
   for (const board of listBoards(opts.root, opts.boards)) {
     const boardDir = join(opts.root, board);
     for (const { path: file, threadNo } of threadFiles(boardDir, board)) {
       let posts: ApiPost[];
       try {
-        const { posts: parsed } = JSON.parse(readFileSync(file, "utf8"));
-        if (!Array.isArray(parsed)) throw new Error("no posts array");
+        const { posts: parsed } = JSON.parse(readFileSync(file, 'utf8'));
+        if (!Array.isArray(parsed)) throw new Error('no posts array');
         posts = parsed;
       } catch {
         stats.badFiles++;
@@ -120,7 +125,7 @@ export const ingestJsonApi = async (
       }
 
       for (const p of posts) {
-        if (typeof p.no !== "number") {
+        if (typeof p.no !== 'number') {
           stats.skippedPosts++;
           continue;
         }
@@ -138,13 +143,14 @@ export const ingestJsonApi = async (
               tripcode: p.trip ?? null,
               subject: p.sub ? stripHtml(p.sub) : null,
               bodyText: p.com ? stripHtml(p.com) : null,
-              mediaFilename: p.filename != null ? `${p.filename}${p.ext ?? ""}` : null,
+              mediaFilename:
+                p.filename != null ? `${p.filename}${p.ext ?? ''}` : null,
               mediaMd5: p.md5 ?? null,
             })
             .then((ok) => {
               if (ok) stats.posts++;
               else stats.skippedPosts++;
-            }),
+            })
         );
       }
 

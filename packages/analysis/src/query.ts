@@ -1,5 +1,5 @@
-import pg from "pg";
-import type { Pool } from "pg";
+import pg from 'pg';
+import type { Pool } from 'pg';
 
 const { Pool: PgPool } = pg;
 
@@ -54,10 +54,10 @@ export const openReadOnly = (connectionString: string): Pool => {
     max: 4,
     connectionTimeoutMillis: 10_000,
     // Year bucketing is done in UTC; don't inherit the server's zone.
-    options: "-c TimeZone=UTC",
+    options: '-c TimeZone=UTC',
   });
-  pool.on("error", (err) => {
-    console.error("unexpected error on idle postgres client", err);
+  pool.on('error', (err) => {
+    console.error('unexpected error on idle postgres client', err);
   });
   return pool;
 };
@@ -65,10 +65,12 @@ export const openReadOnly = (connectionString: string): Pool => {
 /** True when the post_stats summary table exists and is populated. */
 export const hasPostStats = async (db: Pool): Promise<boolean> => {
   const { rows } = await db.query<{ reg: string | null }>(
-    "SELECT to_regclass('public.post_stats')::text AS reg",
+    "SELECT to_regclass('public.post_stats')::text AS reg"
   );
   if (!rows[0]?.reg) return false;
-  const { rows: n } = await db.query<{ n: number }>("SELECT count(*)::bigint AS n FROM post_stats");
+  const { rows: n } = await db.query<{ n: number }>(
+    'SELECT count(*)::bigint AS n FROM post_stats'
+  );
   return (n[0]?.n ?? 0) > 0;
 };
 
@@ -79,11 +81,14 @@ export const hasPostStats = async (db: Pool): Promise<boolean> => {
  * ingest, and every fallback here depends on one of them.
  */
 export const hasQueryIndexes = async (
-  db: Pool,
+  db: Pool
 ): Promise<{ srcTs: boolean; boardTs: boolean }> => {
-  const { rows } = await db.query<{ srcts: string | null; boardts: string | null }>(
+  const { rows } = await db.query<{
+    srcts: string | null;
+    boardts: string | null;
+  }>(
     `SELECT to_regclass('public.idx_posts_src_ts')::text   AS srcts,
-            to_regclass('public.idx_posts_board_ts')::text AS boardts`,
+            to_regclass('public.idx_posts_board_ts')::text AS boardts`
   );
   return { srcTs: rows[0]?.srcts != null, boardTs: rows[0]?.boardts != null };
 };
@@ -96,11 +101,11 @@ export const hasQueryIndexes = async (
  */
 export const bucketsFromStats = async (
   db: Pool,
-  filter?: { site: string; board: string },
+  filter?: { site: string; board: string }
 ): Promise<YearBucket[]> => {
   const where = filter
-    ? "WHERE ps.site = $1 AND ps.board = $2 AND ps.year IS NOT NULL"
-    : "WHERE ps.year IS NOT NULL";
+    ? 'WHERE ps.site = $1 AND ps.board = $2 AND ps.year IS NOT NULL'
+    : 'WHERE ps.year IS NOT NULL';
   const args = filter ? [filter.site, filter.board] : [];
   const { rows } = await db.query<YearBucket>(
     `SELECT s.name AS source, ps.year::text AS year, SUM(ps.posts)::bigint AS posts
@@ -109,16 +114,20 @@ export const bucketsFromStats = async (
       ${where}
       GROUP BY s.name, ps.year
       ORDER BY ps.year, s.name`,
-    args,
+    args
   );
   return rows;
 };
 
 /** Corpus totals from post_stats: a few hundred rows, not 400M. */
 export const totalsFromStats = async (db: Pool): Promise<Totals> => {
-  const { rows } = await db.query<{ posts: number | null; lo: number | null; hi: number | null }>(
+  const { rows } = await db.query<{
+    posts: number | null;
+    lo: number | null;
+    hi: number | null;
+  }>(
     `SELECT SUM(posts)::bigint AS posts, MIN(min_ts)::bigint AS lo, MAX(max_ts)::bigint AS hi
-       FROM post_stats`,
+       FROM post_stats`
   );
   const r = rows[0];
   return { posts: r?.posts ?? 0, minTs: r?.lo ?? null, maxTs: r?.hi ?? null };
@@ -135,9 +144,11 @@ export const totalsFromStats = async (db: Pool): Promise<Totals> => {
  * Requires idx_posts_src_ts.
  */
 export const timestampSpan = async (
-  db: Pool,
+  db: Pool
 ): Promise<{ minTs: number | null; maxTs: number | null }> => {
-  const { rows: sources } = await db.query<{ id: number }>("SELECT id FROM sources");
+  const { rows: sources } = await db.query<{ id: number }>(
+    'SELECT id FROM sources'
+  );
   let minTs: number | null = null;
   let maxTs: number | null = null;
   for (const s of sources) {
@@ -146,7 +157,7 @@ export const timestampSpan = async (
                 ORDER BY ts_utc ASC  LIMIT 1) AS lo,
               (SELECT ts_utc FROM posts WHERE source_id = $1 AND ts_utc IS NOT NULL
                 ORDER BY ts_utc DESC LIMIT 1) AS hi`,
-      [s.id],
+      [s.id]
     );
     const r = rows[0];
     if (r?.lo != null) minTs = minTs == null ? r.lo : Math.min(minTs, r.lo);
@@ -167,7 +178,7 @@ export const timestampSpan = async (
  */
 export const postsByYearAndSource = async (db: Pool): Promise<YearBucket[]> => {
   const { rows: sources } = await db.query<{ id: number; name: string }>(
-    "SELECT id, name FROM sources ORDER BY name",
+    'SELECT id, name FROM sources ORDER BY name'
   );
 
   const span = await timestampSpan(db);
@@ -180,8 +191,8 @@ export const postsByYearAndSource = async (db: Pool): Promise<YearBucket[]> => {
   for (const s of sources) {
     for (let y = firstYear; y <= lastYear; y++) {
       const { rows } = await db.query<{ n: number }>(
-        "SELECT count(*)::bigint AS n FROM posts WHERE source_id = $1 AND ts_utc >= $2 AND ts_utc < $3",
-        [s.id, Date.UTC(y, 0, 1) / 1000, Date.UTC(y + 1, 0, 1) / 1000],
+        'SELECT count(*)::bigint AS n FROM posts WHERE source_id = $1 AND ts_utc >= $2 AND ts_utc < $3',
+        [s.id, Date.UTC(y, 0, 1) / 1000, Date.UTC(y + 1, 0, 1) / 1000]
       );
       const n = rows[0]?.n ?? 0;
       if (n > 0) out.push({ year: String(y), source: s.name, posts: n });
@@ -194,14 +205,14 @@ export const postsByYearAndSource = async (db: Pool): Promise<YearBucket[]> => {
 export const boardSpan = async (
   db: Pool,
   site: string,
-  board: string,
+  board: string
 ): Promise<{ minTs: number | null; maxTs: number | null }> => {
   const { rows } = await db.query<{ lo: number | null; hi: number | null }>(
     `SELECT (SELECT ts_utc FROM posts WHERE site = $1 AND board = $2 AND ts_utc IS NOT NULL
               ORDER BY ts_utc ASC  LIMIT 1) AS lo,
             (SELECT ts_utc FROM posts WHERE site = $1 AND board = $2 AND ts_utc IS NOT NULL
               ORDER BY ts_utc DESC LIMIT 1) AS hi`,
-    [site, board],
+    [site, board]
   );
   return { minTs: rows[0]?.lo ?? null, maxTs: rows[0]?.hi ?? null };
 };
@@ -218,7 +229,7 @@ export const boardSpan = async (
 export const postsByYearForBoard = async (
   db: Pool,
   site: string,
-  board: string,
+  board: string
 ): Promise<{ year: string; posts: number }[]> => {
   const span = await boardSpan(db, site, board);
   if (span.minTs == null || span.maxTs == null) return [];
@@ -228,8 +239,8 @@ export const postsByYearForBoard = async (
   const last = new Date(span.maxTs * 1000).getUTCFullYear();
   for (let y = first; y <= last; y++) {
     const { rows } = await db.query<{ n: number }>(
-      "SELECT count(*)::bigint AS n FROM posts WHERE site = $1 AND board = $2 AND ts_utc >= $3 AND ts_utc < $4",
-      [site, board, Date.UTC(y, 0, 1) / 1000, Date.UTC(y + 1, 0, 1) / 1000],
+      'SELECT count(*)::bigint AS n FROM posts WHERE site = $1 AND board = $2 AND ts_utc >= $3 AND ts_utc < $4',
+      [site, board, Date.UTC(y, 0, 1) / 1000, Date.UTC(y + 1, 0, 1) / 1000]
     );
     out.push({ year: String(y), posts: rows[0]?.n ?? 0 });
   }
@@ -244,6 +255,8 @@ export const postsByYearForBoard = async (
  * unless a small index happens to cover it. Prefer totalsFromStats.
  */
 export const totals = async (db: Pool): Promise<Totals> => {
-  const { rows } = await db.query<{ n: number }>("SELECT count(*)::bigint AS n FROM posts");
+  const { rows } = await db.query<{ n: number }>(
+    'SELECT count(*)::bigint AS n FROM posts'
+  );
   return { posts: rows[0]?.n ?? 0, ...(await timestampSpan(db)) };
 };

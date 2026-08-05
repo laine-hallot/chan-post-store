@@ -1,19 +1,22 @@
 const NAMED_ENTITIES: Record<string, string> = {
-  lt: "<",
-  gt: ">",
+  lt: '<',
+  gt: '>',
   quot: '"',
   apos: "'",
-  nbsp: " ",
+  nbsp: ' ',
 };
 
 const decodeEntities = (s: string): string => {
   return s
     .replace(/&#x([0-9a-f]+);/gi, (_, hex: string) =>
-      String.fromCodePoint(Number.parseInt(hex, 16)),
+      String.fromCodePoint(Number.parseInt(hex, 16))
     )
     .replace(/&#(\d+);/g, (_, dec: string) => String.fromCodePoint(Number(dec)))
-    .replace(/&([a-z]+);/gi, (m, name: string) => NAMED_ENTITIES[name.toLowerCase()] ?? m)
-    .replace(/&amp;/g, "&");
+    .replace(
+      /&([a-z]+);/gi,
+      (m, name: string) => NAMED_ENTITIES[name.toLowerCase()] ?? m
+    )
+    .replace(/&amp;/g, '&');
 };
 
 /**
@@ -30,10 +33,10 @@ export const cleanBodyText = (text: string): string | null => {
     text
       // A whole tag the parser left behind, then any unterminated one at the
       // end: a truncated page can stop mid-tag.
-      .replace(/<[^<>]*>/g, "")
-      .replace(/<[^<>]*$/, ""),
+      .replace(/<[^<>]*>/g, '')
+      .replace(/<[^<>]*$/, '')
   ).trimEnd();
-  return t === "" ? null : t;
+  return t === '' ? null : t;
 };
 
 /**
@@ -43,8 +46,8 @@ export const cleanBodyText = (text: string): string | null => {
 export const stripHtml = (html: string): string => {
   return decodeEntities(
     html
-      .replace(/<br\s*\/?>/gi, "\n")
-      .replace(/<wbr\s*\/?>/gi, "")
-      .replace(/<[^>]+>/g, ""),
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<wbr\s*\/?>/gi, '')
+      .replace(/<[^>]+>/g, '')
   );
 };

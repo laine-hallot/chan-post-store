@@ -1,8 +1,8 @@
-import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
-import { parseArgs } from "node:util";
+import { spawnSync } from 'node:child_process';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { parseArgs } from 'node:util';
 
 import {
   bucketsFromStats,
@@ -13,8 +13,8 @@ import {
   postsByYearAndSource,
   postsByYearForBoard,
   totals,
-} from "./query.ts";
-import { renderChart, type ChartData, type Series } from "./svg.ts";
+} from './query.ts';
+import { renderChart, type ChartData, type Series } from './svg.ts';
 
 /**
  * Renders "what is actually in the corpus" as a chart: posts per calendar
@@ -29,9 +29,9 @@ import { renderChart, type ChartData, type Series } from "./svg.ts";
 const findProjectRoot = (): string => {
   let dir = dirname(fileURLToPath(import.meta.url));
   for (;;) {
-    if (existsSync(join(dir, "sources"))) return dir;
+    if (existsSync(join(dir, 'sources'))) return dir;
     const up = dirname(dir);
-    if (up === dir) throw new Error("could not locate the repo root");
+    if (up === dir) throw new Error('could not locate the repo root');
     dir = up;
   }
 };
@@ -59,58 +59,58 @@ const findProjectRoot = (): string => {
 // 72M-post bar. If the corpus ever exceeds 34 sources, add slots or chart a
 // subset; do not wrap around.
 const COLORS = [
-  "#fb2c36", // red-500
-  "#ff6900", // orange-500
-  "#fe9a00", // amber-500
-  "#f0b100", // yellow-500
-  "#7ccf00", // lime-500
-  "#00c950", // green-500
-  "#00bc7d", // emerald-500
-  "#00bba7", // teal-500
-  "#00b8db", // cyan-500
-  "#00a6f4", // sky-500
-  "#2b7fff", // blue-500
-  "#615fff", // indigo-500
-  "#8e51ff", // violet-500
-  "#ad46ff", // purple-500
-  "#e12afb", // fuchsia-500
-  "#f6339a", // pink-500
-  "#ff2056", // rose-500
-  "#ffc9c9", // red-200
-  "#ffd6a7", // orange-200
-  "#fee685", // amber-200
-  "#fff085", // yellow-200
-  "#d8f999", // lime-200
-  "#b9f8cf", // green-200
-  "#a4f4cf", // emerald-200
-  "#96f7e4", // teal-200
-  "#a2f4fd", // cyan-200
-  "#b8e6fe", // sky-200
-  "#bedbff", // blue-200
-  "#c6d2ff", // indigo-200
-  "#ddd6ff", // violet-200
-  "#e9d4ff", // purple-200
-  "#f6cfff", // fuchsia-200
-  "#fccee8", // pink-200
-  "#ffccd3", // rose-200
+  '#fb2c36', // red-500
+  '#ff6900', // orange-500
+  '#fe9a00', // amber-500
+  '#f0b100', // yellow-500
+  '#7ccf00', // lime-500
+  '#00c950', // green-500
+  '#00bc7d', // emerald-500
+  '#00bba7', // teal-500
+  '#00b8db', // cyan-500
+  '#00a6f4', // sky-500
+  '#2b7fff', // blue-500
+  '#615fff', // indigo-500
+  '#8e51ff', // violet-500
+  '#ad46ff', // purple-500
+  '#e12afb', // fuchsia-500
+  '#f6339a', // pink-500
+  '#ff2056', // rose-500
+  '#ffc9c9', // red-200
+  '#ffd6a7', // orange-200
+  '#fee685', // amber-200
+  '#fff085', // yellow-200
+  '#d8f999', // lime-200
+  '#b9f8cf', // green-200
+  '#a4f4cf', // emerald-200
+  '#96f7e4', // teal-200
+  '#a2f4fd', // cyan-200
+  '#b8e6fe', // sky-200
+  '#bedbff', // blue-200
+  '#c6d2ff', // indigo-200
+  '#ddd6ff', // violet-200
+  '#e9d4ff', // purple-200
+  '#f6cfff', // fuchsia-200
+  '#fccee8', // pink-200
+  '#ffccd3', // rose-200
 ];
 
 const root = findProjectRoot();
 const { values } = parseArgs({
   options: {
-    db: { type: "string" },
-    out: { type: "string" },
-    svg: { type: "boolean" },
-    board: { type: "string" },
-    site: { type: "string", default: "4chan" },
+    db: { type: 'string' },
+    out: { type: 'string' },
+    svg: { type: 'boolean' },
+    board: { type: 'string' },
+    site: { type: 'string', default: '4chan' },
   },
 });
 
 const conn = values.db ?? process.env.DATABASE_URL;
 if (!conn) {
   console.error(
-    "no database connection string.\n" +
-      "  pass --db <postgres://...> or set DATABASE_URL",
+    'no database connection string.\n' +
+      '  pass --db <postgres://...> or set DATABASE_URL'
   );
   process.exit(1);
 }
@@ -118,7 +118,7 @@ if (!conn) {
 const db = openReadOnly(conn);
 
 // Never echo the connection string: it carries the password.
-console.log("reading the post store ...");
+console.log('reading the post store ...');
 const t0 = Date.now();
 
 // post_stats holds pre-rolled (source, board, year) counts, so when it is
@@ -127,8 +127,8 @@ const t0 = Date.now();
 const cached = await hasPostStats(db);
 if (!cached) {
   console.error(
-    "note: post_stats is empty, falling back to counting rows directly.\n" +
-      "      Populate it once with: node packages/cli/src/cli.ts refresh-stats --db <conn>",
+    'note: post_stats is empty, falling back to counting rows directly.\n' +
+      '      Populate it once with: node packages/cli/src/cli.ts refresh-stats --db <conn>'
   );
   // Only consulted on the fallback path. These indexes are dropped for bulk
   // loads and rebuilt afterwards, so their absence is a normal state rather
@@ -138,9 +138,9 @@ if (!cached) {
   const need = values.board ? idx.boardTs : idx.srcTs;
   if (!need) {
     console.error(
-      `warning: ${values.board ? "idx_posts_board_ts" : "idx_posts_src_ts"} is missing too.\n` +
-        "         Every count will scan the whole posts table. Build the indexes first:\n" +
-        "           node packages/cli/src/cli.ts indexes build --db <conn>",
+      `warning: ${values.board ? 'idx_posts_board_ts' : 'idx_posts_src_ts'} is missing too.\n` +
+        '         Every count will scan the whole posts table. Build the indexes first:\n' +
+        '           node packages/cli/src/cli.ts indexes build --db <conn>'
     );
   }
 }
@@ -148,7 +148,7 @@ if (!cached) {
 const buckets = cached
   ? await bucketsFromStats(
       db,
-      values.board ? { site: values.site, board: values.board } : undefined,
+      values.board ? { site: values.site, board: values.board } : undefined
     )
   : values.board
     ? (await postsByYearForBoard(db, values.site, values.board)).map((r) => ({
@@ -156,15 +156,21 @@ const buckets = cached
         source: `/${values.board}/`,
       }))
     : await postsByYearAndSource(db);
-const tot = cached ? await totalsFromStats(db) : values.board ? null : await totals(db);
+const tot = cached
+  ? await totalsFromStats(db)
+  : values.board
+    ? null
+    : await totals(db);
 await db.end();
-console.log(`aggregated ${buckets.length} buckets in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
+console.log(
+  `aggregated ${buckets.length} buckets in ${((Date.now() - t0) / 1000).toFixed(1)}s`
+);
 
 if (buckets.length === 0) {
   console.error(
     values.board
       ? `no dated posts for /${values.board}/ on ${values.site}`
-      : "no dated posts in the database — nothing to chart",
+      : 'no dated posts in the database — nothing to chart'
   );
   process.exit(1);
 }
@@ -184,14 +190,14 @@ for (const b of buckets) {
   totalBySource.set(b.source, (totalBySource.get(b.source) ?? 0) + b.posts);
 }
 const sourceNames = [...totalBySource.keys()].sort(
-  (a, z) => (totalBySource.get(z) ?? 0) - (totalBySource.get(a) ?? 0),
+  (a, z) => (totalBySource.get(z) ?? 0) - (totalBySource.get(a) ?? 0)
 );
 if (sourceNames.length > COLORS.length) {
   // Better to stop than to hand two archives the same colour: the chart's
   // whole job is telling them apart.
   console.error(
     `${sourceNames.length} sources but only ${COLORS.length} validated colors.\n` +
-      `Add slots from the reference palette (validating the new set) or chart a subset with --board.`,
+      `Add slots from the reference palette (validating the new set) or chart a subset with --board.`
   );
   process.exit(1);
 }
@@ -204,7 +210,7 @@ const grid = new Map<string, Map<string, number>>();
 for (const y of allYears) grid.set(y, new Map());
 for (const b of buckets) grid.get(b.year)?.set(b.source, b.posts);
 
-const fmt = (n: number): string => n.toLocaleString("en-US");
+const fmt = (n: number): string => n.toLocaleString('en-US');
 
 // Sum of what is actually charted, so the headline matches the bars.
 const charted = buckets.reduce((n, b) => n + b.posts, 0);
@@ -212,48 +218,66 @@ const charted = buckets.reduce((n, b) => n + b.posts, 0);
 let title: string;
 let subtitle: string;
 if (values.board) {
-  const active = buckets.filter((b) => b.posts > 0).map((b) => b.year).sort();
+  const active = buckets
+    .filter((b) => b.posts > 0)
+    .map((b) => b.year)
+    .sort();
   title = `/${values.board}/ — posts by year`;
   subtitle =
     `${fmt(charted)} posts, ${active[0]} to ${active[active.length - 1]}` +
-    (series.length > 1 ? `, across ${series.length} archives` : "") +
-    ". Each post is counted once, attributed to the archive that supplied it.";
+    (series.length > 1 ? `, across ${series.length} archives` : '') +
+    '. Each post is counted once, attributed to the archive that supplied it.';
 } else {
   const span =
     tot!.minTs && tot!.maxTs
       ? `${new Date(tot!.minTs * 1000).toISOString().slice(0, 7)} to ${new Date(tot!.maxTs * 1000).toISOString().slice(0, 7)}`
-      : "unknown span";
+      : 'unknown span';
   const undated = tot!.posts - charted;
-  title = "Post coverage by year and archive";
+  title = 'Post coverage by year and archive';
   subtitle =
     `${fmt(charted)} dated posts across ${series.length} sources, ${span}.` +
-    (undated > 0 ? ` ${fmt(undated)} undated posts are not shown.` : "") +
-    " Each post is counted once, attributed to the archive that supplied it first.";
+    (undated > 0 ? ` ${fmt(undated)} undated posts are not shown.` : '') +
+    ' Each post is counted once, attributed to the archive that supplied it first.';
 }
 
-const data: ChartData = { years: allYears, series, values: grid, title, subtitle };
+const data: ChartData = {
+  years: allYears,
+  series,
+  values: grid,
+  title,
+  subtitle,
+};
 
 const svg = renderChart(data);
-const outDir = join(root, "artifacts");
+const outDir = join(root, 'artifacts');
 mkdirSync(outDir, { recursive: true });
 
 const base = values.out
   ? resolve(root, values.out)
-  : join(outDir, values.board ? `post-coverage-${values.site}-${values.board}` : "post-coverage");
+  : join(
+      outDir,
+      values.board
+        ? `post-coverage-${values.site}-${values.board}`
+        : 'post-coverage'
+    );
 const svgPath = `${base}.svg`;
 const pngPath = `${base}.png`;
 writeFileSync(svgPath, svg);
 
 // resvg comes from the flake rather than a native npm module, so the
 // toolchain stays declarative.
-const r = spawnSync("resvg", ["--zoom", "2", svgPath, pngPath], { stdio: "inherit" });
+const r = spawnSync('resvg', ['--zoom', '2', svgPath, pngPath], {
+  stdio: 'inherit',
+});
 if (r.error || r.status !== 0) {
-  console.error(`resvg failed (${r.error?.message ?? `exit ${r.status}`}); SVG written to ${svgPath}`);
+  console.error(
+    `resvg failed (${r.error?.message ?? `exit ${r.status}`}); SVG written to ${svgPath}`
+  );
   process.exit(1);
 }
 if (!values.svg) {
   // The SVG is an intermediate unless asked for.
-  const { unlinkSync } = await import("node:fs");
+  const { unlinkSync } = await import('node:fs');
   unlinkSync(svgPath);
 }
 console.log(`wrote ${pngPath}`);

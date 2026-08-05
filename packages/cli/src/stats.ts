@@ -1,4 +1,4 @@
-import type { Pool } from "pg";
+import type { Pool } from 'pg';
 
 /**
  * Rebuilds `post_stats` from `posts`.
@@ -15,8 +15,8 @@ import type { Pool } from "pg";
 export const refreshPostStats = async (db: Pool): Promise<number> => {
   const client = await db.connect();
   try {
-    await client.query("BEGIN");
-    await client.query("DELETE FROM post_stats");
+    await client.query('BEGIN');
+    await client.query('DELETE FROM post_stats');
     await client.query(`
       INSERT INTO post_stats (source_id, site, board, year, posts, min_ts, max_ts)
       SELECT source_id, site, board,
@@ -26,12 +26,12 @@ export const refreshPostStats = async (db: Pool): Promise<number> => {
        GROUP BY source_id, site, board, year
     `);
     const { rows } = await client.query<{ n: number }>(
-      "SELECT COUNT(*) AS n FROM post_stats",
+      'SELECT COUNT(*) AS n FROM post_stats'
     );
-    await client.query("COMMIT");
+    await client.query('COMMIT');
     return rows[0]!.n;
   } catch (e) {
-    await client.query("ROLLBACK");
+    await client.query('ROLLBACK');
     throw e;
   } finally {
     client.release();
@@ -64,20 +64,22 @@ export const boardList = async (db: Pool): Promise<BoardStat[]> => {
 export const boardYears = async (
   db: Pool,
   site: string,
-  board: string,
+  board: string
 ): Promise<{ year: number; posts: number }[]> => {
   const { rows } = await db.query<{ year: number; posts: number }>(
     `SELECT year, SUM(posts)::bigint AS posts
        FROM post_stats
       WHERE site = $1 AND board = $2 AND year IS NOT NULL
       GROUP BY year ORDER BY year`,
-    [site, board],
+    [site, board]
   );
   return rows;
 };
 
 /** True when the summary table has been populated. */
 export const hasStats = async (db: Pool): Promise<boolean> => {
-  const { rows } = await db.query<{ n: number }>("SELECT COUNT(*) AS n FROM post_stats");
+  const { rows } = await db.query<{ n: number }>(
+    'SELECT COUNT(*) AS n FROM post_stats'
+  );
   return rows[0]!.n > 0;
 };

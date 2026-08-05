@@ -7,10 +7,7 @@
     "short-desc": "This data was donated to the Bibliotheca Anonoma, which uploaded it to the Internet Archive for safekeeping on December 23th, 2015."
   },
   "download": {
-    "exclude": [
-      "^thumbs",
-      "thumbs-.*\\.tar\\.xz"
-    ]
+    "exclude": ["^thumbs", "thumbs-.*\\.tar\\.xz"]
   },
   "prepare": [
     {

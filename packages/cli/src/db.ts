@@ -1,5 +1,5 @@
-import pg from "pg";
-import type { Pool } from "pg";
+import pg from 'pg';
+import type { Pool } from 'pg';
 
 const { Pool: PgPool } = pg;
 
@@ -126,18 +126,18 @@ CREATE INDEX IF NOT EXISTS idx_post_stats_board
  */
 export const QUERY_INDEXES: { name: string; sql: string }[] = [
   {
-    name: "idx_posts_board_ts",
-    sql: "CREATE INDEX IF NOT EXISTS idx_posts_board_ts ON posts (site, board, ts_utc)",
+    name: 'idx_posts_board_ts',
+    sql: 'CREATE INDEX IF NOT EXISTS idx_posts_board_ts ON posts (site, board, ts_utc)',
   },
   {
     // covering index for the list/stats queries: distinct post/thread counts
     // and date spans per board without touching the (body-text-heavy) rows
-    name: "idx_posts_stats",
-    sql: "CREATE INDEX IF NOT EXISTS idx_posts_stats ON posts (site, board, post_no, thread_no, ts_utc)",
+    name: 'idx_posts_stats',
+    sql: 'CREATE INDEX IF NOT EXISTS idx_posts_stats ON posts (site, board, post_no, thread_no, ts_utc)',
   },
   {
-    name: "idx_posts_src_ts",
-    sql: "CREATE INDEX IF NOT EXISTS idx_posts_src_ts ON posts (source_id, ts_utc)",
+    name: 'idx_posts_src_ts',
+    sql: 'CREATE INDEX IF NOT EXISTS idx_posts_src_ts ON posts (source_id, ts_utc)',
   },
   {
     // gin_pending_list_limit is in kB (262144 = 256MB), not a unit string.
@@ -150,22 +150,22 @@ export const QUERY_INDEXES: { name: string; sql: string }[] = [
     // IF NOT EXISTS means this does NOT reach an index that already exists.
     // On a store built before this setting, apply it by hand:
     //   ALTER INDEX idx_posts_search SET (gin_pending_list_limit = 262144);
-    name: "idx_posts_search",
+    name: 'idx_posts_search',
     sql:
-      "CREATE INDEX IF NOT EXISTS idx_posts_search ON posts USING GIN (search_vector)" +
-      " WITH (gin_pending_list_limit = 262144)",
+      'CREATE INDEX IF NOT EXISTS idx_posts_search ON posts USING GIN (search_vector)' +
+      ' WITH (gin_pending_list_limit = 262144)',
   },
 ];
 
 /** Which query indexes currently exist, with their on-disk sizes. */
 export const queryIndexStatus = async (
-  db: Pool,
+  db: Pool
 ): Promise<{ name: string; exists: boolean; bytes: number }[]> => {
   const { rows } = await db.query<{ relname: string; bytes: number }>(
     `SELECT c.relname, pg_relation_size(c.oid)::bigint AS bytes
        FROM pg_class c
       WHERE c.relkind = 'i' AND c.relname = ANY($1)`,
-    [QUERY_INDEXES.map((i) => i.name)],
+    [QUERY_INDEXES.map((i) => i.name)]
   );
   const found = new Map(rows.map((r) => [r.relname, r.bytes]));
   return QUERY_INDEXES.map((i) => ({
@@ -218,13 +218,13 @@ export const openDb = async (connectionString: string): Promise<Pool> => {
     // query is next in line, racing two queries on one connection (pg
     // deprecated and will remove the queuing behaviour that happens to make
     // that "work" today).
-    options: "-c TimeZone=UTC",
+    options: '-c TimeZone=UTC',
   });
   // A NAS-hosted connection can drop; without this handler that surfaces as
   // an uncaught exception and crashes the process instead of just failing
   // the query that was using it.
-  pool.on("error", (err) => {
-    console.error("unexpected error on idle postgres client", err);
+  pool.on('error', (err) => {
+    console.error('unexpected error on idle postgres client', err);
   });
   await pool.query(SCHEMA);
   return pool;
@@ -233,15 +233,15 @@ export const openDb = async (connectionString: string): Promise<Pool> => {
 export const getOrCreateSource = async (
   db: Pool,
   name: string,
-  link?: string,
+  link?: string
 ): Promise<number> => {
   await db.query(
-    "INSERT INTO sources (name, link) VALUES ($1, $2) ON CONFLICT (name) DO NOTHING",
-    [name, link ?? null],
+    'INSERT INTO sources (name, link) VALUES ($1, $2) ON CONFLICT (name) DO NOTHING',
+    [name, link ?? null]
   );
   const { rows } = await db.query<{ id: number }>(
-    "SELECT id FROM sources WHERE name = $1",
-    [name],
+    'SELECT id FROM sources WHERE name = $1',
+    [name]
   );
   if (!rows[0]) throw new Error(`failed to create source ${name}`);
   return rows[0].id;
@@ -255,14 +255,21 @@ export const getOrCreateSource = async (
  * and marking on anything short of a normal return would record progress
  * rather than completion.
  */
-export const markSourceCompleted = async (db: Pool, sourceId: number): Promise<void> => {
-  await db.query("UPDATE sources SET completed_at = now() WHERE id = $1", [sourceId]);
+export const markSourceCompleted = async (
+  db: Pool,
+  sourceId: number
+): Promise<void> => {
+  await db.query('UPDATE sources SET completed_at = now() WHERE id = $1', [
+    sourceId,
+  ]);
 };
 
 /** Manifest `name`s already completed, mapped to when. */
-export const completedSources = async (db: Pool): Promise<Map<string, Date>> => {
+export const completedSources = async (
+  db: Pool
+): Promise<Map<string, Date>> => {
   const { rows } = await db.query<{ name: string; completed_at: Date }>(
-    "SELECT name, completed_at FROM sources WHERE completed_at IS NOT NULL",
+    'SELECT name, completed_at FROM sources WHERE completed_at IS NOT NULL'
   );
   return new Map(rows.map((r) => [r.name, r.completed_at]));
 };

@@ -1,12 +1,12 @@
-import type { Pool } from "pg";
+import type { Pool } from 'pg';
 
-import { parse, type HTMLElement } from "node-html-parser";
-import { readFileSync } from "node:fs";
+import { parse, type HTMLElement } from 'node-html-parser';
+import { readFileSync } from 'node:fs';
 
-import { listHtmlPages } from "../html-tree.ts";
-import { cleanBodyText } from "../html.ts";
-import { collectPending, PostInserter } from "../ingest.ts";
-import { makeBar } from "../progress.ts";
+import { listHtmlPages } from '../html-tree.ts';
+import { cleanBodyText } from '../html.ts';
+import { collectPending, PostInserter } from '../ingest.ts';
+import { makeBar } from '../progress.ts';
 
 /**
  * Ingests saved 4chan board/thread pages in the site's own HTML — the markup
@@ -51,13 +51,13 @@ const text = (root: HTMLElement, sel: string): string | null => {
   const el = root.querySelector(sel);
   if (!el) return null;
   const t = el.textContent;
-  return t === "" ? null : t;
+  return t === '' ? null : t;
 };
 
 /** Reads one post's fields out of its container. Thread attribution is the
  * caller's job -- on a board index it depends on which OP came before. */
 const readPost = (
-  container: HTMLElement,
+  container: HTMLElement
 ): {
   postNo: number;
   isOp: boolean;
@@ -70,42 +70,42 @@ const readPost = (
   mediaMd5: string | null;
 } | null => {
   // id is pc<postno> on the wrapper.
-  const id = container.getAttribute("id") ?? "";
-  const postNo = Number(id.replace(/^pc/, ""));
+  const id = container.getAttribute('id') ?? '';
+  const postNo = Number(id.replace(/^pc/, ''));
   if (!Number.isInteger(postNo) || postNo <= 0) return null;
 
-  const isOp = container.classList.contains("opContainer");
+  const isOp = container.classList.contains('opContainer');
 
   // Prefer the desktop block; the mobile one carries the same values, so
   // either will do, but picking deterministically avoids reading half the
   // fields from one and half from the other.
   const info =
-    container.querySelector(".postInfo.desktop") ??
-    container.querySelector(".postInfoM.mobile") ??
+    container.querySelector('.postInfo.desktop') ??
+    container.querySelector('.postInfoM.mobile') ??
     container;
 
   const utcAttr =
-    info.querySelector("[data-utc]")?.getAttribute("data-utc") ??
-    container.querySelector("[data-utc]")?.getAttribute("data-utc");
+    info.querySelector('[data-utc]')?.getAttribute('data-utc') ??
+    container.querySelector('[data-utc]')?.getAttribute('data-utc');
   const utc = utcAttr != null && /^\d+$/.test(utcAttr) ? Number(utcAttr) : null;
 
   // The poster's original filename is the anchor's title when it was truncated
   // for display, and the link text otherwise.
-  const fileLink = container.querySelector(".fileText a");
+  const fileLink = container.querySelector('.fileText a');
   const mediaFilename =
-    fileLink?.getAttribute("title") ??
-    (fileLink?.textContent === "" ? null : (fileLink?.textContent ?? null));
+    fileLink?.getAttribute('title') ??
+    (fileLink?.textContent === '' ? null : (fileLink?.textContent ?? null));
 
-  const body = container.querySelector("blockquote.postMessage");
+  const body = container.querySelector('blockquote.postMessage');
   let bodyText: string | null = null;
   if (body) {
     // Drop the truncation notice before reading the text, so it is not stored
     // as though the poster had written it.
-    for (const abbr of body.querySelectorAll(".abbr")) abbr.remove();
+    for (const abbr of body.querySelectorAll('.abbr')) abbr.remove();
     // <br> carries the line breaks; textContent would run the lines together.
     // cleanBodyText then sweeps up markup the parser left as literal text --
     // broken or unclosed tags inside a post survive textContent otherwise.
-    const withBreaks = body.innerHTML.replace(/<br\s*\/?>/gi, "\n");
+    const withBreaks = body.innerHTML.replace(/<br\s*\/?>/gi, '\n');
     bodyText = cleanBodyText(parse(withBreaks).textContent);
   }
 
@@ -113,12 +113,13 @@ const readPost = (
     postNo,
     isOp,
     tsUtc: utc,
-    name: text(info, ".name") ?? text(container, ".name"),
-    tripcode: text(info, ".postertrip") ?? text(container, ".postertrip"),
-    subject: text(info, ".subject") ?? text(container, ".subject"),
+    name: text(info, '.name') ?? text(container, '.name'),
+    tripcode: text(info, '.postertrip') ?? text(container, '.postertrip'),
+    subject: text(info, '.subject') ?? text(container, '.subject'),
     bodyText,
     mediaFilename,
-    mediaMd5: container.querySelector("[data-md5]")?.getAttribute("data-md5") ?? null,
+    mediaMd5:
+      container.querySelector('[data-md5]')?.getAttribute('data-md5') ?? null,
   };
 };
 
@@ -136,11 +137,13 @@ const threadNoFromName = (fileName: string): number | null => {
 /** Board and thread number from a saved page's filename or its own markup. */
 const threadIdentity = (
   fileName: string,
-  doc: HTMLElement,
+  doc: HTMLElement
 ): { board: string; threadNo: number | null } | null => {
   // warc-extract names files after the captured URL, e.g.
   // boards.4channel.org_a_thread_231722770.html or boards.4chan.org_pol.html
-  const thread = /^boards\.4chan(?:nel)?\.org_([a-z0-9]+)_thread_(\d+)/i.exec(fileName);
+  const thread = /^boards\.4chan(?:nel)?\.org_([a-z0-9]+)_thread_(\d+)/i.exec(
+    fileName
+  );
   if (thread) return { board: thread[1], threadNo: Number(thread[2]) };
   const board = /^boards\.4chan(?:nel)?\.org_([a-z0-9]+)\b/i.exec(fileName);
   if (board) return { board: board[1], threadNo: null };
@@ -151,7 +154,8 @@ const threadIdentity = (
   const mirrored = /^([a-z0-9]+)_(\d+)\.html?$/i.exec(fileName);
   if (mirrored) return { board: mirrored[1], threadNo: Number(mirrored[2]) };
   // Fall back to the page's own canonical link when the filename is opaque.
-  const href = doc.querySelector('link[rel="canonical"]')?.getAttribute("href") ?? "";
+  const href =
+    doc.querySelector('link[rel="canonical"]')?.getAttribute('href') ?? '';
   const canon = /\/([a-z0-9]+)\/thread\/(\d+)/i.exec(href);
   if (canon) return { board: canon[1], threadNo: Number(canon[2]) };
   const bonly = /\/([a-z0-9]+)\/?$/i.exec(href);
@@ -161,7 +165,7 @@ const threadIdentity = (
 
 export const ingestChanHtml = async (
   db: Pool,
-  opts: { root: string; sourceId: number; site: string; boards?: string[] },
+  opts: { root: string; sourceId: number; site: string; boards?: string[] }
 ): Promise<IngestStats> => {
   const inserter = new PostInserter(db, opts.sourceId);
   const stats: IngestStats = {
@@ -190,7 +194,7 @@ export const ingestChanHtml = async (
     // them killed an entire 23k-page pass before this guard existed.
     let raw: string;
     try {
-      raw = readFileSync(page.path, "utf8");
+      raw = readFileSync(page.path, 'utf8');
     } catch {
       stats.badFiles++;
       continue;
@@ -216,7 +220,7 @@ export const ingestChanHtml = async (
     // separately rather than as an empty success, because a directory can
     // legitimately hold both (fybertech's crawl mixes 20 native pages in
     // with 617 of its own) and each adapter must skip the other's files.
-    if (!doc.querySelector(".postContainer")) {
+    if (!doc.querySelector('.postContainer')) {
       stats.skippedForeign++;
       continue;
     }
@@ -224,9 +228,11 @@ export const ingestChanHtml = async (
     if (id.threadNo != null) stats.threads++;
 
     let currentThread = id.threadNo;
-    for (const container of doc.querySelectorAll(".postContainer")) {
-      const isOp = container.classList.contains("opContainer");
-      const provisional = Number((container.getAttribute("id") ?? "").replace(/^pc/, ""));
+    for (const container of doc.querySelectorAll('.postContainer')) {
+      const isOp = container.classList.contains('opContainer');
+      const provisional = Number(
+        (container.getAttribute('id') ?? '').replace(/^pc/, '')
+      );
       if (isOp) currentThread = id.threadNo ?? provisional;
       const p = readPost(container);
       if (!p) {
@@ -255,7 +261,7 @@ export const ingestChanHtml = async (
           .then((ok) => {
             if (ok) stats.posts++;
             else stats.skippedDup++;
-          }),
+          })
       );
     }
     bar.message(`/${id.board}/ files=${stats.files} posts=${stats.posts}`);

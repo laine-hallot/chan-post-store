@@ -1,17 +1,17 @@
-import type { Pool } from "pg";
+import type { Pool } from 'pg';
 
-import { createReadStream } from "node:fs";
-import { createInterface } from "node:readline";
+import { createReadStream } from 'node:fs';
+import { createInterface } from 'node:readline';
 
-import { collectPending, PostInserter } from "../ingest.ts";
-import { makeBar } from "../progress.ts";
+import { collectPending, PostInserter } from '../ingest.ts';
+import { makeBar } from '../progress.ts';
 import {
   CREATE_TABLE_RE,
   insertColumns,
   nyWallToUtc,
   parseTuples,
   takeCompleteTuples,
-} from "../mysqldump.ts";
+} from '../mysqldump.ts';
 
 /**
  * Ingests the 2019 Desuarchive/RBT database dumps.
@@ -54,10 +54,10 @@ import {
  * 4chan) are skipped, as elsewhere.
  */
 
-const REQUIRED_COLS = ["num", "subnum", "thread_num", "timestamp", "comment"];
+const REQUIRED_COLS = ['num', 'subnum', 'thread_num', 'timestamp', 'comment'];
 
 /** A UTF-8 BOM appears before the first INSERT of each table in these dumps. */
-const BOM = "﻿";
+const BOM = '﻿';
 
 interface IngestStats {
   posts: number;
@@ -75,7 +75,7 @@ export const ingestDesuarchiveSql = async (
     site: string;
     boards?: string[];
     fileSize?: number;
-  },
+  }
 ): Promise<IngestStats> => {
   const inserter = new PostInserter(db, opts.sourceId);
   const stats: IngestStats = {
@@ -87,18 +87,18 @@ export const ingestDesuarchiveSql = async (
   };
 
   const input =
-    opts.file === "-"
+    opts.file === '-'
       ? process.stdin
       : createReadStream(opts.file, { highWaterMark: 4 * 1024 * 1024 });
   let bytesRead = 0;
   const bar = makeBar({ max: opts.fileSize });
   bar.start(`reading ${opts.file}`);
-  input.on("data", (chunk: string | Buffer) => {
+  input.on('data', (chunk: string | Buffer) => {
     bytesRead += chunk.length;
     bar.advance(
       chunk.length,
       `${(bytesRead / 1e6).toFixed(0)}MB read, ${stats.posts} posts,` +
-        ` tables: ${stats.tables.join(",") || "-"}`,
+        ` tables: ${stats.tables.join(',') || '-'}`
     );
   });
   const lines = createInterface({ input, crlfDelay: Infinity });
@@ -113,7 +113,7 @@ export const ingestDesuarchiveSql = async (
   const pending: Promise<void>[] = [];
 
   /** Unconsumed text of a statement whose last tuple is still open. */
-  let buf = "";
+  let buf = '';
 
   /** Insert every complete tuple in `buf`, keeping the trailing fragment. */
   const drainBuffer = async (): Promise<void> => {
@@ -140,7 +140,8 @@ export const ingestDesuarchiveSql = async (
               board,
               threadNo: threadNo === 0 ? num : threadNo,
               postNo: num,
-              isOp: idx.op !== undefined ? vals[idx.op] === "1" : num === threadNo,
+              isOp:
+                idx.op !== undefined ? vals[idx.op] === '1' : num === threadNo,
               tsUtc: ts > 0 ? nyWallToUtc(ts) : null,
               name: vals[idx.name] ?? null,
               tripcode: vals[idx.trip] ?? null,
@@ -152,7 +153,7 @@ export const ingestDesuarchiveSql = async (
             .then((ok) => {
               if (ok) stats.posts++;
               else stats.skippedDup++;
-            }),
+            })
         );
         if (++sinceCommit >= COMMIT_EVERY) {
           await inserter.finish();
@@ -173,7 +174,7 @@ export const ingestDesuarchiveSql = async (
     if (creating !== null) {
       const col = /^\s*`([^`]+)`/.exec(line);
       if (col) tableCols.get(creating)!.push(col[1]);
-      else if (line.startsWith(")")) creating = null;
+      else if (line.startsWith(')')) creating = null;
       continue;
     }
 
@@ -186,10 +187,10 @@ export const ingestDesuarchiveSql = async (
     if (active !== null) {
       // A new statement starts only at column 0 and outside any open literal,
       // which an unbalanced buffer proves we are not.
-      if (buf.length === 0 && line.startsWith("INSERT INTO `")) {
+      if (buf.length === 0 && line.startsWith('INSERT INTO `')) {
         active = null; // fall through to the INSERT handling below
       } else {
-        buf += (buf.length ? "\n" : "") + line;
+        buf += (buf.length ? '\n' : '') + line;
         await drainBuffer();
         continue;
       }
@@ -202,15 +203,15 @@ export const ingestDesuarchiveSql = async (
       continue;
     }
 
-    if (!line.startsWith("INSERT INTO `")) continue;
-    const tick = line.indexOf("`", 13);
+    if (!line.startsWith('INSERT INTO `')) continue;
+    const tick = line.indexOf('`', 13);
     const table = line.slice(13, tick);
-    const valuesAt = line.indexOf(" VALUES", tick);
+    const valuesAt = line.indexOf(' VALUES', tick);
     if (valuesAt < 0) continue;
 
     active = null;
     const cols = tableCols.get(table);
-    const board = table.replace(/_deleted$/, "");
+    const board = table.replace(/_deleted$/, '');
     if (opts.boards && !opts.boards.includes(board)) continue;
 
     // The INSERT's own column list is authoritative; fall back to the
@@ -239,6 +240,6 @@ export const ingestDesuarchiveSql = async (
 
   await inserter.finish();
   await Promise.all(pending);
-  bar.stop(`${stats.posts} posts from tables [${stats.tables.join(", ")}]`);
+  bar.stop(`${stats.posts} posts from tables [${stats.tables.join(', ')}]`);
   return stats;
 };

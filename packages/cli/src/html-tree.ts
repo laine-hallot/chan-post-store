@@ -1,6 +1,6 @@
-import { Buffer } from "node:buffer";
-import { opendirSync, readdirSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { Buffer } from 'node:buffer';
+import { opendirSync, readdirSync, statSync } from 'node:fs';
+import { join } from 'node:path';
 
 /**
  * Finds saved HTML pages for the HTML adapters, in either of the two layouts
@@ -49,13 +49,13 @@ export interface HtmlPageRef {
 const htmlNamesIn = (dir: string): { name: string; raw: Buffer }[] => {
   let raws: Buffer[];
   try {
-    raws = readdirSync(dir, { encoding: "buffer" });
+    raws = readdirSync(dir, { encoding: 'buffer' });
   } catch {
     return [];
   }
   const out: { name: string; raw: Buffer }[] = [];
   for (const raw of raws) {
-    const name = raw.toString("utf8");
+    const name = raw.toString('utf8');
     if (!/\.html?$/i.test(name)) continue;
     // Directories can end in .html too; only files are pages.
     try {
@@ -70,7 +70,10 @@ const htmlNamesIn = (dir: string): { name: string; raw: Buffer }[] => {
 
 /** Joins a string directory and a raw filename into a byte path. */
 const joinBytes = (dir: string, name: Buffer): Buffer => {
-  return Buffer.concat([Buffer.from(dir.endsWith("/") ? dir : `${dir}/`), name]);
+  return Buffer.concat([
+    Buffer.from(dir.endsWith('/') ? dir : `${dir}/`),
+    name,
+  ]);
 };
 
 const subdirsIn = (dir: string): string[] => {
@@ -110,7 +113,10 @@ const subdirsIn = (dir: string): string[] => {
  * markup, which only the adapter can read -- so callers still apply their own
  * per-page board check.
  */
-export const listHtmlPages = (root: string, boards?: string[]): HtmlPageRef[] => {
+export const listHtmlPages = (
+  root: string,
+  boards?: string[]
+): HtmlPageRef[] => {
   const out: HtmlPageRef[] = htmlNamesIn(root).map(({ name, raw }) => ({
     path: joinBytes(root, raw),
     name,

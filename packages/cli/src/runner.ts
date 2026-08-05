@@ -1,7 +1,13 @@
-import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
-import { homedir, tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { spawn } from 'node:child_process';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  writeFileSync,
+} from 'node:fs';
+import { homedir, tmpdir } from 'node:os';
+import { dirname, join, resolve } from 'node:path';
 
 /**
  * Command execution that is either local or on the NAS over SSH.
@@ -55,26 +61,26 @@ const run = (
   file: string,
   args: string[],
   inherit: boolean,
-  stdin?: Buffer,
+  stdin?: Buffer
 ): Promise<ExecResult & { raw: Buffer }> => {
   return new Promise((res, rej) => {
     // spawn, not exec: staging commands stream progress for minutes to hours
     // and can emit more output than exec's buffer holds.
     const child = spawn(file, args, {
       stdio: [
-        stdin ? "pipe" : "ignore",
-        inherit ? "inherit" : "pipe",
-        inherit ? "inherit" : "pipe",
+        stdin ? 'pipe' : 'ignore',
+        inherit ? 'inherit' : 'pipe',
+        inherit ? 'inherit' : 'pipe',
       ],
     });
     const out: Buffer[] = [];
-    let stderr = "";
-    child.stdout?.on("data", (d: Buffer) => out.push(d));
-    child.stderr?.on("data", (d) => (stderr += d));
-    child.on("error", rej);
-    child.on("close", (code) => {
+    let stderr = '';
+    child.stdout?.on('data', (d: Buffer) => out.push(d));
+    child.stderr?.on('data', (d) => (stderr += d));
+    child.on('error', rej);
+    child.on('close', (code) => {
       const raw = Buffer.concat(out);
-      res({ code: code ?? -1, stdout: raw.toString("utf8"), stderr, raw });
+      res({ code: code ?? -1, stdout: raw.toString('utf8'), stderr, raw });
     });
     if (stdin) {
       child.stdin!.end(stdin);
@@ -83,7 +89,7 @@ const run = (
 };
 
 export class LocalRunner implements Runner {
-  readonly where = "local";
+  readonly where = 'local';
   readonly rootIsDatasets = false;
   readonly root: string;
 
@@ -93,7 +99,11 @@ export class LocalRunner implements Runner {
 
   exec(cmd: string, opts: ExecOptions = {}): Promise<ExecResult> {
     const cwd = opts.cwd ?? this.root;
-    return run("bash", ["-c", `cd ${shQuote(cwd)} && ${cmd}`], opts.inherit ?? false);
+    return run(
+      'bash',
+      ['-c', `cd ${shQuote(cwd)} && ${cmd}`],
+      opts.inherit ?? false
+    );
   }
 
   path(rel: string): string {
@@ -136,7 +146,7 @@ export class RemoteRunner implements Runner {
     this.root = root;
     this.key = key;
     this.where = `ssh://${host}`;
-    this.ctl = join(mkdtempSync(join(tmpdir(), "chan-ssh-")), "ctl");
+    this.ctl = join(mkdtempSync(join(tmpdir(), 'chan-ssh-')), 'ctl');
   }
 
   /**
@@ -150,12 +160,15 @@ export class RemoteRunner implements Runner {
    * connection before reaching the right one.
    */
   private sshOpts(): string[] {
-    const o = ["-o", "BatchMode=yes"];
+    const o = ['-o', 'BatchMode=yes'];
     if (this.key) {
       o.push(
-        "-i", this.key,
-        "-o", "IdentitiesOnly=yes",
-        "-o", "IdentityAgent=none",
+        '-i',
+        this.key,
+        '-o',
+        'IdentitiesOnly=yes',
+        '-o',
+        'IdentityAgent=none'
       );
     }
     return o;
@@ -164,20 +177,23 @@ export class RemoteRunner implements Runner {
   /** Opens the shared connection. Fails fast if the host isn't reachable. */
   async connect(): Promise<void> {
     this.master = spawn(
-      "ssh",
+      'ssh',
       [
-        "-N",
-        "-M",
-        "-S", this.ctl,
+        '-N',
+        '-M',
+        '-S',
+        this.ctl,
         ...this.sshOpts(),
-        "-o", "ConnectTimeout=10",
-        "-o", "ServerAliveInterval=30",
+        '-o',
+        'ConnectTimeout=10',
+        '-o',
+        'ServerAliveInterval=30',
         this.host,
       ],
-      { stdio: ["ignore", "ignore", "pipe"] },
+      { stdio: ['ignore', 'ignore', 'pipe'] }
     );
-    let err = "";
-    this.master.stderr?.on("data", (d) => (err += d));
+    let err = '';
+    this.master.stderr?.on('data', (d) => (err += d));
 
     // Wait for the control socket to appear, or for the master to give up.
     const deadline = Date.now() + 15_000;
@@ -188,7 +204,7 @@ export class RemoteRunner implements Runner {
           ? `  install the key: ssh-copy-id -i ${this.key}.pub ${this.host}`
           : `  set NAS_KEY in .env, or run: ssh-copy-id ${this.host}`;
         throw new Error(
-          `ssh to ${this.host} failed: ${err.trim() || `exited ${this.master.exitCode}`}\n${hint}`,
+          `ssh to ${this.host} failed: ${err.trim() || `exited ${this.master.exitCode}`}\n${hint}`
         );
       }
       if (Date.now() > deadline) {
@@ -205,52 +221,59 @@ export class RemoteRunner implements Runner {
     // here as a single argv element and left for that shell to parse.
     const remote = `cd ${shQuote(cwd)} && ${cmd}`;
     return run(
-      "ssh",
-      ["-S", this.ctl, ...this.sshOpts(), this.host, remote],
-      opts.inherit ?? false,
+      'ssh',
+      ['-S', this.ctl, ...this.sshOpts(), this.host, remote],
+      opts.inherit ?? false
     );
   }
 
   path(rel: string): string {
-    if (rel.startsWith("/")) return rel;
-    return `${this.root.replace(/\/$/, "")}/${rel}`;
+    if (rel.startsWith('/')) return rel;
+    return `${this.root.replace(/\/$/, '')}/${rel}`;
   }
 
   /** Streams a remote file back over the existing connection. */
   async readFile(path: string): Promise<Buffer> {
     const r = await run(
-      "ssh",
-      ["-S", this.ctl, ...this.sshOpts(), this.host, `cat ${shQuote(path)}`],
-      false,
+      'ssh',
+      ['-S', this.ctl, ...this.sshOpts(), this.host, `cat ${shQuote(path)}`],
+      false
     );
     if (r.code !== 0) {
-      throw new Error(`could not read ${path} on ${this.host}: ${r.stderr.trim()}`);
+      throw new Error(
+        `could not read ${path} on ${this.host}: ${r.stderr.trim()}`
+      );
     }
     return r.raw;
   }
 
   /** Writes a remote file by piping the bytes in over stdin. */
   async writeFile(path: string, data: Buffer): Promise<void> {
-    const dir = path.replace(/\/[^/]*$/, "");
+    const dir = path.replace(/\/[^/]*$/, '');
     const r = await run(
-      "ssh",
+      'ssh',
       [
-        "-S", this.ctl,
+        '-S',
+        this.ctl,
         ...this.sshOpts(),
         this.host,
         `mkdir -p ${shQuote(dir)} && cat > ${shQuote(path)}`,
       ],
       false,
-      data,
+      data
     );
     if (r.code !== 0) {
-      throw new Error(`could not write ${path} on ${this.host}: ${r.stderr.trim()}`);
+      throw new Error(
+        `could not write ${path} on ${this.host}: ${r.stderr.trim()}`
+      );
     }
   }
 
   async close(): Promise<void> {
     if (!this.master) return;
-    await run("ssh", ["-S", this.ctl, "-O", "exit", this.host], false).catch(() => {});
+    await run('ssh', ['-S', this.ctl, '-O', 'exit', this.host], false).catch(
+      () => {}
+    );
     this.master.kill();
     this.master = undefined;
   }
@@ -260,12 +283,15 @@ export class RemoteRunner implements Runner {
 export const readEnvFile = (file: string): Record<string, string> => {
   if (!existsSync(file)) return {};
   const out: Record<string, string> = {};
-  for (const line of readFileSync(file, "utf8").split("\n")) {
+  for (const line of readFileSync(file, 'utf8').split('\n')) {
     const t = line.trim();
-    if (!t || t.startsWith("#")) continue;
-    const i = t.indexOf("=");
+    if (!t || t.startsWith('#')) continue;
+    const i = t.indexOf('=');
     if (i < 0) continue;
-    out[t.slice(0, i).trim()] = t.slice(i + 1).trim().replace(/^["']|["']$/g, "");
+    out[t.slice(0, i).trim()] = t
+      .slice(i + 1)
+      .trim()
+      .replace(/^["']|["']$/g, '');
   }
   return out;
 };
@@ -288,14 +314,14 @@ export interface RunnerConfig {
  * a local path there, not the SMB mount path used here.
  */
 export const makeRunner = async (cfg: RunnerConfig): Promise<Runner> => {
-  const env = readEnvFile(join(cfg.projectRoot, ".env"));
+  const env = readEnvFile(join(cfg.projectRoot, '.env'));
   const host = cfg.forceLocal ? undefined : (cfg.host ?? env.NAS_HOST);
   if (!host) return new LocalRunner(cfg.projectRoot);
 
   const root = cfg.rootOverride ?? env.NAS_ROOT;
   if (!root) {
     throw new Error(
-      `NAS_HOST is set but NAS_ROOT is not — add the archive path on ${host} to .env`,
+      `NAS_HOST is set but NAS_ROOT is not — add the archive path on ${host} to .env`
     );
   }
   const key = cfg.key ?? env.NAS_KEY;
@@ -306,5 +332,5 @@ export const makeRunner = async (cfg: RunnerConfig): Promise<Runner> => {
 
 /** Expands a leading ~ so .env can hold the usual ~/.ssh/... form. */
 const expandHome = (p: string): string => {
-  return p.startsWith("~/") ? join(homedir(), p.slice(2)) : p;
+  return p.startsWith('~/') ? join(homedir(), p.slice(2)) : p;
 };

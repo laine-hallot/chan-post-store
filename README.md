@@ -2,7 +2,7 @@
 
 Ingests heterogeneous 4chan (and eventually 8chan) archive dumps into a single
 local SQLite database with FTS5 full-text search, and answers questions like
-"how many posts on /g/ mentioned *X* per month between 2017 and 2018".
+"how many posts on /g/ mentioned _X_ per month between 2017 and 2018".
 
 Runs on Node 24+ with no runtime dependencies — SQLite comes from the built-in
 `node:sqlite` module and `.ts` files are executed directly via type stripping.

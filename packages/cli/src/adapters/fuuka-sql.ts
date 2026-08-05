@@ -1,16 +1,16 @@
-import type { Pool } from "pg";
+import type { Pool } from 'pg';
 
-import { createReadStream } from "node:fs";
-import { createInterface } from "node:readline";
+import { createReadStream } from 'node:fs';
+import { createInterface } from 'node:readline';
 
-import { collectPending, PostInserter } from "../ingest.ts";
-import { makeBar } from "../progress.ts";
+import { collectPending, PostInserter } from '../ingest.ts';
+import { makeBar } from '../progress.ts';
 import {
   CREATE_TABLE_RE,
   insertColumns,
   nyWallToUtc,
   parseTuples,
-} from "../mysqldump.ts";
+} from '../mysqldump.ts';
 
 /**
  * Ingests a mysqldump of a Fuuka/Asagi (FoolFuuka-schema) archive database,
@@ -23,7 +23,7 @@ import {
  * time"); values are converted back to true UTC on the way in.
  */
 
-const REQUIRED_COLS = ["num", "subnum", "thread_num", "timestamp", "comment"];
+const REQUIRED_COLS = ['num', 'subnum', 'thread_num', 'timestamp', 'comment'];
 
 interface IngestStats {
   posts: number;
@@ -43,7 +43,7 @@ export const ingestFuukaSql = async (
     site: string;
     boards?: string[];
     fileSize?: number;
-  },
+  }
 ): Promise<IngestStats> => {
   const inserter = new PostInserter(db, opts.sourceId);
   const stats: IngestStats = {
@@ -55,18 +55,18 @@ export const ingestFuukaSql = async (
   };
 
   const input =
-    opts.file === "-"
+    opts.file === '-'
       ? process.stdin
       : createReadStream(opts.file, { highWaterMark: 4 * 1024 * 1024 });
   let bytesRead = 0;
   const bar = makeBar({ max: opts.fileSize });
   bar.start(`reading ${opts.file}`);
-  input.on("data", (chunk: string | Buffer) => {
+  input.on('data', (chunk: string | Buffer) => {
     bytesRead += chunk.length;
     bar.advance(
       chunk.length,
       `${(bytesRead / 1e6).toFixed(0)}MB read, ${stats.posts} posts,` +
-        ` tables: ${stats.tables.join(",") || "-"}`,
+        ` tables: ${stats.tables.join(',') || '-'}`
     );
   });
   const lines = createInterface({ input, crlfDelay: Infinity });
@@ -82,7 +82,7 @@ export const ingestFuukaSql = async (
     listKey?: string;
     listIdx?: Record<string, number> | null;
   } | null = null;
-  let acceptFor = ""; // last table name we computed `accept` for
+  let acceptFor = ''; // last table name we computed `accept` for
 
   const COMMIT_EVERY = 50_000;
   let sinceCommit = 0;
@@ -93,7 +93,7 @@ export const ingestFuukaSql = async (
       const col = /^\s*`([^`]+)`/.exec(line);
       if (col) {
         tableCols.get(creating)!.push(col[1]);
-      } else if (line.startsWith(")")) {
+      } else if (line.startsWith(')')) {
         creating = null;
       }
       continue;
@@ -106,8 +106,8 @@ export const ingestFuukaSql = async (
       continue;
     }
 
-    if (!line.startsWith("INSERT INTO `")) continue;
-    const tick = line.indexOf("`", 13);
+    if (!line.startsWith('INSERT INTO `')) continue;
+    const tick = line.indexOf('`', 13);
     const table = line.slice(13, tick);
 
     if (table !== acceptFor) {
@@ -115,7 +115,7 @@ export const ingestFuukaSql = async (
       accept = null;
       const cols = tableCols.get(table);
       if (cols && REQUIRED_COLS.every((c) => cols.includes(c))) {
-        const board = table.replace(/_deleted$/, "");
+        const board = table.replace(/_deleted$/, '');
         if (!opts.boards || opts.boards.includes(board)) {
           const idx: Record<string, number> = {};
           cols.forEach((c, i) => (idx[c] = i));
@@ -127,7 +127,7 @@ export const ingestFuukaSql = async (
     if (!accept) continue;
 
     const { board } = accept;
-    const valuesAt = line.indexOf(" VALUES ", tick);
+    const valuesAt = line.indexOf(' VALUES ', tick);
     if (valuesAt < 0) continue;
 
     // An explicit column list on the INSERT overrides the CREATE TABLE order,
@@ -137,7 +137,7 @@ export const ingestFuukaSql = async (
     let idx = accept.idx;
     const listed = insertColumns(line, tick + 1, valuesAt);
     if (listed) {
-      const key = listed.join(",");
+      const key = listed.join(',');
       if (key !== accept.listKey) {
         const m: Record<string, number> = {};
         listed.forEach((c, i) => (m[c] = i));
@@ -171,7 +171,8 @@ export const ingestFuukaSql = async (
               board,
               threadNo,
               postNo: num,
-              isOp: idx.op !== undefined ? vals[idx.op] === "1" : num === threadNo,
+              isOp:
+                idx.op !== undefined ? vals[idx.op] === '1' : num === threadNo,
               tsUtc: ts > 0 ? nyWallToUtc(ts) : null,
               name: vals[idx.name] ?? null,
               tripcode: vals[idx.trip] ?? null,
@@ -183,7 +184,7 @@ export const ingestFuukaSql = async (
             .then((ok) => {
               if (ok) stats.posts++;
               else stats.skippedDup++;
-            }),
+            })
         );
         if (++sinceCommit >= COMMIT_EVERY) {
           // Flush the stats tallies alongside the posts they describe, so
@@ -201,6 +202,6 @@ export const ingestFuukaSql = async (
   }
   await inserter.finish();
   await Promise.all(pending);
-  bar.stop(`${stats.posts} posts from tables [${stats.tables.join(", ")}]`);
+  bar.stop(`${stats.posts} posts from tables [${stats.tables.join(', ')}]`);
   return stats;
 };

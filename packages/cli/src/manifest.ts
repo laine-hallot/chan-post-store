@@ -1,17 +1,17 @@
-import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
-import { basename, join, resolve } from "node:path";
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { basename, join, resolve } from 'node:path';
 
 /** Where committed source manifests live, relative to the project root. */
-export const SOURCES_DIR = "sources";
+export const SOURCES_DIR = 'sources';
 
 export const ADAPTERS = [
-  "json-api",
-  "fuuka-sql",
-  "warosu-sql",
-  "desuarchive-sql",
-  "posts-threads-sql",
-  "chan-html",
-  "fybertech-html",
+  'json-api',
+  'fuuka-sql',
+  'warosu-sql',
+  'desuarchive-sql',
+  'posts-threads-sql',
+  'chan-html',
+  'fybertech-html',
 ] as const;
 export type Adapter = (typeof ADAPTERS)[number];
 
@@ -87,49 +87,59 @@ const bad: (file: string, msg: string) => never = (file, msg) => {
  * "Memetic Sociology" symlink is repointed.
  */
 export const readManifest = (file: string, projectRoot: string): Manifest => {
-  if (!existsSync(file)) bad(file, "no such manifest");
+  if (!existsSync(file)) bad(file, 'no such manifest');
 
   let raw: unknown;
   try {
-    raw = JSON.parse(readFileSync(file, "utf8"));
+    raw = JSON.parse(readFileSync(file, 'utf8'));
   } catch (e) {
     bad(file, `invalid JSON: ${(e as Error).message}`);
   }
-  if (typeof raw !== "object" || raw === null) bad(file, "expected a JSON object");
+  if (typeof raw !== 'object' || raw === null)
+    bad(file, 'expected a JSON object');
 
-  const doc = raw as { source?: Record<string, unknown>; ingest?: Record<string, unknown> };
-  const {source} = doc;
-  const {ingest} = doc;
+  const doc = raw as {
+    source?: Record<string, unknown>;
+    ingest?: Record<string, unknown>;
+  };
+  const { source } = doc;
+  const { ingest } = doc;
   if (!source) bad(file, 'missing "source" block');
   if (!ingest) bad(file, 'missing "ingest" block');
 
-  const {name} = source;
-  if (typeof name !== "string" || name === "") bad(file, 'source.name is required');
+  const { name } = source;
+  if (typeof name !== 'string' || name === '')
+    bad(file, 'source.name is required');
 
-  const {link} = source;
-  if (link != null && typeof link !== "string") bad(file, "source.link must be a string");
+  const { link } = source;
+  if (link != null && typeof link !== 'string')
+    bad(file, 'source.link must be a string');
 
   // Scaffolded-but-unfinished manifests are an expected state, not corruption:
   // the prepare pipeline hasn't produced this source's data yet.
-  const {adapter} = ingest;
-  const {path} = ingest;
-  if (adapter === null || path === null || adapter === "" || path === "") {
+  const { adapter } = ingest;
+  const { path } = ingest;
+  if (adapter === null || path === null || adapter === '' || path === '') {
     throw new PendingSourceError(
       `${file}: ingest.adapter/ingest.path not filled in yet — run this source's` +
-        ` prepare step to populate its out/ directory, then set both fields`,
+        ` prepare step to populate its out/ directory, then set both fields`
     );
   }
 
-  if (typeof adapter !== "string" || !(ADAPTERS as readonly string[]).includes(adapter)) {
-    bad(file, `ingest.adapter must be one of: ${ADAPTERS.join(", ")}`);
+  if (
+    typeof adapter !== 'string' ||
+    !(ADAPTERS as readonly string[]).includes(adapter)
+  ) {
+    bad(file, `ingest.adapter must be one of: ${ADAPTERS.join(', ')}`);
   }
-  if (typeof path !== "string") bad(file, "ingest.path must be a string");
+  if (typeof path !== 'string') bad(file, 'ingest.path must be a string');
 
-  const site = ingest.site ?? "4chan";
-  if (typeof site !== "string" || site === "") bad(file, "ingest.site must be a non-empty string");
+  const site = ingest.site ?? '4chan';
+  if (typeof site !== 'string' || site === '')
+    bad(file, 'ingest.site must be a non-empty string');
 
   return {
-    id: basename(file, ".json"),
+    id: basename(file, '.json'),
     file,
     name,
     link: link ?? undefined,
@@ -146,10 +156,10 @@ export const readManifest = (file: string, projectRoot: string): Manifest => {
  * ingest block, so `download` must not require one.
  */
 export const readSourceInfo = (file: string): SourceInfo => {
-  if (!existsSync(file)) bad(file, "no such manifest");
+  if (!existsSync(file)) bad(file, 'no such manifest');
   let raw: unknown;
   try {
-    raw = JSON.parse(readFileSync(file, "utf8"));
+    raw = JSON.parse(readFileSync(file, 'utf8'));
   } catch (e) {
     bad(file, `invalid JSON: ${(e as Error).message}`);
   }
@@ -158,17 +168,21 @@ export const readSourceInfo = (file: string): SourceInfo => {
     files?: { source?: unknown };
   };
   if (!doc.source) bad(file, 'missing "source" block');
-  const {name} = doc.source;
-  if (typeof name !== "string" || name === "") bad(file, "source.name is required");
-  const {link} = doc.source;
+  const { name } = doc.source;
+  if (typeof name !== 'string' || name === '')
+    bad(file, 'source.name is required');
+  const { link } = doc.source;
 
-  const id = basename(file, ".json");
-  const {dir} = (doc as { dir?: unknown });
-  if (typeof dir !== "string" || dir === "") {
-    bad(file, '"dir" (the dataset directory, project-root relative) is required');
+  const id = basename(file, '.json');
+  const { dir } = doc as { dir?: unknown };
+  if (typeof dir !== 'string' || dir === '') {
+    bad(
+      file,
+      '"dir" (the dataset directory, project-root relative) is required'
+    );
   }
 
-  const clean = dir.replace(/\/$/, "");
+  const clean = dir.replace(/\/$/, '');
 
   const prep = (doc as { prepare?: unknown }).prepare;
   const steps: PrepareStep[] = [];
@@ -176,23 +190,23 @@ export const readSourceInfo = (file: string): SourceInfo => {
     if (!Array.isArray(prep)) bad(file, '"prepare" must be an array of steps');
     for (const [i, raw] of prep.entries()) {
       const s = raw as { name?: unknown; run?: unknown };
-      if (typeof s?.run !== "string" || s.run === "") {
+      if (typeof s?.run !== 'string' || s.run === '') {
         bad(file, `prepare[${i}].run must be a non-empty shell command`);
       }
       steps.push({
-        name: typeof s.name === "string" && s.name ? s.name : `step ${i + 1}`,
+        name: typeof s.name === 'string' && s.name ? s.name : `step ${i + 1}`,
         run: s.run,
       });
     }
   }
 
   const output = (doc as { prepareOutput?: unknown }).prepareOutput;
-  if (output != null && typeof output !== "string") {
+  if (output != null && typeof output !== 'string') {
     bad(file, '"prepareOutput" must be a string');
   }
 
-  const dead = (doc as { "dead-end"?: unknown })["dead-end"];
-  if (dead != null && typeof dead !== "boolean") {
+  const dead = (doc as { 'dead-end'?: unknown })['dead-end'];
+  if (dead != null && typeof dead !== 'boolean') {
     bad(file, '"dead-end" must be a boolean');
   }
 
@@ -202,13 +216,18 @@ export const readSourceInfo = (file: string): SourceInfo => {
   const dl = (doc as { download?: { exclude?: unknown } }).download;
   const downloadExclude: RegExp[] = [];
   if (dl?.exclude != null) {
-    if (!Array.isArray(dl.exclude)) bad(file, '"download.exclude" must be an array of regexes');
+    if (!Array.isArray(dl.exclude))
+      bad(file, '"download.exclude" must be an array of regexes');
     for (const [i, pat] of dl.exclude.entries()) {
-      if (typeof pat !== "string") bad(file, `download.exclude[${i}] must be a string`);
+      if (typeof pat !== 'string')
+        bad(file, `download.exclude[${i}] must be a string`);
       try {
-        downloadExclude.push(new RegExp(pat, "i"));
+        downloadExclude.push(new RegExp(pat, 'i'));
       } catch (e) {
-        bad(file, `download.exclude[${i}] is not a valid regex: ${(e as Error).message}`);
+        bad(
+          file,
+          `download.exclude[${i}] is not a valid regex: ${(e as Error).message}`
+        );
       }
     }
   }
@@ -217,7 +236,7 @@ export const readSourceInfo = (file: string): SourceInfo => {
     id,
     file,
     name,
-    link: typeof link === "string" && link !== "" ? link : undefined,
+    link: typeof link === 'string' && link !== '' ? link : undefined,
     // Downloads land in <dir>/source, the first stage of the
     // source -> extracted -> out pipeline.
     stageDir: `${clean}/source`,
@@ -227,7 +246,7 @@ export const readSourceInfo = (file: string): SourceInfo => {
     dir: clean,
     dirFromDatasets: basename(clean),
     prepare: steps,
-    prepareOutput: output ?? "out",
+    prepareOutput: output ?? 'out',
     downloadExclude,
     deadEnd: dead === true,
   };
@@ -235,7 +254,7 @@ export const readSourceInfo = (file: string): SourceInfo => {
 
 /** Resolves a source id (or a direct path to a manifest file) to its file. */
 export const manifestPath = (idOrPath: string, projectRoot: string): string => {
-  if (idOrPath.endsWith(".json")) return resolve(projectRoot, idOrPath);
+  if (idOrPath.endsWith('.json')) return resolve(projectRoot, idOrPath);
   return join(projectRoot, SOURCES_DIR, `${idOrPath}.json`);
 };
 
@@ -243,8 +262,8 @@ export const listManifestIds = (projectRoot: string): string[] => {
   const dir = join(projectRoot, SOURCES_DIR);
   if (!existsSync(dir)) return [];
   return readdirSync(dir)
-    .filter((f) => f.endsWith(".json"))
-    .map((f) => basename(f, ".json"))
+    .filter((f) => f.endsWith('.json'))
+    .map((f) => basename(f, '.json'))
     .sort();
 };
 
@@ -258,16 +277,16 @@ export const ingestInputs = (m: Manifest): string[] => {
   if (!existsSync(m.path)) {
     throw new PendingSourceError(
       `${m.file}: ingest.path does not exist: ${m.path}\n` +
-        `  the prepare step for this source has not been run yet`,
+        `  the prepare step for this source has not been run yet`
     );
   }
 
   // Directory-walking adapters take the root itself; they find their own files
   // (thread JSON, saved pages) rather than being handed a glob.
   if (
-    m.adapter === "json-api" ||
-    m.adapter === "chan-html" ||
-    m.adapter === "fybertech-html"
+    m.adapter === 'json-api' ||
+    m.adapter === 'chan-html' ||
+    m.adapter === 'fybertech-html'
   ) {
     if (!statSync(m.path).isDirectory()) {
       bad(m.file, `ingest.path must be a directory for ${m.adapter}`);
@@ -277,13 +296,13 @@ export const ingestInputs = (m: Manifest): string[] => {
 
   if (!statSync(m.path).isDirectory()) return [m.path];
   const sql = readdirSync(m.path)
-    .filter((f) => f.toLowerCase().endsWith(".sql"))
+    .filter((f) => f.toLowerCase().endsWith('.sql'))
     .sort()
     .map((f) => join(m.path, f));
   if (sql.length === 0) {
     throw new PendingSourceError(
       `${m.file}: no .sql files in ${m.path}\n` +
-        `  the prepare step for this source has not been run yet`,
+        `  the prepare step for this source has not been run yet`
     );
   }
   return sql;

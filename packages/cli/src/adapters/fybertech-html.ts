@@ -1,13 +1,13 @@
-import type { Pool } from "pg";
+import type { Pool } from 'pg';
 
-import { parse, type HTMLElement, type Node } from "node-html-parser";
-import { readFileSync } from "node:fs";
+import { parse, type HTMLElement, type Node } from 'node-html-parser';
+import { readFileSync } from 'node:fs';
 
-import { listHtmlPages } from "../html-tree.ts";
-import { cleanBodyText } from "../html.ts";
-import { collectPending, PostInserter } from "../ingest.ts";
-import { makeBar } from "../progress.ts";
-import { nyWallToUtc } from "../mysqldump.ts";
+import { listHtmlPages } from '../html-tree.ts';
+import { cleanBodyText } from '../html.ts';
+import { collectPending, PostInserter } from '../ingest.ts';
+import { makeBar } from '../progress.ts';
+import { nyWallToUtc } from '../mysqldump.ts';
 
 /**
  * Ingests fybertech.com's rendered 4chan thread pages (2008-2014).
@@ -56,20 +56,22 @@ interface ParsedPost {
  * Two-digit years: 4chan launched in 2003 and fybertech's crawl stops in 2015,
  * so every value is 20xx. Seconds are absent on the older pages and default to
  * zero, which loses precision but never invents it. */
-const DATE = /(\d{2})\/(\d{2})\/(\d{2})\((?:\w{3})\)(\d{2}):(\d{2})(?::(\d{2}))?/;
+const DATE =
+  /(\d{2})\/(\d{2})\/(\d{2})\((?:\w{3})\)(\d{2}):(\d{2})(?::(\d{2}))?/;
 
 export const parseFyberDate = (s: string): number | null => {
   const m = DATE.exec(s);
   if (!m) return null;
   const [, mo, dd, yy, hh, mi, ss] = m;
-  const wall = Date.UTC(
-    2000 + Number(yy),
-    Number(mo) - 1,
-    Number(dd),
-    Number(hh),
-    Number(mi),
-    ss ? Number(ss) : 0,
-  ) / 1000;
+  const wall =
+    Date.UTC(
+      2000 + Number(yy),
+      Number(mo) - 1,
+      Number(dd),
+      Number(hh),
+      Number(mi),
+      ss ? Number(ss) : 0
+    ) / 1000;
   // The displayed clock is New York wall time, not UTC.
   return nyWallToUtc(wall);
 };
@@ -79,8 +81,8 @@ const looseText = (el: Node): string => {
   return el.childNodes
     .filter((n) => n.nodeType === 3)
     .map((n) => (n as unknown as { rawText: string }).rawText)
-    .join(" ")
-    .replace(/\s+/g, " ")
+    .join(' ')
+    .replace(/\s+/g, ' ')
     .trim();
 };
 
@@ -94,8 +96,8 @@ const looseText = (el: Node): string => {
  * posts (5.4%), because the wrapped ones leave nothing but whitespace behind.
  */
 const dateWithin = (el: HTMLElement): number | null => {
-  const span = el.querySelector(".posttime")?.textContent;
-  const fromSpan = parseFyberDate(span ?? "");
+  const span = el.querySelector('.posttime')?.textContent;
+  const fromSpan = parseFyberDate(span ?? '');
   if (fromSpan != null) return fromSpan;
   const fromLoose = parseFyberDate(looseText(el));
   if (fromLoose != null) return fromLoose;
@@ -141,7 +143,7 @@ const pick = (root: HTMLElement, sel: string): string | null => {
  */
 const bodyOf = (el: HTMLElement | null): string | null => {
   if (!el) return null;
-  const text = parse(el.innerHTML.replace(/<br\s*\/?>/gi, "\n")).textContent;
+  const text = parse(el.innerHTML.replace(/<br\s*\/?>/gi, '\n')).textContent;
   return cleanBodyText(text);
 };
 
@@ -156,10 +158,15 @@ const fileNameFrom = (text: string | null): string | null => {
   if (!text) return null;
   const paren = /\(([^)]*)\)\s*$/.exec(text);
   if (paren) {
-    const parts = paren[1].split(",").map((p) => p.trim());
+    const parts = paren[1].split(',').map((p) => p.trim());
     const last = parts[parts.length - 1];
     // "51 KB, 287x700" alone means no original name was recorded.
-    if (last && !/^\d+x\d+$/.test(last) && !/^\d+(\.\d+)?\s*[KMG]?B$/i.test(last)) return last;
+    if (
+      last &&
+      !/^\d+x\d+$/.test(last) &&
+      !/^\d+(\.\d+)?\s*[KMG]?B$/i.test(last)
+    )
+      return last;
   }
   const served = /File\s*:?\s*([^\s-]+)/.exec(text);
   return served ? served[1] : null;
@@ -178,8 +185,8 @@ const fileNameFrom = (text: string | null): string | null => {
 const readLater = (doc: HTMLElement): ParsedPost[] => {
   const out: ParsedPost[] = [];
   let first = true;
-  for (const p of doc.querySelectorAll(".post")) {
-    const noText = pick(p, ".post_no");
+  for (const p of doc.querySelectorAll('.post')) {
+    const noText = pick(p, '.post_no');
     const postNo = Number(noText);
     if (!Number.isInteger(postNo) || postNo <= 0) continue;
     const isOp = first;
@@ -187,13 +194,13 @@ const readLater = (doc: HTMLElement): ParsedPost[] => {
     out.push({
       postNo,
       isOp,
-      tsUtc: parseFyberDate(pick(p, ".post_now") ?? ""),
-      name: pick(p, ".post_name"),
+      tsUtc: parseFyberDate(pick(p, '.post_now') ?? ''),
+      name: pick(p, '.post_name'),
       // post_id holds a tripcode when there is one; empty on every sampled page.
-      tripcode: pick(p, ".post_id"),
-      subject: pick(p, ".post_sub"),
-      bodyText: bodyOf(p.querySelector(".post_com")),
-      mediaFilename: pick(p, ".post_filename"),
+      tripcode: pick(p, '.post_id'),
+      subject: pick(p, '.post_sub'),
+      bodyText: bodyOf(p.querySelector('.post_com')),
+      mediaFilename: pick(p, '.post_filename'),
     });
   }
   return out;
@@ -209,12 +216,12 @@ const readClassic = (doc: HTMLElement, threadNo: number): ParsedPost[] => {
   // --- the OP ---
   // Not every page has a <body> tag; where it is missing the parser hangs the
   // content off <html>, so anchor on whichever exists rather than assuming.
-  const body = doc.querySelector("body") ?? doc.querySelector("html") ?? doc;
+  const body = doc.querySelector('body') ?? doc.querySelector('html') ?? doc;
   const opNoEl = body
-    .querySelectorAll("span[id]")
-    .find((s) => /^nothread\d+$/.test(s.getAttribute("id") ?? ""));
+    .querySelectorAll('span[id]')
+    .find((s) => /^nothread\d+$/.test(s.getAttribute('id') ?? ''));
   const opNo = opNoEl
-    ? Number((opNoEl.getAttribute("id") ?? "").replace("nothread", ""))
+    ? Number((opNoEl.getAttribute('id') ?? '').replace('nothread', ''))
     : threadNo;
   // The OP's date follows its name span as a loose text node -- or sits in a
   // .posttime span on the pages that wrap it. Take the first date that appears
@@ -222,31 +229,31 @@ const readClassic = (doc: HTMLElement, threadNo: number): ParsedPost[] => {
   // pick up a reply's date on pages with no <body> element (the OP's own text
   // node is a child of <html> there, not of any post container).
   const opDate = dateWithin(body) ?? firstDateBeforeReplies(body);
-  const opBq = body.querySelector("blockquote");
+  const opBq = body.querySelector('blockquote');
   out.push({
     postNo: opNo,
     isOp: true,
     tsUtc: opDate,
-    name: pick(body, "span.postername"),
-    tripcode: pick(body, "span.postertrip"),
-    subject: pick(body, "span.filetitle"),
+    name: pick(body, 'span.postername'),
+    tripcode: pick(body, 'span.postertrip'),
+    subject: pick(body, 'span.filetitle'),
     bodyText: bodyOf(opBq),
-    mediaFilename: fileNameFrom(pick(body, "span.filesize")),
+    mediaFilename: fileNameFrom(pick(body, 'span.filesize')),
   });
 
   // --- the replies ---
-  for (const td of doc.querySelectorAll("td.reply")) {
-    const postNo = Number(td.getAttribute("id"));
+  for (const td of doc.querySelectorAll('td.reply')) {
+    const postNo = Number(td.getAttribute('id'));
     if (!Number.isInteger(postNo) || postNo <= 0) continue;
     out.push({
       postNo,
       isOp: false,
       tsUtc: dateWithin(td),
-      name: pick(td, "span.commentpostername"),
-      tripcode: pick(td, "span.postertrip"),
-      subject: pick(td, "span.replytitle"),
-      bodyText: bodyOf(td.querySelector("blockquote")),
-      mediaFilename: fileNameFrom(pick(td, "span.filesize")),
+      name: pick(td, 'span.commentpostername'),
+      tripcode: pick(td, 'span.postertrip'),
+      subject: pick(td, 'span.replytitle'),
+      bodyText: bodyOf(td.querySelector('blockquote')),
+      mediaFilename: fileNameFrom(pick(td, 'span.filesize')),
     });
   }
   return out;
@@ -254,7 +261,7 @@ const readClassic = (doc: HTMLElement, threadNo: number): ParsedPost[] => {
 
 export const ingestFybertechHtml = async (
   db: Pool,
-  opts: { root: string; sourceId: number; site: string; boards?: string[] },
+  opts: { root: string; sourceId: number; site: string; boards?: string[] }
 ): Promise<IngestStats> => {
   const inserter = new PostInserter(db, opts.sourceId);
   const stats: IngestStats = {
@@ -304,7 +311,7 @@ export const ingestFybertechHtml = async (
     // readdir but cannot be passed back to open().
     let raw: string;
     try {
-      raw = readFileSync(page.path, "utf8");
+      raw = readFileSync(page.path, 'utf8');
     } catch {
       stats.badFiles++;
       continue;
@@ -312,7 +319,7 @@ export const ingestFybertechHtml = async (
     const doc = parse(raw);
 
     // 4chan's own markup: chan-html's job, not this adapter's.
-    if (doc.querySelector(".postContainer")) {
+    if (doc.querySelector('.postContainer')) {
       stats.skippedNative++;
       continue;
     }
@@ -323,8 +330,8 @@ export const ingestFybertechHtml = async (
     // with, or misattribute, real threads. The markup is authoritative;
     // fall back to the filename only when the page carries no id.
     const idInMarkup = doc
-      .querySelectorAll("span[id]")
-      .map((s) => /^nothread(\d+)$/.exec(s.getAttribute("id") ?? "")?.[1])
+      .querySelectorAll('span[id]')
+      .map((s) => /^nothread(\d+)$/.exec(s.getAttribute('id') ?? '')?.[1])
       .find((v) => v != null);
     const threadNo = idInMarkup ? Number(idInMarkup) : threadNoFromFile;
     if (threadNo == null || !Number.isInteger(threadNo) || threadNo <= 0) {
@@ -332,9 +339,9 @@ export const ingestFybertechHtml = async (
       continue;
     }
 
-    const posts = doc.querySelector(".post_com")
+    const posts = doc.querySelector('.post_com')
       ? readLater(doc)
-      : doc.querySelector("td.reply, span.postername")
+      : doc.querySelector('td.reply, span.postername')
         ? readClassic(doc, threadNo)
         : [];
     if (posts.length === 0) {
@@ -371,7 +378,7 @@ export const ingestFybertechHtml = async (
           .then((ok) => {
             if (ok) stats.posts++;
             else stats.skippedDup++;
-          }),
+          })
       );
     }
     // Cheap -- just updates the displayed text, not I/O -- so refresh it

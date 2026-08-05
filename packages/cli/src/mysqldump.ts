@@ -3,9 +3,9 @@
 
 // ---- America/New_York wall time -> UTC ----------------------------------
 
-const nyFormat = new Intl.DateTimeFormat("en-US", {
-  timeZone: "America/New_York",
-  timeZoneName: "longOffset",
+const nyFormat = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'America/New_York',
+  timeZoneName: 'longOffset',
 });
 const offsetCache = new Map<number, number>();
 
@@ -17,10 +17,10 @@ const nyOffsetAt = (utcSec: number): number => {
   if (cached !== undefined) return cached;
   const tzName = nyFormat
     .formatToParts(utcSec * 1000)
-    .find((p) => p.type === "timeZoneName")!.value;
+    .find((p) => p.type === 'timeZoneName')!.value;
   const m = /GMT([+-])(\d{1,2})(?::(\d{2}))?/.exec(tzName);
   if (!m) throw new Error(`cannot parse timezone offset: ${tzName}`);
-  const sign = m[1] === "-" ? -1 : 1;
+  const sign = m[1] === '-' ? -1 : 1;
   const offset = sign * (Number(m[2]) * 3600 + Number(m[3] ?? 0) * 60);
   offsetCache.set(hour, offset);
   return offset;
@@ -37,12 +37,12 @@ export const nyWallToUtc = (wall: number): number => {
 // ---- mysqldump INSERT tuple parsing -------------------------------------
 
 const ESCAPES: Record<string, string> = {
-  "0": "\0",
-  n: "\n",
-  r: "\r",
-  t: "\t",
-  Z: "\x1a",
-  b: "\b",
+  '0': '\0',
+  n: '\n',
+  r: '\r',
+  t: '\t',
+  Z: '\x1a',
+  b: '\b',
 };
 
 /**
@@ -75,10 +75,10 @@ export const CREATE_TABLE_RE = /^CREATE TABLE (?:IF NOT EXISTS )?`([^`]+)` \($/;
 export const insertColumns = (
   line: string,
   from: number,
-  valuesAt: number,
+  valuesAt: number
 ): string[] | null => {
   const between = line.slice(from, valuesAt).trim();
-  if (!between.startsWith("(") || !between.endsWith(")")) return null;
+  if (!between.startsWith('(') || !between.endsWith(')')) return null;
   const out: string[] = [];
   const re = /`([^`]+)`/g;
   let m: RegExpExecArray | null;
@@ -103,7 +103,7 @@ export const insertColumns = (
  * must join lines with "\n", because that newline is part of the post text.
  */
 export const takeCompleteTuples = (
-  buf: string,
+  buf: string
 ): { tuples: string[]; rest: string } => {
   const out: string[] = [];
   const n = buf.length;
@@ -111,7 +111,7 @@ export const takeCompleteTuples = (
   let consumed = 0;
 
   while (i < n) {
-    while (i < n && buf[i] !== "(") i++;
+    while (i < n && buf[i] !== '(') i++;
     if (i >= n) break;
     const start = i;
     i++;
@@ -124,7 +124,7 @@ export const takeCompleteTuples = (
         i++;
         let ended = false;
         while (i < n) {
-          if (buf[i] === "\\") {
+          if (buf[i] === '\\') {
             i += 2; // backslash escape, including \' and \\
             continue;
           }
@@ -142,8 +142,8 @@ export const takeCompleteTuples = (
         if (!ended) break; // literal runs past the end of what we have
         continue;
       }
-      if (c === "(") depth++;
-      else if (c === ")" && --depth === 0) {
+      if (c === '(') depth++;
+      else if (c === ')' && --depth === 0) {
         i++;
         closed = true;
         break;
@@ -161,12 +161,12 @@ export const takeCompleteTuples = (
 
 export const parseTuples = function* (
   line: string,
-  start: number,
+  start: number
 ): Generator<(string | null)[]> {
   let i = start;
   const n = line.length;
   while (i < n) {
-    while (i < n && line[i] !== "(") i++;
+    while (i < n && line[i] !== '(') i++;
     if (i >= n) return;
     i++;
     const vals: (string | null)[] = [];
@@ -178,15 +178,15 @@ export const parseTuples = function* (
       // splits it into extra fields. That corrupts silently: a post whose
       // comment contains a comma yields more values than the table has
       // columns, shifting everything after it.
-      while (i < n && (line[i] === " " || line[i] === "\t")) i++;
+      while (i < n && (line[i] === ' ' || line[i] === '\t')) i++;
       if (line[i] === "'") {
         i++;
-        let out = "";
+        let out = '';
         let seg = i;
         for (;;) {
           const ch = line[i];
-          if (ch === undefined) throw new Error("unterminated string");
-          if (ch === "\\") {
+          if (ch === undefined) throw new Error('unterminated string');
+          if (ch === '\\') {
             const esc = line[i + 1];
             out += line.slice(seg, i) + (ESCAPES[esc] ?? esc);
             i += 2;
@@ -208,15 +208,15 @@ export const parseTuples = function* (
         vals.push(out);
       } else {
         let j = i;
-        while (j < n && line[j] !== "," && line[j] !== ")") j++;
-        if (j >= n) throw new Error("unterminated tuple");
+        while (j < n && line[j] !== ',' && line[j] !== ')') j++;
+        if (j >= n) throw new Error('unterminated tuple');
         const tok = line.slice(i, j).trim();
-        vals.push(tok === "NULL" ? null : tok);
+        vals.push(tok === 'NULL' ? null : tok);
         i = j;
       }
-      if (line[i] === ",") {
+      if (line[i] === ',') {
         i++;
-      } else if (line[i] === ")") {
+      } else if (line[i] === ')') {
         i++;
         break;
       } else {
