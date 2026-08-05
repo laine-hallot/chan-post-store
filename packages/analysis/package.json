@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "devDependencies": {
-    "typescript": "^6.0.0"
+    "typescript": "^6.0.0",
+    "@types/pg": "^8.11.0",
+    "@types/node": "^24.0.0"
   },
   "scripts": {
     "coverage": "node src/coverage.ts"
@@ -12,5 +14,8 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "pg": "^8.13.0"
+  }
 }

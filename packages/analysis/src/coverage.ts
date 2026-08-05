@@ -8,7 +8,7 @@ import {
   bucketsFromStats,
   hasPostStats,
   totalsFromStats,
-  hasSourceTimeIndex,
+  hasQueryIndexes,
   openReadOnly,
   postsByYearAndSource,
   postsByYearForBoard,
@@ -20,7 +20,10 @@ import { renderChart, type ChartData, type Series } from "./svg.ts";
  * Renders "what is actually in the corpus" as a chart: posts per calendar
  * year, split by which archive contributed them.
  *
- * Run: node packages/analysis/src/coverage.ts [--db data/posts.db]
+ * Run: node packages/analysis/src/coverage.ts --db <postgres-conn-string>
+ *
+ * --db is a connection string, not a file. It defaults to $DATABASE_URL so the
+ * credentials need not go on the command line.
  */
 
 const findProjectRoot = (): string => {
@@ -62,46 +65,58 @@ const { values } = parseArgs({
   },
 });
 
-const dbPath = resolve(root, values.db ?? "data/posts.db");
-if (!existsSync(dbPath)) {
-  console.error(`no database at ${dbPath}`);
+const conn = values.db ?? process.env.DATABASE_URL;
+if (!conn) {
+  console.error(
+    "no database connection string.\n" +
+      "  pass --db <postgres://...> or set DATABASE_URL",
+  );
   process.exit(1);
 }
 
-const db = openReadOnly(dbPath);
+const db = openReadOnly(conn);
 
-console.log(`reading ${dbPath} ...`);
+// Never echo the connection string: it carries the password.
+console.log("reading the post store ...");
 const t0 = Date.now();
 
 // post_stats holds pre-rolled (source, board, year) counts, so when it is
 // populated everything is a scan of a few hundred rows — including the
 // board+source split, which no index on `posts` can serve.
-const cached = hasPostStats(db);
+const cached = await hasPostStats(db);
 if (!cached) {
   console.error(
     "note: post_stats is empty, falling back to counting rows directly.\n" +
-      "      Populate it once with: node packages/cli/src/cli.ts refresh-stats --db <file>",
+      "      Populate it once with: node packages/cli/src/cli.ts refresh-stats --db <conn>",
   );
-  // Only relevant on the fallback path; with the summary table this index
-  // is not consulted at all.
-  if (!hasSourceTimeIndex(db)) {
+  // Only consulted on the fallback path. These indexes are dropped for bulk
+  // loads and rebuilt afterwards, so their absence is a normal state rather
+  // than a broken store — but the fallback without them is a sequential scan
+  // of a 126GB heap per cell, which is hours, not minutes.
+  const idx = await hasQueryIndexes(db);
+  const need = values.board ? idx.boardTs : idx.srcTs;
+  if (!need) {
     console.error(
-      "warning: idx_posts_src_ts is missing too — the fallback will scan the\n" +
-        "         whole posts table and may take several minutes.",
+      `warning: ${values.board ? "idx_posts_board_ts" : "idx_posts_src_ts"} is missing too.\n` +
+        "         Every count will scan the whole posts table. Build the indexes first:\n" +
+        "           node packages/cli/src/cli.ts indexes build --db <conn>",
     );
   }
 }
 
 const buckets = cached
-  ? bucketsFromStats(db, values.board ? { site: values.site, board: values.board } : undefined)
+  ? await bucketsFromStats(
+      db,
+      values.board ? { site: values.site, board: values.board } : undefined,
+    )
   : values.board
-    ? postsByYearForBoard(db, values.site, values.board).map((r) => ({
+    ? (await postsByYearForBoard(db, values.site, values.board)).map((r) => ({
         ...r,
         source: `/${values.board}/`,
       }))
-    : postsByYearAndSource(db);
-const tot = cached ? totalsFromStats(db) : values.board ? null : totals(db);
-db.close();
+    : await postsByYearAndSource(db);
+const tot = cached ? await totalsFromStats(db) : values.board ? null : await totals(db);
+await db.end();
 console.log(`aggregated ${buckets.length} buckets in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
 
 if (buckets.length === 0) {
