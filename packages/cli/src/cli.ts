@@ -12,6 +12,7 @@ import { ingestDesuarchiveSql } from "./adapters/desuarchive-sql.ts";
 import { ingestFuukaSql } from "./adapters/fuuka-sql.ts";
 import { ingestFybertechHtml } from "./adapters/fybertech-html.ts";
 import { ingestJsonApi } from "./adapters/json-api.ts";
+import { ingestPostsThreadsSql } from "./adapters/posts-threads-sql.ts";
 import { ingestWarosuSql } from "./adapters/warosu-sql.ts";
 import {
   downloadItem,
@@ -398,7 +399,9 @@ const ingestOne = async (
         ? ingestFuukaSql
         : manifest.adapter === "desuarchive-sql"
           ? ingestDesuarchiveSql
-          : ingestWarosuSql;
+          : manifest.adapter === "posts-threads-sql"
+            ? ingestPostsThreadsSql
+            : ingestWarosuSql;
     let posts = 0;
     const tables: string[] = [];
     for (const file of inputs) {

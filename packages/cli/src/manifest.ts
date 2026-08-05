@@ -9,6 +9,7 @@ export const ADAPTERS = [
   "fuuka-sql",
   "warosu-sql",
   "desuarchive-sql",
+  "posts-threads-sql",
   "chan-html",
   "fybertech-html",
 ] as const;
