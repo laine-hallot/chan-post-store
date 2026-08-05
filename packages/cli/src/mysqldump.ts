@@ -98,9 +98,19 @@ export const insertColumns = (
  * somebody's paragraph.
  *
  * Quote state is therefore tracked across the whole buffer: a tuple ends only
- * at a ")" seen outside a string literal. Anything after the last complete
- * tuple is returned as `rest`, to be prepended to the next chunk. The caller
- * must join lines with "\n", because that newline is part of the post text.
+ * at a ")" seen outside a string literal. The caller must join lines with
+ * "\n", because that newline is part of the post text.
+ *
+ * `rest` is UNCONSUMED TUPLE TEXT ONLY, and is empty when no tuple is open.
+ * That distinction is load-bearing, not tidiness. Trailing punctuation -- the
+ * ";" ending a statement -- is not a continuation, and returning it made
+ * `rest` permanently non-empty, so callers that treat "buffer not empty" as
+ * "still inside a statement" never came back out. Every following line got
+ * appended instead, including the next table's INSERTs: reading `posts` from
+ * 4archive silently swallowed the 57,674 `threads` rows and would have stored
+ * them as posts (9,754,504 + 57,674 = the 9,812,178 tuples that came back).
+ * An open tuple always carries its own "(", so its absence means the statement
+ * closed.
  */
 export const takeCompleteTuples = (
   buf: string
@@ -156,7 +166,11 @@ export const takeCompleteTuples = (
     consumed = i;
   }
 
-  return { tuples: out, rest: buf.slice(consumed) };
+  // Only hand back text that is actually an unfinished tuple. Without the
+  // "(" test this returns the statement's trailing ";" forever -- see the
+  // note above.
+  const tail = buf.slice(consumed);
+  return { tuples: out, rest: tail.includes('(') ? tail : '' };
 };
 
 export const parseTuples = function* (
