@@ -4,20 +4,21 @@
     "type": "internet-archive",
     "name": "4chan-vp-2015-threads",
     "link": "https://archive.org/details/4chan-vp-2015-threads",
-    "short-desc": ""
+    "short-desc": "Daily wget captures of /vp/ threads, June-October 2015, in 4chan's own markup",
+    "capture": "Four loose 7z volumes (vp_2015-06, -07, -08, -09+10), 124MB total, no images. There is NO single item zip — the previous prepare step expected source/4chan-vp-2015-threads.zip and would have failed outright.\n\nEach volume holds daily wget captures laid out as <date>/vp/boards.4chan.org/vp/thread/<threadno>, e.g. 2015-06-01/vp/boards.4chan.org/vp/thread/23433058. vp_2015-06 alone is 8,027 files across 150 folders, 715MB uncompressed.\n\nTWO THINGS PREPARE HAS TO NORMALISE, both of which would otherwise make the adapter silently find nothing:\n  1. The pages have NO FILE EXTENSION. html-tree.ts only accepts names matching /\\.html?$/, so an un-renamed tree yields zero pages.\n  2. The layout is five levels deep and is neither of the two shapes html-tree recognises (flat <root>/<page>.html, or nested <root>/<board>/<page>.html).\nSo prepare flattens to out/vp/<date>_<threadno>.html.\n\nTHE DATE PREFIX IS DELIBERATE, NOT DECORATION. The same thread is captured on several consecutive days as it grows, and collapsing to <threadno>.html would keep only one of them. Since thread numbers and dates are read from the markup rather than the filename, the name is free — so every capture is kept and the UNIQUE (site, board, post_no) constraint unions their posts, giving the fullest version of each thread rather than whichever copy happened to win.\n\nADAPTER IS chan-html: verified on a sample page, which carries both `postContainer` and `data-utc` attributes, i.e. 4chan's own markup with true epoch timestamps and no timezone conversion needed. Not fybertech-html, which is for rendered third-party archives."
   },
   "prepare": [
     {
-      "name": "unzip the item",
-      "run": "mkdir -p extracted && 7z x -aos -o./extracted source/4chan-vp-2015-threads.zip"
+      "name": "extract the per-month 7z volumes",
+      "run": "mkdir -p extracted && for f in source/vp_*.7z; do [ -e \"$f\" ] || continue; 7z x -aos -o./extracted \"$f\"; done"
     },
     {
-      "name": "extract the per-month 7z volumes into a board tree",
-      "run": "mkdir -p out/vp && for f in extracted/vp_*.7z; do [ -e \"$f\" ] || continue; 7z x -aos -o./out/vp \"$f\"; done"
+      "name": "flatten the capture tree into out/vp/<date>_<threadno>.html",
+      "run": "mkdir -p out/vp && find extracted -type f -path '*/thread/*' | while read -r f; do d=${f#extracted/}; d=${d%%/*}; n=$(basename \"$f\"); t=\"out/vp/${d}_${n}.html\"; [ -e \"$t\" ] || cp -al \"$f\" \"$t\" 2>/dev/null || cp -a \"$f\" \"$t\"; done"
     }
   ],
   "ingest": {
-    "adapter": null,
+    "adapter": "chan-html",
     "path": "Memetic Sociology/Datasets/4chan/4chan-vp-2015-threads/out",
     "site": "4chan"
   },
