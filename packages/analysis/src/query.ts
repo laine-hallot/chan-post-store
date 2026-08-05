@@ -1,5 +1,6 @@
-import pg from 'pg';
 import type { Pool } from 'pg';
+
+import pg from 'pg';
 
 const { Pool: PgPool } = pg;
 

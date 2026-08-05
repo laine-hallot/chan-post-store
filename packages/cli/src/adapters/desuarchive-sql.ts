@@ -4,7 +4,6 @@ import { createReadStream } from 'node:fs';
 import { createInterface } from 'node:readline';
 
 import { collectPending, PostInserter } from '../ingest.ts';
-import { makeBar } from '../progress.ts';
 import {
   CREATE_TABLE_RE,
   insertColumns,
@@ -12,6 +11,7 @@ import {
   parseTuples,
   takeCompleteTuples,
 } from '../mysqldump.ts';
+import { makeBar } from '../progress.ts';
 
 /**
  * Ingests the 2019 Desuarchive/RBT database dumps.

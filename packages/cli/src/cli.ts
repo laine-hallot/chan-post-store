@@ -1,6 +1,8 @@
-import { log } from '@clack/prompts';
 import type { Pool } from 'pg';
 
+import type { Manifest } from './manifest.ts';
+
+import { log } from '@clack/prompts';
 import {
   existsSync,
   mkdirSync,
@@ -43,7 +45,6 @@ import {
   readSourceInfo,
   SOURCES_DIR,
 } from './manifest.ts';
-import type { Manifest } from './manifest.ts';
 import { runPrepare } from './prepare.ts';
 import { makeBar } from './progress.ts';
 import { makeRunner, shQuote } from './runner.ts';

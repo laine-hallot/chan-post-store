@@ -29,8 +29,10 @@ export default defineConfig([
       '@typescript-eslint/prefer-destructuring': [
         'warn',
         {
-          array: false,
-          object: true,
+          VariableDeclarator: {
+            array: false,
+            object: true,
+          },
         },
       ],
       '@typescript-eslint/explicit-function-return-type': 'warn',

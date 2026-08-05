@@ -6,8 +6,8 @@ import { readFileSync } from 'node:fs';
 import { listHtmlPages } from '../html-tree.ts';
 import { cleanBodyText } from '../html.ts';
 import { collectPending, PostInserter } from '../ingest.ts';
-import { makeBar } from '../progress.ts';
 import { nyWallToUtc } from '../mysqldump.ts';
+import { makeBar } from '../progress.ts';
 
 /**
  * Ingests fybertech.com's rendered 4chan thread pages (2008-2014).

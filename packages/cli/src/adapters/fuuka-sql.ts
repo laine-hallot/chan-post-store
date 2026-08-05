@@ -4,13 +4,13 @@ import { createReadStream } from 'node:fs';
 import { createInterface } from 'node:readline';
 
 import { collectPending, PostInserter } from '../ingest.ts';
-import { makeBar } from '../progress.ts';
 import {
   CREATE_TABLE_RE,
   insertColumns,
   nyWallToUtc,
   parseTuples,
 } from '../mysqldump.ts';
+import { makeBar } from '../progress.ts';
 
 /**
  * Ingests a mysqldump of a Fuuka/Asagi (FoolFuuka-schema) archive database,
@@ -134,7 +134,7 @@ export const ingestFuukaSql = async (
     // because it is what the tuples actually follow. Cached on the accept
     // entry: the list is identical on every statement for a table, so this
     // rebuilds the map once rather than millions of times.
-    let idx = accept.idx;
+    let { idx } = accept;
     const listed = insertColumns(line, tick + 1, valuesAt);
     if (listed) {
       const key = listed.join(',');
