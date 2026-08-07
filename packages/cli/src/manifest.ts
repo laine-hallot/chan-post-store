@@ -2,8 +2,7 @@ import { Result } from '@badrap/result';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
 
-/** Where committed source manifests live, relative to the project root. */
-export const SOURCES_DIR = 'sources';
+import { SOURCES_DIR } from './paths.ts';
 
 export const ADAPTERS = [
   'json-api',

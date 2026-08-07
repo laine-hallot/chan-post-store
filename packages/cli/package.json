@@ -15,6 +15,10 @@
   "author": "",
   "license": "ISC",
   "type": "module",
+  "exports": {
+    "./env": "./src/env.ts",
+    "./paths": "./src/paths.ts"
+  },
   "dependencies": {
     "@badrap/result": "^0.3.1",
     "@clack/prompts": "^1.7.0",

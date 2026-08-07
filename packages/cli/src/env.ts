@@ -1,8 +1,11 @@
 import { object } from '@optique/core/constructs';
-import { withDefault } from '@optique/core/modifiers';
+import { message } from '@optique/core/message';
 import { option } from '@optique/core/primitives';
 import { integer, string } from '@optique/core/valueparser';
 import { bindEnv, createEnvContext } from '@optique/env';
+import { join } from 'node:path';
+
+import { PROJECT_ROOT } from './paths.ts';
 
 /**
  * Environment plumbing: the `.env` layer and the Postgres connection.
@@ -26,16 +29,21 @@ export const envContext = createEnvContext({
   // No prefix: the keys in this .env are already project-specific
   // (NAS_HOST, DB_HOST) rather than namespaced.
   prefix: '',
-  envFile: '.env',
+  // Absolute, via PROJECT_ROOT, rather than Optique's cwd-relative default:
+  // `packages/analysis` runs its own tools with cwd set there (`npm run
+  // coverage`), and a cwd-relative `.env` is simply not found from
+  // anywhere but the repo root -- silently, since a missing .env file is
+  // skipped rather than reported.
+  envFile: join(PROJECT_ROOT, '.env'),
 });
 
 /**
  * The Postgres connection, as CLI options that each fall back to `.env`.
  *
  * `--db` stays as a whole connection string because that is what every
- * invocation in the project's history passes, and because DATABASE_URL is
- * what `packages/analysis` reads. When it is absent the URL is composed from
- * the parts.
+ * invocation in the project's history passes. It falls back to DATABASE_URL,
+ * which is the spelling `packages/analysis` already used, and when neither is
+ * present the URL is composed from the DB_* parts.
  *
  * THE PASSWORD IN `.env` IS URL-ENCODED, and must be spliced in as-is.
  * Verified against the live server: the stored value ends `%40BA9gCkAhvh`,
@@ -50,37 +58,72 @@ export const envContext = createEnvContext({
  * auth. A password added later must likewise be percent-encoded in `.env`.
  */
 export const dbOptions = object({
-  db: withDefault(option('--db', string()), ''),
-  dbHost: bindEnv(option('--db-host', string()), {
-    context: envContext,
-    key: 'DB_HOST',
-    parser: string(),
-    default: 'localhost',
-  }),
-  dbPort: bindEnv(option('--db-port', integer()), {
-    context: envContext,
-    key: 'DB_PORT',
-    parser: integer(),
-    default: 5432,
-  }),
-  dbUser: bindEnv(option('--db-user', string()), {
-    context: envContext,
-    key: 'DB_USER',
-    parser: string(),
-    default: '',
-  }),
-  dbPassword: bindEnv(option('--db-password', string()), {
-    context: envContext,
-    key: 'DB_PASSWORD',
-    parser: string(),
-    default: '',
-  }),
-  dbName: bindEnv(option('--db-name', string()), {
-    context: envContext,
-    key: 'DB_DATABASE',
-    parser: string(),
-    default: '',
-  }),
+  db: bindEnv(
+    option('--db', string(), {
+      description: message`Whole connection string. Wins outright over the parts below. Falls back to DATABASE_URL, then to composing DB_HOST/DB_PORT/DB_USER/DB_PASSWORD/DB_DATABASE from .env -- so with a populated .env this need not be passed at all.`,
+    }),
+    {
+      context: envContext,
+      key: 'DATABASE_URL',
+      parser: string(),
+      default: '',
+    }
+  ),
+  dbHost: bindEnv(
+    option('--db-host', string(), {
+      description: message`Postgres host. Defaults to DB_HOST, then localhost.`,
+    }),
+    {
+      context: envContext,
+      key: 'DB_HOST',
+      parser: string(),
+      default: 'localhost',
+    }
+  ),
+  dbPort: bindEnv(
+    option('--db-port', integer(), {
+      description: message`Postgres port. Defaults to DB_PORT, then 5432.`,
+    }),
+    {
+      context: envContext,
+      key: 'DB_PORT',
+      parser: integer(),
+      default: 5432,
+    }
+  ),
+  dbUser: bindEnv(
+    option('--db-user', string(), {
+      description: message`Role to connect as. Defaults to DB_USER.`,
+    }),
+    {
+      context: envContext,
+      key: 'DB_USER',
+      parser: string(),
+      default: '',
+    }
+  ),
+  dbPassword: bindEnv(
+    option('--db-password', string(), {
+      description: message`Password, PERCENT-ENCODED: it is spliced into a URL unchanged, so an @ must be written %40. Defaults to DB_PASSWORD.`,
+    }),
+    {
+      context: envContext,
+      key: 'DB_PASSWORD',
+      parser: string(),
+      default: '',
+    }
+  ),
+  dbName: bindEnv(
+    option('--db-name', string(), {
+      description: message`Database name. Defaults to DB_DATABASE.`,
+    }),
+    {
+      context: envContext,
+      key: 'DB_DATABASE',
+      parser: string(),
+      default: '',
+    }
+  ),
 });
 
 export interface DbOptions {

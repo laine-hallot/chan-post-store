@@ -5,14 +5,8 @@ import type { Manifest } from './manifest.ts';
 
 import { log } from '@clack/prompts';
 import { runAsync } from '@optique/run';
-import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  statSync,
-  writeFileSync,
-} from 'node:fs';
-import { dirname, join, relative, resolve } from 'node:path';
+import { mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gunzipSync } from 'node:zlib';
 
@@ -46,37 +40,14 @@ import {
   ManifestError,
   readManifest,
   readSourceInfo,
-  SOURCES_DIR,
 } from './manifest.ts';
 import { cli } from './parsers.ts';
+import { PROJECT_ROOT, SOURCES_DIR } from './paths.ts';
 import { runPrepare } from './prepare.ts';
 import { makeBar } from './progress.ts';
 import { makeRunner, shQuote } from './runner.ts';
 import { boardList, hasStats, refreshPostStats } from './stats.ts';
 import { htmlPages, uriToFilename } from './warc.ts';
-
-/**
- * Repo root; manifest ingest paths are resolved against it.
- *
- * Found by walking up to the directory holding `sources/` rather than by a
- * fixed number of `..` hops, so moving this package within the workspace
- * doesn't silently resolve archive paths somewhere wrong.
- */
-const findProjectRoot = (): string => {
-  let dir = dirname(fileURLToPath(import.meta.url));
-  for (;;) {
-    if (existsSync(join(dir, SOURCES_DIR))) return dir;
-    const up = dirname(dir);
-    if (up === dir) {
-      throw new Error(
-        `could not locate the repo root (no ${SOURCES_DIR}/ above ${import.meta.url})`
-      );
-    }
-    dir = up;
-  }
-};
-
-const PROJECT_ROOT = findProjectRoot();
 
 /**
  * Per-command argument types, narrowed out of the one grammar in parsers.ts.

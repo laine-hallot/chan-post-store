@@ -21,8 +21,29 @@ shared. tsconfig uses project references, so typechecking needs `tsc -b` and
 the root config is solution-style (`"files": []`) — without that tsc globs the
 whole tree and reports TS6305 against the referenced project's sources.
 
-The CLI locates the repo root by walking up to the directory containing
-`sources/`, so it keeps working if the package moves.
+`packages/cli/src/paths.ts` locates the repo root by walking up to the
+directory containing `sources/`, so it keeps working if a package moves and —
+more importantly — does not depend on cwd. `.env` and `chan.config.json` are
+resolved against it rather than Optique's cwd-relative default, because
+`packages/analysis` runs its own tools with cwd set there (`npm run
+coverage`); a cwd-relative `.env` would simply not be found from anywhere but
+the repo root, and *silently*, since a missing `.env` is skipped rather than
+reported.
+
+`analysis` imports from `cli` across packages — `@chan-post-store/cli/env`
+supplies the shared `dbOptions`/`connectionString`, so both tools agree on how
+the database is addressed and the URL-encoded-password rule is stated once.
+Two things make that work, neither obvious:
+
+- **An `exports` map in `packages/cli/package.json` pointing at `.ts`
+  sources.** Node strips types through the workspace symlink fine; the usual
+  "no type stripping under `node_modules`" rule doesn't bite because the
+  symlink resolves to a real path outside it.
+- **No tsconfig project reference.** Adding one fails with TS6310 —
+  referenced projects may not disable emit, and `noEmit` is the whole premise
+  here. Without the reference tsc pulls the imported file in as an ordinary
+  source and still checks it fully (verified: a deliberate type error across
+  the boundary is reported).
 
 `.ts` files run directly under Node 24 type stripping. That means **no
 TypeScript syntax that emits code**: no enums, no namespaces, and no

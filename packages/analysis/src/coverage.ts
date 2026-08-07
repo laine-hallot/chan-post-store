@@ -1,8 +1,20 @@
+import { merge, object } from '@optique/core/constructs';
+import { message } from '@optique/core/message';
+import { optional, withDefault } from '@optique/core/modifiers';
+import { flag, option } from '@optique/core/primitives';
+import { defineProgram } from '@optique/core/program';
+import { string } from '@optique/core/valueparser';
+import { run } from '@optique/run';
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { parseArgs } from 'node:util';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
+
+import {
+  connectionString,
+  dbOptions,
+  envContext,
+} from '@chan-post-store/cli/env';
+import { PROJECT_ROOT } from '@chan-post-store/cli/paths';
 
 import {
   bucketsFromStats,
@@ -20,21 +32,13 @@ import { renderChart, type ChartData, type Series } from './svg.ts';
  * Renders "what is actually in the corpus" as a chart: posts per calendar
  * year, split by which archive contributed them.
  *
- * Run: node packages/analysis/src/coverage.ts --db <postgres-conn-string>
- *
- * --db is a connection string, not a file. It defaults to $DATABASE_URL so the
- * credentials need not go on the command line.
+ * The connection comes from the CLI package's shared `dbOptions`, so this
+ * tool and `cli.ts` agree on how the database is addressed rather than each
+ * having their own idea. In particular `--db` is now optional here too: with
+ * a populated `.env` this runs with no arguments at all. Reusing it also
+ * means the URL-encoded-password rule documented in `packages/cli/src/env.ts`
+ * is stated once, not twice and eventually only once correctly.
  */
-
-const findProjectRoot = (): string => {
-  let dir = dirname(fileURLToPath(import.meta.url));
-  for (;;) {
-    if (existsSync(join(dir, 'sources'))) return dir;
-    const up = dirname(dir);
-    if (up === dir) throw new Error('could not locate the repo root');
-    dir = up;
-  }
-};
 
 // Tailwind's default palette, non-gray hues only: every 500 in Tailwind's hue
 // order, then every 200 in the same order. Converted from the published
@@ -95,23 +99,62 @@ const COLORS = [
   '#ffccd3', // rose-200
 ];
 
-const root = findProjectRoot();
-const { values } = parseArgs({
-  options: {
-    db: { type: 'string' },
-    out: { type: 'string' },
-    svg: { type: 'boolean' },
-    board: { type: 'string' },
-    site: { type: 'string', default: '4chan' },
+/**
+ * One command, so the grammar is a plain `object()` rather than the `or()` of
+ * `command()`s that `packages/cli/src/parsers.ts` builds. `defineProgram`
+ * carries the prose that used to sit in a doc comment nobody running the tool
+ * would ever see; it reaches `--help` instead.
+ */
+const program = defineProgram({
+  parser: merge(
+    object({
+      board: optional(
+        option('--board', string(), {
+          description: message`Chart one board instead of the whole corpus. Changes what the bars mean: the corpus chart splits by archive, a board chart splits by whichever archives supplied that board.`,
+        })
+      ),
+      site: withDefault(
+        option('--site', string(), {
+          description: message`Site the --board belongs to. Ignored without --board.`,
+        }),
+        '4chan'
+      ),
+      out: optional(
+        option('--out', string(), {
+          description: message`Output path without extension, resolved against the repo root. Defaults to artifacts/post-coverage[-<site>-<board>].`,
+        })
+      ),
+      svg: withDefault(
+        flag('--svg', {
+          description: message`Keep the intermediate SVG next to the PNG. It is deleted by default.`,
+        }),
+        false
+      ),
+    }),
+    dbOptions
+  ),
+  metadata: {
+    name: 'coverage.ts',
+    brief: message`Chart what the post store actually contains.`,
+    description: message`Posts per calendar year, stacked by the archive that supplied them. Every post is counted once -- posts is keyed UNIQUE (site, board, post_no), so a post held by several archives is attributed to whichever one got there first, and the bars do not double-count overlap. Reads post_stats when it is populated, which is a few hundred rows; without it every cell is counted from the posts heap and needs the query indexes to finish in reasonable time. Writes a PNG (via resvg) into artifacts/.`,
   },
 });
 
-const conn = values.db ?? process.env.DATABASE_URL;
-if (!conn) {
-  console.error(
-    'no database connection string.\n' +
-      '  pass --db <postgres://...> or set DATABASE_URL'
-  );
+// Awaited: binding a context makes the parse async, the same way cli.ts uses
+// runAsync. Top-level await, so nothing else changes.
+const values = await run(program, {
+  contexts: [envContext],
+  // `--help` and `help`, matching cli.ts.
+  help: 'both',
+});
+
+// connectionString throws when nothing is configured; its message is the
+// useful part, so print that rather than a stack trace.
+let conn: string;
+try {
+  conn = connectionString(values);
+} catch (e) {
+  console.error((e as Error).message);
   process.exit(1);
 }
 
@@ -249,11 +292,11 @@ const data: ChartData = {
 };
 
 const svg = renderChart(data);
-const outDir = join(root, 'artifacts');
+const outDir = join(PROJECT_ROOT, 'artifacts');
 mkdirSync(outDir, { recursive: true });
 
 const base = values.out
-  ? resolve(root, values.out)
+  ? resolve(PROJECT_ROOT, values.out)
   : join(
       outDir,
       values.board
