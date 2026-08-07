@@ -1,3 +1,4 @@
+import { Result } from '@badrap/result';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
 
@@ -26,6 +27,12 @@ export interface Manifest {
   /** Ingest input, relative to the project root. Absolute once resolved. */
   path: string;
   site: string;
+  /**
+   * Boards to drop on ingest — the archive's own boards, other imageboards
+   * it swept up, and non-board parse artifacts. Applied by the adapter, not
+   * centrally; see boards.ts.
+   */
+  excludeBoards: string[];
   /** Download staging dir, project-root relative (files.source). */
   stageDir?: string;
 }
@@ -69,15 +76,42 @@ export interface SourceInfo {
   deadEnd: boolean;
 }
 
-/** A manifest whose `ingest` block is still a scaffold placeholder. */
-export class PendingSourceError extends Error {}
+/**
+ * Why a manifest could not be turned into something usable.
+ *
+ * The distinction is the whole point, and callers act on it: `pending` means
+ * the source simply is not staged yet, which `ingest-all` skips silently and
+ * `list manifests` shows as "pending". `invalid` means the file is wrong and
+ * somebody has to fix it. Collapsing the two would either make a typo look
+ * like an unstaged source (silently ingesting nothing) or make every
+ * not-yet-prepared source look like a broken one.
+ */
+export type ManifestErrorKind = 'pending' | 'invalid';
 
-// The annotation is load-bearing: a call only ends control flow when the
-// callee is a function declaration or a const with an explicit type, and the
-// validators below rely on `bad()` narrowing the value they just rejected.
-const bad: (file: string, msg: string) => never = (file, msg) => {
-  throw new Error(`${file}: ${msg}`);
-};
+export class ManifestError extends Error {
+  kind: ManifestErrorKind;
+  constructor(kind: ManifestErrorKind, message: string) {
+    super(message);
+    this.name = 'ManifestError';
+    this.kind = kind;
+  }
+}
+
+/**
+ * A rejected manifest, as a `Result` error.
+ *
+ * Generic in the ok type so `return bad(file, msg)` type-checks inside any
+ * reader regardless of what that reader returns. `return` is also what makes
+ * the narrowing below work: the validators rely on the rejecting branch
+ * ending control flow, which it did when this threw `never` and still does
+ * now that it returns.
+ */
+const bad = <T>(file: string, msg: string): Result<T, ManifestError> =>
+  Result.err(new ManifestError('invalid', `${file}: ${msg}`));
+
+/** A manifest whose `ingest` block is still a scaffold placeholder. */
+const pending = <T>(msg: string): Result<T, ManifestError> =>
+  Result.err(new ManifestError('pending', msg));
 
 /**
  * Reads one `sources/<id>.json`. The `source` block carries provenance
@@ -86,17 +120,20 @@ const bad: (file: string, msg: string) => never = (file, msg) => {
  * relative so they survive the archive storage moving, as long as the
  * "Memetic Sociology" symlink is repointed.
  */
-export const readManifest = (file: string, projectRoot: string): Manifest => {
-  if (!existsSync(file)) bad(file, 'no such manifest');
+export const readManifest = (
+  file: string,
+  projectRoot: string
+): Result<Manifest, ManifestError> => {
+  if (!existsSync(file)) return bad(file, 'no such manifest');
 
   let raw: unknown;
   try {
     raw = JSON.parse(readFileSync(file, 'utf8'));
   } catch (e) {
-    bad(file, `invalid JSON: ${(e as Error).message}`);
+    return bad(file, `invalid JSON: ${(e as Error).message}`);
   }
   if (typeof raw !== 'object' || raw === null)
-    bad(file, 'expected a JSON object');
+    return bad(file, 'expected a JSON object');
 
   const doc = raw as {
     source?: Record<string, unknown>;
@@ -104,23 +141,23 @@ export const readManifest = (file: string, projectRoot: string): Manifest => {
   };
   const { source } = doc;
   const { ingest } = doc;
-  if (!source) bad(file, 'missing "source" block');
-  if (!ingest) bad(file, 'missing "ingest" block');
+  if (!source) return bad(file, 'missing "source" block');
+  if (!ingest) return bad(file, 'missing "ingest" block');
 
   const { name } = source;
   if (typeof name !== 'string' || name === '')
-    bad(file, 'source.name is required');
+    return bad(file, 'source.name is required');
 
   const { link } = source;
   if (link != null && typeof link !== 'string')
-    bad(file, 'source.link must be a string');
+    return bad(file, 'source.link must be a string');
 
   // Scaffolded-but-unfinished manifests are an expected state, not corruption:
   // the prepare pipeline hasn't produced this source's data yet.
   const { adapter } = ingest;
   const { path } = ingest;
   if (adapter === null || path === null || adapter === '' || path === '') {
-    throw new PendingSourceError(
+    return pending(
       `${file}: ingest.adapter/ingest.path not filled in yet — run this source's` +
         ` prepare step to populate its out/ directory, then set both fields`
     );
@@ -130,15 +167,31 @@ export const readManifest = (file: string, projectRoot: string): Manifest => {
     typeof adapter !== 'string' ||
     !(ADAPTERS as readonly string[]).includes(adapter)
   ) {
-    bad(file, `ingest.adapter must be one of: ${ADAPTERS.join(', ')}`);
+    return bad(file, `ingest.adapter must be one of: ${ADAPTERS.join(', ')}`);
   }
-  if (typeof path !== 'string') bad(file, 'ingest.path must be a string');
+  if (typeof path !== 'string')
+    return bad(file, 'ingest.path must be a string');
 
   const site = ingest.site ?? '4chan';
   if (typeof site !== 'string' || site === '')
-    bad(file, 'ingest.site must be a non-empty string');
+    return bad(file, 'ingest.site must be a non-empty string');
 
-  return {
+  // Boards this archive carries that are not boards of `site` -- the archive's
+  // own discussion board, another imageboard the crawl caught, or a name that
+  // was never a board at all. Enforced by the adapters (see boards.ts for why
+  // it cannot be a central whitelist).
+  const excludeBoards = ingest['exclude-boards'] ?? [];
+  if (
+    !Array.isArray(excludeBoards) ||
+    excludeBoards.some((b) => typeof b !== 'string' || b === '')
+  ) {
+    return bad(
+      file,
+      'ingest.exclude-boards must be an array of non-empty strings'
+    );
+  }
+
+  return Result.ok({
     id: basename(file, '.json'),
     file,
     name,
@@ -146,7 +199,8 @@ export const readManifest = (file: string, projectRoot: string): Manifest => {
     adapter: adapter as Adapter,
     path: resolve(projectRoot, path),
     site,
-  };
+    excludeBoards: excludeBoards as string[],
+  });
 };
 
 /**
@@ -155,28 +209,30 @@ export const readManifest = (file: string, projectRoot: string): Manifest => {
  * A source that hasn't been downloaded yet necessarily has an unfilled
  * ingest block, so `download` must not require one.
  */
-export const readSourceInfo = (file: string): SourceInfo => {
-  if (!existsSync(file)) bad(file, 'no such manifest');
+export const readSourceInfo = (
+  file: string
+): Result<SourceInfo, ManifestError> => {
+  if (!existsSync(file)) return bad(file, 'no such manifest');
   let raw: unknown;
   try {
     raw = JSON.parse(readFileSync(file, 'utf8'));
   } catch (e) {
-    bad(file, `invalid JSON: ${(e as Error).message}`);
+    return bad(file, `invalid JSON: ${(e as Error).message}`);
   }
   const doc = raw as {
     source?: Record<string, unknown>;
     files?: { source?: unknown };
   };
-  if (!doc.source) bad(file, 'missing "source" block');
+  if (!doc.source) return bad(file, 'missing "source" block');
   const { name } = doc.source;
   if (typeof name !== 'string' || name === '')
-    bad(file, 'source.name is required');
+    return bad(file, 'source.name is required');
   const { link } = doc.source;
 
   const id = basename(file, '.json');
   const { dir } = doc as { dir?: unknown };
   if (typeof dir !== 'string' || dir === '') {
-    bad(
+    return bad(
       file,
       '"dir" (the dataset directory, project-root relative) is required'
     );
@@ -187,11 +243,12 @@ export const readSourceInfo = (file: string): SourceInfo => {
   const prep = (doc as { prepare?: unknown }).prepare;
   const steps: PrepareStep[] = [];
   if (prep != null) {
-    if (!Array.isArray(prep)) bad(file, '"prepare" must be an array of steps');
+    if (!Array.isArray(prep))
+      return bad(file, '"prepare" must be an array of steps');
     for (const [i, raw] of prep.entries()) {
       const s = raw as { name?: unknown; run?: unknown };
       if (typeof s?.run !== 'string' || s.run === '') {
-        bad(file, `prepare[${i}].run must be a non-empty shell command`);
+        return bad(file, `prepare[${i}].run must be a non-empty shell command`);
       }
       steps.push({
         name: typeof s.name === 'string' && s.name ? s.name : `step ${i + 1}`,
@@ -202,12 +259,12 @@ export const readSourceInfo = (file: string): SourceInfo => {
 
   const output = (doc as { prepareOutput?: unknown }).prepareOutput;
   if (output != null && typeof output !== 'string') {
-    bad(file, '"prepareOutput" must be a string');
+    return bad(file, '"prepareOutput" must be a string');
   }
 
   const dead = (doc as { 'dead-end'?: unknown })['dead-end'];
   if (dead != null && typeof dead !== 'boolean') {
-    bad(file, '"dead-end" must be a boolean');
+    return bad(file, '"dead-end" must be a boolean');
   }
 
   // Several items ship image/thumbnail tarballs that dwarf the text: rbt-asia
@@ -217,14 +274,14 @@ export const readSourceInfo = (file: string): SourceInfo => {
   const downloadExclude: RegExp[] = [];
   if (dl?.exclude != null) {
     if (!Array.isArray(dl.exclude))
-      bad(file, '"download.exclude" must be an array of regexes');
+      return bad(file, '"download.exclude" must be an array of regexes');
     for (const [i, pat] of dl.exclude.entries()) {
       if (typeof pat !== 'string')
-        bad(file, `download.exclude[${i}] must be a string`);
+        return bad(file, `download.exclude[${i}] must be a string`);
       try {
         downloadExclude.push(new RegExp(pat, 'i'));
       } catch (e) {
-        bad(
+        return bad(
           file,
           `download.exclude[${i}] is not a valid regex: ${(e as Error).message}`
         );
@@ -232,7 +289,7 @@ export const readSourceInfo = (file: string): SourceInfo => {
     }
   }
 
-  return {
+  return Result.ok({
     id,
     file,
     name,
@@ -249,7 +306,7 @@ export const readSourceInfo = (file: string): SourceInfo => {
     prepareOutput: output ?? 'out',
     downloadExclude,
     deadEnd: dead === true,
-  };
+  });
 };
 
 /** Resolves a source id (or a direct path to a manifest file) to its file. */
@@ -273,9 +330,9 @@ export const listManifestIds = (projectRoot: string): string[] => {
  * adapters want one file per call, and warosu backups ship a separate dump
  * per board.
  */
-export const ingestInputs = (m: Manifest): string[] => {
+export const ingestInputs = (m: Manifest): Result<string[], ManifestError> => {
   if (!existsSync(m.path)) {
-    throw new PendingSourceError(
+    return pending(
       `${m.file}: ingest.path does not exist: ${m.path}\n` +
         `  the prepare step for this source has not been run yet`
     );
@@ -289,21 +346,21 @@ export const ingestInputs = (m: Manifest): string[] => {
     m.adapter === 'fybertech-html'
   ) {
     if (!statSync(m.path).isDirectory()) {
-      bad(m.file, `ingest.path must be a directory for ${m.adapter}`);
+      return bad(m.file, `ingest.path must be a directory for ${m.adapter}`);
     }
-    return [m.path];
+    return Result.ok([m.path]);
   }
 
-  if (!statSync(m.path).isDirectory()) return [m.path];
+  if (!statSync(m.path).isDirectory()) return Result.ok([m.path]);
   const sql = readdirSync(m.path)
     .filter((f) => f.toLowerCase().endsWith('.sql'))
     .sort()
     .map((f) => join(m.path, f));
   if (sql.length === 0) {
-    throw new PendingSourceError(
+    return pending(
       `${m.file}: no .sql files in ${m.path}\n` +
         `  the prepare step for this source has not been run yet`
     );
   }
-  return sql;
+  return Result.ok(sql);
 };

@@ -40,7 +40,7 @@ import {
   ingestInputs,
   listManifestIds,
   manifestPath,
-  PendingSourceError,
+  ManifestError,
   readManifest,
   readSourceInfo,
   SOURCES_DIR,
@@ -80,7 +80,7 @@ const USAGE = `Usage:
   cli.ts warc-extract --warc <file.warc[.gz]> --out <dir> [--host <regex>]
   cli.ts ingest <source> --db <file> [--board <b> ...]
   cli.ts ingest-all --db <file> [--dry-run] [--exclude <source> ...] [--redo <source> ...] [--force]
-  cli.ts indexes build|drop|status --db <file> [--memory 4GB]
+  cli.ts indexes build|drop|status --db <file> [--memory 4GB] [--tablespace <ts>] [--only <index> ...]
   cli.ts boards --db <file>
   cli.ts refresh-stats --db <file>
   cli.ts count --db <file> --phrase <text> [--board <b>] [--site 4chan] [--from <date>] [--to <date>] [--by month|day|year|total]
@@ -157,19 +157,18 @@ const cmdDownload = async (argv: string[]): Promise<void> => {
     },
   });
 
-  let info;
-  try {
-    info = readSourceInfo(manifestPath(id, PROJECT_ROOT));
-  } catch (e) {
-    fail(String((e as Error).message));
-  }
+  const infoR = readSourceInfo(manifestPath(id, PROJECT_ROOT));
+  if (infoR.isErr) fail(infoR.error.message);
+  const info = infoR.value;
   if (!info.link) fail(`${info.file}: source.link is required to download`);
   const identifier = identifierFromLink(info.link);
   if (!identifier) {
     fail(`${info.file}: source.link is not an archive.org URL: ${info.link}`);
   }
 
-  const item = await fetchItem(identifier);
+  const itemR = await fetchItem(identifier);
+  if (itemR.isErr) fail(itemR.error.message);
+  const item = itemR.value;
   console.log(`${item.identifier}: ${item.title ?? '(untitled)'}`);
   console.log(`${item.files.length} files, ${humanBytes(item.totalBytes)}`);
 
@@ -190,24 +189,28 @@ const cmdDownload = async (argv: string[]): Promise<void> => {
     }
   }
 
-  const runner = await makeRunner({
+  const runnerR = await makeRunner({
     projectRoot: PROJECT_ROOT,
     host: values.remote,
     forceLocal: values.local,
     key: values.key,
   });
+  if (runnerR.isErr) fail(runnerR.error.message);
+  const runner = runnerR.value;
   try {
     const dest = runner.path(
       runner.rootIsDatasets ? info.stageDirFromDatasets : info.stageDir
     );
     console.log(`destination: ${dest} (${runner.where})\n`);
-    const results = await downloadItem({
+    const outcome = await downloadItem({
       item,
       dest,
       runner,
       force: values.force,
       dryRun: values['dry-run'],
     });
+    if (outcome.isErr) fail(outcome.error.message);
+    const results = outcome.value;
 
     const by = (s: string): number =>
       results.filter((r) => r.status === s).length;
@@ -244,19 +247,18 @@ const cmdPrepare = async (argv: string[]): Promise<void> => {
     },
   });
 
-  let info;
-  try {
-    info = readSourceInfo(manifestPath(id, PROJECT_ROOT));
-  } catch (e) {
-    fail(String((e as Error).message));
-  }
+  const infoR = readSourceInfo(manifestPath(id, PROJECT_ROOT));
+  if (infoR.isErr) fail(infoR.error.message);
+  const info = infoR.value;
 
-  const runner = await makeRunner({
+  const runnerR = await makeRunner({
     projectRoot: PROJECT_ROOT,
     host: values.remote,
     forceLocal: values.local,
     key: values.key,
   });
+  if (runnerR.isErr) fail(runnerR.error.message);
+  const runner = runnerR.value;
   try {
     const dir = runner.path(
       runner.rootIsDatasets ? info.dirFromDatasets : info.dir
@@ -286,8 +288,13 @@ const cmdPrepare = async (argv: string[]): Promise<void> => {
         TARGET: targetFlags,
       },
     });
-    if (!res.skipped && !values['dry-run']) {
-      console.log(`\n${res.ran} step(s) completed -> ${info.prepareOutput}/`);
+    if (res.isErr) {
+      console.error(res.error.message);
+      process.exitCode = 1;
+    } else if (!res.value.skipped && !values['dry-run']) {
+      console.log(
+        `\n${res.value.ran} step(s) completed -> ${info.prepareOutput}/`
+      );
     }
   } catch (e) {
     console.error(String((e as Error).message));
@@ -319,12 +326,14 @@ const cmdWarcExtract = async (argv: string[]): Promise<void> => {
 
   // Parsing happens here rather than on the target: the NAS has no Node, and
   // these WARCs are single-digit MB, so the round trip is cheap.
-  const runner = await makeRunner({
+  const runnerR = await makeRunner({
     projectRoot: PROJECT_ROOT,
     host: values.remote,
     forceLocal: values.local,
     key: values.key,
   });
+  if (runnerR.isErr) fail(runnerR.error.message);
+  const runner = runnerR.value;
   try {
     // --warc may name a single file or a directory of them; archives like
     // fybertech ship many WARCs from one crawl.
@@ -350,12 +359,15 @@ const cmdWarcExtract = async (argv: string[]): Promise<void> => {
     const outDir = values.out.replace(/\/$/, '');
     let n = 0;
     for (const w of warcs) {
-      const raw = await runner.readFile(w);
+      const rawR = await runner.readFile(w);
+      if (rawR.isErr) fail(rawR.error.message);
+      const raw = rawR.value;
       // Items ship the WARC gzipped; accept either form.
       const buf = w.endsWith('.gz') ? gunzipSync(raw) : raw;
       for (const rec of htmlPages(buf, hostRe)) {
         const name = uriToFilename(rec.uri!);
-        await runner.writeFile(`${outDir}/${name}`, rec.body);
+        const wrote = await runner.writeFile(`${outDir}/${name}`, rec.body);
+        if (wrote.isErr) fail(wrote.error.message);
         console.log(`  ${name} (${rec.body.length} bytes) <- ${rec.uri}`);
         n++;
       }
@@ -388,6 +400,7 @@ const ingestOne = async (
       sourceId,
       site: manifest.site,
       boards,
+      excludeBoards: manifest.excludeBoards,
     });
     const secs = ((Date.now() - t0) / 1000).toFixed(1);
     return {
@@ -402,6 +415,7 @@ const ingestOne = async (
       sourceId,
       site: manifest.site,
       boards,
+      excludeBoards: manifest.excludeBoards,
     });
     const secs = ((Date.now() - t0) / 1000).toFixed(1);
     return {
@@ -421,6 +435,7 @@ const ingestOne = async (
       sourceId,
       site: manifest.site,
       boards,
+      excludeBoards: manifest.excludeBoards,
     });
     const secs = ((Date.now() - t0) / 1000).toFixed(1);
     return {
@@ -450,6 +465,7 @@ const ingestOne = async (
         sourceId,
         site: manifest.site,
         boards,
+        excludeBoards: manifest.excludeBoards,
         fileSize: statSync(file).size,
       });
       posts += stats.posts;
@@ -483,19 +499,20 @@ const cmdIngest = async (argv: string[]): Promise<void> => {
   });
   if (!values.db) fail('ingest requires --db');
 
-  let manifest, inputs;
-  try {
-    manifest = readManifest(manifestPath(id, PROJECT_ROOT), PROJECT_ROOT);
-    inputs = ingestInputs(manifest);
-  } catch (e) {
-    // A source whose prepare step hasn't run is a normal state to hit; say so
-    // plainly instead of dressing it up as a usage error.
-    if (e instanceof PendingSourceError) {
-      console.error(String(e.message));
+  // A source whose prepare step hasn't run is a normal state to hit; say so
+  // plainly instead of dressing it up as a usage error.
+  const resolved = readManifest(
+    manifestPath(id, PROJECT_ROOT),
+    PROJECT_ROOT
+  ).chain((m) => ingestInputs(m).map((inputs) => ({ manifest: m, inputs })));
+  if (resolved.isErr) {
+    if (resolved.error.kind === 'pending') {
+      console.error(resolved.error.message);
       process.exit(2);
     }
-    fail(String((e as Error).message));
+    fail(resolved.error.message);
   }
+  const { manifest, inputs } = resolved.value;
 
   const db = await openDb(values.db);
   try {
@@ -526,6 +543,16 @@ const cmdIngest = async (argv: string[]): Promise<void> => {
   }
 };
 
+/**
+ * A SQL identifier, double-quoted with embedded quotes doubled.
+ *
+ * `SET default_tablespace` takes an identifier, not a value, so it cannot be
+ * a bound parameter -- the name has to go into the statement text. Quoting it
+ * here rather than interpolating raw keeps a tablespace name off the command
+ * line and straight into SQL.
+ */
+const quoteIdent = (s: string): string => `"${s.replace(/"/g, '""')}"`;
+
 /** Elapsed since `t0`, as a human duration. Index builds run into hours. */
 const fmtSecs = (t0: number): string => {
   const s = (Date.now() - t0) / 1000;
@@ -550,7 +577,12 @@ const cmdIndexes = async (argv: string[]): Promise<void> => {
   }
   const { values } = parseArgs({
     args: argv.slice(1),
-    options: { db: { type: 'string' }, memory: { type: 'string' } },
+    options: {
+      db: { type: 'string' },
+      memory: { type: 'string' },
+      tablespace: { type: 'string' },
+      only: { type: 'string', multiple: true },
+    },
   });
   if (!values.db) fail('indexes requires --db');
 
@@ -594,14 +626,38 @@ const cmdIndexes = async (argv: string[]): Promise<void> => {
     // workers each holding several GB alongside an ingest is not the trade
     // being made here.
     const memory = values.memory ?? '4GB';
-    const missing = before.filter((i) => !i.exists);
+    // Which disk the indexes land on. Set as default_tablespace on the build
+    // session rather than written into QUERY_INDEXES, for the same reason
+    // maintenance_work_mem is: it is a property of this machine's disks, not
+    // of the schema, and hardcoding it would make the DDL untrue anywhere
+    // else. It also keeps drop/status working unchanged -- they match on
+    // index name, which does not depend on location.
+    const { tablespace } = values;
+    // Build a subset. The GIN full-text index is the bulk of the total and
+    // scales with text volume rather than row count, so its size is the least
+    // predictable; building the cheap btrees first tells you what is left
+    // before the expensive one commits to it.
+    const { only } = values;
+    let missing = before.filter((i) => !i.exists);
+    if (only?.length) {
+      const known = new Set(QUERY_INDEXES.map((q) => q.name));
+      for (const n of only) {
+        if (!known.has(n))
+          fail(
+            `unknown index ${n}; --only takes one of: ` +
+              QUERY_INDEXES.map((q) => q.name).join(', ')
+          );
+      }
+      missing = missing.filter((i) => only.includes(i.name));
+    }
     if (!missing.length) {
       console.log('all query indexes already present — nothing to build');
       return;
     }
     console.log(
-      `building ${missing.length} index(es) with maintenance_work_mem=${memory}\n` +
-        `  each takes an ACCESS EXCLUSIVE lock on posts; queries against it will block`
+      `building ${missing.length} index(es) with maintenance_work_mem=${memory}` +
+        (tablespace ? ` in tablespace ${tablespace}` : '') +
+        `\n  each takes an ACCESS EXCLUSIVE lock on posts; queries against it will block`
     );
     for (const i of missing) {
       const spec = QUERY_INDEXES.find((q) => q.name === i.name);
@@ -614,6 +670,12 @@ const cmdIndexes = async (argv: string[]): Promise<void> => {
       const client = await db.connect();
       try {
         await client.query(`SET maintenance_work_mem = '${memory}'`);
+        if (tablespace) {
+          // Identifier, so it cannot be parameterized; quote it instead.
+          await client.query(
+            `SET default_tablespace = ${quoteIdent(tablespace)}`
+          );
+        }
         await client.query(spec.sql);
       } finally {
         client.release();
@@ -640,7 +702,7 @@ interface ReadySource {
 
 /**
  * Every manifest that `readManifest` + `ingestInputs` resolve without
- * throwing `PendingSourceError` -- the same "ready" definition `list
+ * returning a `pending` ManifestError -- the same "ready" definition `list
  * manifests` reports, but derived directly rather than re-deriving it from
  * the s/e/o stage probe (which goes through the runner and is about staging,
  * not about whether ingest itself can run).
@@ -648,16 +710,16 @@ interface ReadySource {
 const readySources = (): ReadySource[] => {
   const out: ReadySource[] = [];
   for (const id of listManifestIds(PROJECT_ROOT)) {
-    try {
-      const manifest = readManifest(
-        manifestPath(id, PROJECT_ROOT),
-        PROJECT_ROOT
-      );
-      const inputs = ingestInputs(manifest);
-      out.push({ id, manifest, inputs });
-    } catch (e) {
-      if (e instanceof PendingSourceError) continue; // not staged, or a dead end
-      throw e; // a real problem with an otherwise-ready manifest
+    const r = readManifest(manifestPath(id, PROJECT_ROOT), PROJECT_ROOT).chain(
+      (manifest) =>
+        ingestInputs(manifest).map((inputs) => ({ id, manifest, inputs }))
+    );
+    if (r.isOk) {
+      out.push(r.value);
+    } else if (r.error.kind === 'invalid') {
+      // Not staged (or a dead end) is expected and skipped; a manifest that is
+      // actually wrong is not something to walk past silently.
+      throw r.error;
     }
   }
   return out;
@@ -873,12 +935,14 @@ const cmdListManifests = async (argv: string[]): Promise<void> => {
     return;
   }
 
-  const runner = await makeRunner({
+  const runnerR = await makeRunner({
     projectRoot: PROJECT_ROOT,
     host: values.remote,
     forceLocal: values.local,
     key: values.key,
   });
+  if (runnerR.isErr) fail(runnerR.error.message);
+  const runner = runnerR.value;
   try {
     const rows: (string | number | null)[][] = [];
     for (const id of ids) {
@@ -886,7 +950,9 @@ const cmdListManifests = async (argv: string[]): Promise<void> => {
       let stages = '';
       let status = 'ready';
       try {
-        const info = readSourceInfo(manifestPath(id, PROJECT_ROOT));
+        const infoR = readSourceInfo(manifestPath(id, PROJECT_ROOT));
+        if (infoR.isErr) throw infoR.error;
+        const info = infoR.value;
         const base = runner.path(
           runner.rootIsDatasets ? info.dirFromDatasets : info.dir
         );
@@ -894,15 +960,23 @@ const cmdListManifests = async (argv: string[]): Promise<void> => {
         // Read the manifest before probing, so the probe can also ask about
         // the real ingest input rather than only the conventional stage dirs.
         let ingestRel: string | null = null;
-        try {
-          const m = readManifest(manifestPath(id, PROJECT_ROOT), PROJECT_ROOT);
+        // A manifest that is *wrong* is not a manifest that is *unstaged*.
+        // Both used to collapse to "pending" here, because the read threw and
+        // one catch swallowed either kind -- so a typo in an adapter name
+        // looked exactly like a source waiting on its prepare step. The
+        // Result carries the distinction, so keep it.
+        let broken = false;
+        const mR = readManifest(manifestPath(id, PROJECT_ROOT), PROJECT_ROOT);
+        if (mR.isOk) {
+          const m = mR.value;
           adapter = m.adapter;
           // manifest.path is absolute once resolved; express it relative to
           // the dataset dir so it works through a datasets-rooted runner too.
           const rel = relative(resolve(PROJECT_ROOT, info.dir), m.path) || '.';
           if (!rel.startsWith('..')) ingestRel = rel;
-        } catch {
+        } else {
           adapter = '-';
+          broken = mR.error.kind === 'invalid';
         }
 
         const nonEmpty = (p: string, yes: string, no: string): string =>
@@ -928,10 +1002,14 @@ const cmdListManifests = async (argv: string[]): Promise<void> => {
           : stages.endsWith('o');
         // A dead end outranks both: it is not waiting on anything, so listing
         // it as "pending" would invite a repeat survey of the item.
-        if (info.deadEnd) status = 'dead-end';
+        if (broken) status = 'error';
+        else if (info.deadEnd) status = 'dead-end';
         else status = hasInput && adapter !== '-' ? 'ready' : 'pending';
       } catch (e) {
-        status = e instanceof PendingSourceError ? 'pending' : 'error';
+        status =
+          e instanceof ManifestError && e.kind === 'pending'
+            ? 'pending'
+            : 'error';
       }
       rows.push([id, adapter, stages, status]);
     }

@@ -3,6 +3,7 @@ import type { Pool } from 'pg';
 import { createReadStream } from 'node:fs';
 import { createInterface } from 'node:readline';
 
+import { makeBoardFilter } from '../boards.ts';
 import { collectPending, PostInserter } from '../ingest.ts';
 import {
   CREATE_TABLE_RE,
@@ -42,9 +43,11 @@ export const ingestFuukaSql = async (
     sourceId: number;
     site: string;
     boards?: string[];
+    excludeBoards?: string[];
     fileSize?: number;
   }
 ): Promise<IngestStats> => {
+  const boardFilter = makeBoardFilter(opts.excludeBoards);
   const inserter = new PostInserter(db, opts.sourceId);
   const stats: IngestStats = {
     posts: 0,
@@ -116,7 +119,13 @@ export const ingestFuukaSql = async (
       const cols = tableCols.get(table);
       if (cols && REQUIRED_COLS.every((c) => cols.includes(c))) {
         const board = table.replace(/_deleted$/, '');
-        if (!opts.boards || opts.boards.includes(board)) {
+        // Excluding here costs nothing: the table is never accepted, so its
+        // INSERTs are skipped by the `if (!accept) continue` below without
+        // ever being tuple-parsed. One tally per table, not per post.
+        if (
+          !boardFilter.reject(board) &&
+          (!opts.boards || opts.boards.includes(board))
+        ) {
           const idx: Record<string, number> = {};
           cols.forEach((c, i) => (idx[c] = i));
           accept = { table, board, idx };
@@ -202,6 +211,9 @@ export const ingestFuukaSql = async (
   }
   await inserter.finish();
   await Promise.all(pending);
-  bar.stop(`${stats.posts} posts from tables [${stats.tables.join(', ')}]`);
+  bar.stop(
+    `${stats.posts} posts from tables [${stats.tables.join(', ')}]` +
+      boardFilter.summary()
+  );
   return stats;
 };

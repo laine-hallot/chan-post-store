@@ -1,3 +1,4 @@
+import { Result } from '@badrap/result';
 import { spawn } from 'node:child_process';
 import {
   existsSync,
@@ -37,10 +38,17 @@ export const shQuote = (s: string): string => {
 };
 
 export interface Runner {
-  /** Reads a file from wherever the runner points. */
-  readFile(path: string): Promise<Buffer>;
+  /**
+   * Reads a file from wherever the runner points.
+   *
+   * Result rather than throwing: over SSH a missing or unreadable file is an
+   * ordinary answer from the far end, not a defect, and the local and remote
+   * implementations otherwise fail in different shapes (an fs exception vs a
+   * non-zero exit) for the same situation.
+   */
+  readFile(path: string): Promise<Result<Buffer, Error>>;
   /** Writes a file wherever the runner points, creating parent dirs. */
-  writeFile(path: string, data: Buffer): Promise<void>;
+  writeFile(path: string, data: Buffer): Promise<Result<void, Error>>;
   /** Human-readable description of where commands run. */
   readonly where: string;
   /** Base directory that relative paths resolve against. */
@@ -110,13 +118,22 @@ export class LocalRunner implements Runner {
     return resolve(this.root, rel);
   }
 
-  async readFile(path: string): Promise<Buffer> {
-    return readFileSync(path);
+  async readFile(path: string): Promise<Result<Buffer, Error>> {
+    try {
+      return Result.ok(readFileSync(path));
+    } catch (e) {
+      return Result.err(e as Error);
+    }
   }
 
-  async writeFile(path: string, data: Buffer): Promise<void> {
-    mkdirSync(dirname(path), { recursive: true });
-    writeFileSync(path, data);
+  async writeFile(path: string, data: Buffer): Promise<Result<void, Error>> {
+    try {
+      mkdirSync(dirname(path), { recursive: true });
+      writeFileSync(path, data);
+      return Result.ok(undefined);
+    } catch (e) {
+      return Result.err(e as Error);
+    }
   }
 
   async close(): Promise<void> {}
@@ -233,22 +250,22 @@ export class RemoteRunner implements Runner {
   }
 
   /** Streams a remote file back over the existing connection. */
-  async readFile(path: string): Promise<Buffer> {
+  async readFile(path: string): Promise<Result<Buffer, Error>> {
     const r = await run(
       'ssh',
       ['-S', this.ctl, ...this.sshOpts(), this.host, `cat ${shQuote(path)}`],
       false
     );
     if (r.code !== 0) {
-      throw new Error(
-        `could not read ${path} on ${this.host}: ${r.stderr.trim()}`
+      return Result.err(
+        new Error(`could not read ${path} on ${this.host}: ${r.stderr.trim()}`)
       );
     }
-    return r.raw;
+    return Result.ok(r.raw);
   }
 
   /** Writes a remote file by piping the bytes in over stdin. */
-  async writeFile(path: string, data: Buffer): Promise<void> {
+  async writeFile(path: string, data: Buffer): Promise<Result<void, Error>> {
     const dir = path.replace(/\/[^/]*$/, '');
     const r = await run(
       'ssh',
@@ -263,10 +280,11 @@ export class RemoteRunner implements Runner {
       data
     );
     if (r.code !== 0) {
-      throw new Error(
-        `could not write ${path} on ${this.host}: ${r.stderr.trim()}`
+      return Result.err(
+        new Error(`could not write ${path} on ${this.host}: ${r.stderr.trim()}`)
       );
     }
+    return Result.ok(undefined);
   }
 
   async close(): Promise<void> {
@@ -313,21 +331,32 @@ export interface RunnerConfig {
  * local otherwise. NAS_ROOT is where the archives live on the NAS, which is
  * a local path there, not the SMB mount path used here.
  */
-export const makeRunner = async (cfg: RunnerConfig): Promise<Runner> => {
+export const makeRunner = async (
+  cfg: RunnerConfig
+): Promise<Result<Runner, Error>> => {
   const env = readEnvFile(join(cfg.projectRoot, '.env'));
   const host = cfg.forceLocal ? undefined : (cfg.host ?? env.NAS_HOST);
-  if (!host) return new LocalRunner(cfg.projectRoot);
+  if (!host) return Result.ok(new LocalRunner(cfg.projectRoot));
 
   const root = cfg.rootOverride ?? env.NAS_ROOT;
   if (!root) {
-    throw new Error(
-      `NAS_HOST is set but NAS_ROOT is not — add the archive path on ${host} to .env`
+    return Result.err(
+      new Error(
+        `NAS_HOST is set but NAS_ROOT is not — add the archive path on ${host} to .env`
+      )
     );
   }
   const key = cfg.key ?? env.NAS_KEY;
   const r = new RemoteRunner(host, root, key ? expandHome(key) : undefined);
-  await r.connect();
-  return r;
+  // connect() still throws: it is internal to this module, and its two
+  // failures (auth refused, 15s timeout) both carry the setup hint that is
+  // the whole point of the message. Caught here so callers see one Result.
+  try {
+    await r.connect();
+  } catch (e) {
+    return Result.err(e as Error);
+  }
+  return Result.ok(r);
 };
 
 /** Expands a leading ~ so .env can hold the usual ~/.ssh/... form. */

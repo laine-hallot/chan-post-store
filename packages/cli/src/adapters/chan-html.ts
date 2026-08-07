@@ -3,6 +3,7 @@ import type { Pool } from 'pg';
 import { parse, type HTMLElement } from 'node-html-parser';
 import { readFileSync } from 'node:fs';
 
+import { makeBoardFilter } from '../boards.ts';
 import { listHtmlPages } from '../html-tree.ts';
 import { cleanBodyText } from '../html.ts';
 import { collectPending, PostInserter } from '../ingest.ts';
@@ -165,8 +166,15 @@ const threadIdentity = (
 
 export const ingestChanHtml = async (
   db: Pool,
-  opts: { root: string; sourceId: number; site: string; boards?: string[] }
+  opts: {
+    root: string;
+    sourceId: number;
+    site: string;
+    boards?: string[];
+    excludeBoards?: string[];
+  }
 ): Promise<IngestStats> => {
+  const boardFilter = makeBoardFilter(opts.excludeBoards);
   const inserter = new PostInserter(db, opts.sourceId);
   const stats: IngestStats = {
     files: 0,
@@ -214,6 +222,8 @@ export const ingestChanHtml = async (
       continue;
     }
     if (opts.boards && !opts.boards.includes(id.board)) continue;
+    // Tallied per page, not per post: the page is never parsed for posts.
+    if (boardFilter.reject(id.board)) continue;
 
     // No postContainer means this is not 4chan's own markup: a third-party
     // mirror's rendered template, an error page, or something else. Counted
@@ -277,6 +287,8 @@ export const ingestChanHtml = async (
   }
   await inserter.finish();
   await Promise.all(pending);
-  bar.stop(`${stats.posts} posts from ${stats.files} page(s)`);
+  bar.stop(
+    `${stats.posts} posts from ${stats.files} page(s)` + boardFilter.summary()
+  );
   return stats;
 };

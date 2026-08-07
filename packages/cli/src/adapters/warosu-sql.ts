@@ -3,6 +3,7 @@ import type { Pool } from 'pg';
 import { createReadStream } from 'node:fs';
 import { createInterface } from 'node:readline';
 
+import { makeBoardFilter } from '../boards.ts';
 import { collectPending, PostInserter } from '../ingest.ts';
 import {
   CREATE_TABLE_RE,
@@ -55,9 +56,11 @@ export const ingestWarosuSql = async (
     sourceId: number;
     site: string;
     boards?: string[];
+    excludeBoards?: string[];
     fileSize?: number;
   }
 ): Promise<IngestStats> => {
+  const boardFilter = makeBoardFilter(opts.excludeBoards);
   const inserter = new PostInserter(db, opts.sourceId);
   const stats: IngestStats = {
     posts: 0,
@@ -128,6 +131,9 @@ export const ingestWarosuSql = async (
       if (
         cols &&
         REQUIRED_COLS.every((c) => cols.includes(c)) &&
+        // Rejected here the table is never accepted, so none of its INSERTs
+        // are tuple-parsed. Tallied once per table, not per post.
+        !boardFilter.reject(table) &&
         (!opts.boards || opts.boards.includes(table))
       ) {
         const idx: Record<string, number> = {};
@@ -214,6 +220,9 @@ export const ingestWarosuSql = async (
   }
   await inserter.finish();
   await Promise.all(pending);
-  bar.stop(`${stats.posts} posts from boards [${stats.tables.join(', ')}]`);
+  bar.stop(
+    `${stats.posts} posts from boards [${stats.tables.join(', ')}]` +
+      boardFilter.summary()
+  );
   return stats;
 };

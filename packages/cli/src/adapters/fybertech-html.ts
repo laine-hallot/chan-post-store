@@ -3,6 +3,7 @@ import type { Pool } from 'pg';
 import { parse, type HTMLElement, type Node } from 'node-html-parser';
 import { readFileSync } from 'node:fs';
 
+import { makeBoardFilter } from '../boards.ts';
 import { listHtmlPages } from '../html-tree.ts';
 import { cleanBodyText } from '../html.ts';
 import { collectPending, PostInserter } from '../ingest.ts';
@@ -261,8 +262,15 @@ const readClassic = (doc: HTMLElement, threadNo: number): ParsedPost[] => {
 
 export const ingestFybertechHtml = async (
   db: Pool,
-  opts: { root: string; sourceId: number; site: string; boards?: string[] }
+  opts: {
+    root: string;
+    sourceId: number;
+    site: string;
+    boards?: string[];
+    excludeBoards?: string[];
+  }
 ): Promise<IngestStats> => {
+  const boardFilter = makeBoardFilter(opts.excludeBoards);
   const inserter = new PostInserter(db, opts.sourceId);
   const stats: IngestStats = {
     files: 0,
@@ -305,6 +313,9 @@ export const ingestFybertechHtml = async (
       threadNoFromFile = Number(m[2]);
       if (opts.boards && !opts.boards.includes(board)) continue;
     }
+    // Outside the branches deliberately: both layouts must be filtered, and
+    // the --board check above covers only the flat one. Tallied per page.
+    if (boardFilter.reject(board)) continue;
 
     // An unopenable page must not end the run: handmade archives carry
     // filenames whose bytes are not valid UTF-8, and such a name survives
@@ -392,6 +403,8 @@ export const ingestFybertechHtml = async (
   }
   await inserter.finish();
   await Promise.all(pending);
-  bar.stop(`${stats.posts} posts from ${stats.files} page(s)`);
+  bar.stop(
+    `${stats.posts} posts from ${stats.files} page(s)` + boardFilter.summary()
+  );
   return stats;
 };

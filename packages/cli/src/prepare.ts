@@ -1,5 +1,7 @@
 import type { SourceInfo } from './manifest.ts';
 
+import { Result } from '@badrap/result';
+
 import { LocalRunner, shQuote, type Runner } from './runner.ts';
 
 /**
@@ -43,12 +45,14 @@ const pathExists = async (runner: Runner, path: string): Promise<boolean> => {
 
 export const runPrepare = async (
   opts: PrepareOptions
-): Promise<PrepareResult> => {
+): Promise<Result<PrepareResult, Error>> => {
   const { info, dir, runner } = opts;
   if (info.prepare.length === 0) {
-    throw new Error(
-      `${info.file}: no "prepare" steps defined\n` +
-        `  add a prepare array of {name, run} shell commands`
+    return Result.err(
+      new Error(
+        `${info.file}: no "prepare" steps defined\n` +
+          `  add a prepare array of {name, run} shell commands`
+      )
     );
   }
 
@@ -57,7 +61,7 @@ export const runPrepare = async (
     console.log(
       `${info.prepareOutput} already exists — nothing to do (use --force to re-run)`
     );
-    return { ran: 0, skipped: true };
+    return Result.ok({ ran: 0, skipped: true });
   }
 
   // Exported ahead of each command so steps can reference them.
@@ -87,12 +91,16 @@ export const runPrepare = async (
       : await runner.exec(cmd, { cwd: dir, inherit: true });
 
     if (r.code !== 0) {
-      throw new Error(
-        `prepare step "${step.name}" failed (exit ${r.code})\n  ${body}` +
-          (r.stderr.trim() ? `\n  ${r.stderr.trim()}` : '')
+      // Stops at the first failing step: later steps consume earlier output,
+      // so continuing would compound one failure into several confusing ones.
+      return Result.err(
+        new Error(
+          `prepare step "${step.name}" failed (exit ${r.code})\n  ${body}` +
+            (r.stderr.trim() ? `\n  ${r.stderr.trim()}` : '')
+        )
       );
     }
     n++;
   }
-  return { ran: n, skipped: false };
+  return Result.ok({ ran: n, skipped: false });
 };

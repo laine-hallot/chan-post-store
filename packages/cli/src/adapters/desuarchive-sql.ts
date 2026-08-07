@@ -3,6 +3,7 @@ import type { Pool } from 'pg';
 import { createReadStream } from 'node:fs';
 import { createInterface } from 'node:readline';
 
+import { makeBoardFilter } from '../boards.ts';
 import { collectPending, PostInserter } from '../ingest.ts';
 import {
   CREATE_TABLE_RE,
@@ -74,9 +75,11 @@ export const ingestDesuarchiveSql = async (
     sourceId: number;
     site: string;
     boards?: string[];
+    excludeBoards?: string[];
     fileSize?: number;
   }
 ): Promise<IngestStats> => {
+  const boardFilter = makeBoardFilter(opts.excludeBoards);
   const inserter = new PostInserter(db, opts.sourceId);
   const stats: IngestStats = {
     posts: 0,
@@ -212,6 +215,10 @@ export const ingestDesuarchiveSql = async (
     active = null;
     const cols = tableCols.get(table);
     const board = table.replace(/_deleted$/, '');
+    // Before the tuple parse, so an excluded board costs only the statement
+    // header. Tallied per INSERT statement rather than per post -- these dumps
+    // use extended inserts, so the count is statements, not rows.
+    if (boardFilter.reject(board)) continue;
     if (opts.boards && !opts.boards.includes(board)) continue;
 
     // The INSERT's own column list is authoritative; fall back to the
@@ -240,6 +247,9 @@ export const ingestDesuarchiveSql = async (
 
   await inserter.finish();
   await Promise.all(pending);
-  bar.stop(`${stats.posts} posts from tables [${stats.tables.join(', ')}]`);
+  bar.stop(
+    `${stats.posts} posts from tables [${stats.tables.join(', ')}]` +
+      boardFilter.summary()
+  );
   return stats;
 };

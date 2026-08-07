@@ -3,6 +3,7 @@ import type { Pool } from 'pg';
 import { existsSync, opendirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { makeBoardFilter } from '../boards.ts';
 import { stripHtml } from '../html.ts';
 import { collectPending, PostInserter } from '../ingest.ts';
 import { makeBar } from '../progress.ts';
@@ -85,7 +86,13 @@ const listBoards = (root: string, only?: string[]): string[] => {
 
 export const ingestJsonApi = async (
   db: Pool,
-  opts: { root: string; sourceId: number; site: string; boards?: string[] }
+  opts: {
+    root: string;
+    sourceId: number;
+    site: string;
+    boards?: string[];
+    excludeBoards?: string[];
+  }
 ): Promise<IngestStats> => {
   const inserter = new PostInserter(db, opts.sourceId);
 
@@ -111,13 +118,22 @@ export const ingestJsonApi = async (
   const bar = makeBar({});
   bar.start('ingesting');
 
+  const boardFilter = makeBoardFilter(opts.excludeBoards);
   for (const board of listBoards(opts.root, opts.boards)) {
+    // Whole board skipped before any thread file is opened; tallied once.
+    if (boardFilter.reject(board)) continue;
     const boardDir = join(opts.root, board);
     for (const { path: file, threadNo } of threadFiles(boardDir, board)) {
       let posts: ApiPost[];
       try {
         const { posts: parsed } = JSON.parse(readFileSync(file, 'utf8'));
-        if (!Array.isArray(parsed)) throw new Error('no posts array');
+        if (!Array.isArray(parsed)) {
+          // Same outcome as a parse failure, reached without throwing to a
+          // catch three lines below. Only unreadable/unparseable files are
+          // exceptional here; a well-formed file that is not a thread is not.
+          stats.badFiles++;
+          continue;
+        }
         posts = parsed;
       } catch {
         stats.badFiles++;
@@ -171,6 +187,9 @@ export const ingestJsonApi = async (
   }
   await inserter.finish();
   await Promise.all(pending);
-  bar.stop(`${stats.posts} posts from ${stats.threads} thread(s)`);
+  bar.stop(
+    `${stats.posts} posts from ${stats.threads} thread(s)` +
+      boardFilter.summary()
+  );
   return stats;
 };

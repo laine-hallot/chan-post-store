@@ -1,3 +1,5 @@
+import { Result } from '@badrap/result';
+
 import { shQuote, type Runner } from './runner.ts';
 
 /**
@@ -36,18 +38,27 @@ export const identifierFromLink = (link: string): string | undefined => {
   )?.[1];
 };
 
-export const fetchItem = async (id: string): Promise<IaItem> => {
+/**
+ * Item metadata from archive.org.
+ *
+ * A network failure or a bad identifier is an ordinary outcome of asking a
+ * remote service a question, not a program defect, so it comes back as an
+ * error value the caller reports rather than an exception it has to guard.
+ */
+export const fetchItem = async (id: string): Promise<Result<IaItem, Error>> => {
   const url = `https://archive.org/metadata/${encodeURIComponent(id)}`;
   const res = await fetch(url);
   if (!res.ok)
-    throw new Error(`metadata fetch failed for ${id}: HTTP ${res.status}`);
+    return Result.err(
+      new Error(`metadata fetch failed for ${id}: HTTP ${res.status}`)
+    );
   const doc = (await res.json()) as {
     metadata?: { identifier?: string; title?: string };
     files?: Record<string, unknown>[];
   };
   // The API answers 200 with {} for an identifier that doesn't exist.
   if (!doc.metadata || !doc.files)
-    throw new Error(`no such item on archive.org: ${id}`);
+    return Result.err(new Error(`no such item on archive.org: ${id}`));
 
   const files: IaFile[] = doc.files.map((f) => ({
     name: String(f.name),
@@ -57,12 +68,12 @@ export const fetchItem = async (id: string): Promise<IaItem> => {
     source: typeof f.source === 'string' ? f.source : undefined,
   }));
 
-  return {
+  return Result.ok({
     identifier: doc.metadata.identifier ?? id,
     title: doc.metadata.title,
     files,
     totalBytes: files.reduce((n, f) => n + f.size, 0),
-  };
+  });
 };
 
 /**
@@ -124,7 +135,7 @@ const md5Of = async (
  */
 export const downloadItem = async (
   opts: DownloadOptions
-): Promise<FileOutcome[]> => {
+): Promise<Result<FileOutcome[], Error>> => {
   const { item, dest, runner } = opts;
   const base = itemUrl(item.identifier);
   const results: FileOutcome[] = [];
@@ -132,7 +143,9 @@ export const downloadItem = async (
   if (!opts.dryRun) {
     const mk = await runner.exec(`mkdir -p ${shQuote(dest)}`);
     if (mk.code !== 0)
-      throw new Error(`could not create ${dest}: ${mk.stderr.trim()}`);
+      return Result.err(
+        new Error(`could not create ${dest}: ${mk.stderr.trim()}`)
+      );
   }
 
   // Item file names can themselves be nested (threads/xml/a.tar.gz), and curl
@@ -169,8 +182,15 @@ export const downloadItem = async (
     const parent = target.slice(0, target.lastIndexOf('/'));
     if (!made.has(parent)) {
       const mk = await runner.exec(`mkdir -p ${shQuote(parent)}`);
-      if (mk.code !== 0)
-        throw new Error(`could not create ${parent}: ${mk.stderr.trim()}`);
+      if (mk.code !== 0) {
+        // Aborts the whole download rather than failing this one file, which
+        // is the pre-existing behaviour: a parent directory that cannot be
+        // created usually means the destination is unwritable, and the next
+        // file would hit the same wall.
+        return Result.err(
+          new Error(`could not create ${parent}: ${mk.stderr.trim()}`)
+        );
+      }
       made.add(parent);
     }
 
@@ -219,5 +239,5 @@ export const downloadItem = async (
     results.push({ name: f.name, status: 'downloaded' });
   }
 
-  return results;
+  return Result.ok(results);
 };

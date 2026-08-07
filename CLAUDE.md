@@ -160,6 +160,43 @@ separate even when formats look similar.
 store `timestamp` as America/New_York wall time, not UTC, so it is converted
 back on ingest.
 
+**Not every board in an archive is a board of the site it claims.** Three
+kinds turn up: the archive's *own* discussion board (Desuarchive's `meta`),
+*other imageboards* a broad crawl swept in (`may.not4chan.org`,
+`orly.yi.org`), and *parse artifacts* that were never boards — collection
+titles read into the board column (`bay of pigs`, `law and order hack`) or
+bare numbers (`7898`).
+
+`ingest.exclude-boards` in a manifest drops them, and `packages/cli/src/boards.ts`
+(`makeBoardFilter`) is the shared matcher. **The enforcement is in the
+adapters, deliberately, not in one central whitelist.** A canonical
+board-list-per-site catches only the third kind: it asks "is this board valid
+for site X", but the defect in the first kind is the *site attribution
+itself*, and an archive's own board named `meta` or `qa` is a perfectly valid
+4chan board name that any name-keyed check waves through. Only the adapter
+knows how it derived the board — table name, thread URL, or markup — and
+therefore whether the site label can be trusted.
+
+Where the check goes matters for cost and for honesty:
+
+- SQL adapters reject at `CREATE TABLE`/INSERT-header time, so an excluded
+  board is never tuple-parsed.
+- `posts-threads-sql` resolves it inside `ThreadIndex` at *label intern* time
+  — once per distinct `(site, board)` rather than once per post — and the
+  excluded thread **stays in the index**. Dropping it instead would make its
+  posts indistinguishable from genuine orphans, and `noThread` is a real
+  diagnostic (3.0% on the ten-billion archive) that must not absorb rows we
+  chose to discard. Verified: `noThread` is 290,171 on 4archive whether `/b/`
+  is excluded or not.
+- Every adapter folds the exclusion tally into its final line. A filter that
+  discards silently is the same failure mode as a parser that returns zero —
+  an ingest that exits 0 having stored less than it should looks exactly like
+  one with nothing left to store.
+
+The reject-lists are per-source because the boards are: work out what an
+archive actually hosted before adding names, and prefer re-attributing a
+site-local board (`ingest.site`) over deleting real posts.
+
 **A mysqldump is not a format — the producing tool matters more than the
 schema.** `desuarchive-sql` exists because the 2019 Desuarchive/RBT dumps have
 the *same Asagi schema* `fuuka-sql` already reads, and are still unreadable by
