@@ -18,7 +18,14 @@
   "dependencies": {
     "@badrap/result": "^0.3.1",
     "@clack/prompts": "^1.7.0",
+    "@optique/config": "^1.2.0",
+    "@optique/core": "^1.2.0",
+    "@optique/env": "^1.2.0",
+    "@optique/run": "^1.2.0",
+    "@optique/temporal": "^1.2.0",
+    "@standard-schema/spec": "^1.1.0",
     "node-html-parser": "^9.0.1",
-    "pg": "^8.13.0"
+    "pg": "^8.13.0",
+    "zod": "^4.4.3"
   }
 }

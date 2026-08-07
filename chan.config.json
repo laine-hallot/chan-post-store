@@ -1,0 +1,6 @@
+{
+  "indexes": {
+    "memory": "8GB",
+    "tablespace": "fast"
+  }
+}
