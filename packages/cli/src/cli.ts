@@ -1,8 +1,10 @@
+import type { InferValue } from '@optique/core/parser';
 import type { Pool } from 'pg';
 
 import type { Manifest } from './manifest.ts';
 
 import { log } from '@clack/prompts';
+import { runAsync } from '@optique/run';
 import {
   existsSync,
   mkdirSync,
@@ -12,7 +14,6 @@ import {
 } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parseArgs } from 'node:util';
 import { gunzipSync } from 'node:zlib';
 
 import { ingestChanHtml } from './adapters/chan-html.ts';
@@ -28,6 +29,7 @@ import {
   humanBytes,
   identifierFromLink,
 } from './archive-org.ts';
+import { configContext, CONFIG_FILE } from './config.ts';
 import {
   openDb,
   getOrCreateSource,
@@ -36,6 +38,7 @@ import {
   QUERY_INDEXES,
   queryIndexStatus,
 } from './db.ts';
+import { connectionString, envContext } from './env.ts';
 import {
   ingestInputs,
   listManifestIds,
@@ -45,6 +48,7 @@ import {
   readSourceInfo,
   SOURCES_DIR,
 } from './manifest.ts';
+import { cli } from './parsers.ts';
 import { runPrepare } from './prepare.ts';
 import { makeBar } from './progress.ts';
 import { makeRunner, shQuote } from './runner.ts';
@@ -74,47 +78,39 @@ const findProjectRoot = (): string => {
 
 const PROJECT_ROOT = findProjectRoot();
 
-const USAGE = `Usage:
-  cli.ts download <source> [--remote <host>] [--local] [--dry-run] [--force]
-  cli.ts prepare <source> [--remote <host>] [--local] [--dry-run] [--force]
-  cli.ts warc-extract --warc <file.warc[.gz]> --out <dir> [--host <regex>]
-  cli.ts ingest <source> --db <file> [--board <b> ...]
-  cli.ts ingest-all --db <file> [--dry-run] [--exclude <source> ...] [--redo <source> ...] [--force]
-  cli.ts indexes build|drop|status --db <file> [--memory 4GB] [--tablespace <ts>] [--only <index> ...]
-  cli.ts boards --db <file>
-  cli.ts refresh-stats --db <file>
-  cli.ts count --db <file> --phrase <text> [--board <b>] [--site 4chan] [--from <date>] [--to <date>] [--by month|day|year|total]
-  cli.ts search --db <file> --phrase <text> [--board <b>] [--site 4chan] [--from <date>] [--to <date>] [--limit 20]
-  cli.ts list boards|sites|sources|manifests --db <file> [--site <s>]
+/**
+ * Per-command argument types, narrowed out of the one grammar in parsers.ts.
+ *
+ * Derived rather than declared: the parser is the single source of truth, so
+ * adding an option there is a type error here until it is handled, and the
+ * two cannot drift the way the old hand-written USAGE banner drifted from
+ * the twelve separate parseArgs calls it was supposed to describe.
+ */
+type Args = InferValue<typeof cli>;
+type Pick_<A extends Args['action']> = Extract<Args, { action: A }>;
+type DownloadArgs = Pick_<'download'>;
+type PrepareArgs = Pick_<'prepare'>;
+type WarcExtractArgs = Pick_<'warc-extract'>;
+type IngestArgs = Pick_<'ingest'>;
+type IngestAllArgs = Pick_<'ingest-all'>;
+type IndexesArgs = Pick_<'indexes'>;
+type BoardsArgs = Pick_<'boards'>;
+type RefreshStatsArgs = Pick_<'refresh-stats'>;
+type CountArgs = Pick_<'count'>;
+type SearchArgs = Pick_<'search'>;
+type ListManifestsArgs = Pick_<'list-manifests'>;
+type ListQueryArgs = Pick_<'list-boards' | 'list-sites' | 'list-sources'>;
 
-<source> names a manifest in ${SOURCES_DIR}/<source>.json (or a path to one).
-The manifest supplies the source name, link, adapter, and input path;
---board still narrows which boards are read out of that input.
-
-download stages an archive.org item into the source's files.source dir.
-It runs on the NAS when NAS_HOST/NAS_ROOT are set in .env (or --remote is
-given), so the transfer goes straight there; --local forces this machine.
-
-ingest-all skips sources whose last run finished cleanly, so an interrupted
-pass resumes instead of re-reading tens of GB that ON CONFLICT would discard.
-Re-staging an archive or fixing an adapter bug invalidates that: --redo
-<source> re-ingests one anyway, --force re-ingests every one. Both refresh
-completed_at when the run finishes.
-
-The query-time indexes on posts are NOT created on connect — ingest only
-needs the UNIQUE constraint, and maintaining the rest per-insert costs far
-more than sorting them once at the end. A bulk load is therefore:
-  indexes drop  ->  ingest-all  ->  indexes build
-"indexes status" says which are present. Queries want them; ingest does not.
-
-Dates are YYYY, YYYY-MM, or YYYY-MM-DD (UTC). --from/--to are both inclusive:
---to 2018-09 means "through the end of September 2018".`;
-
-// Explicitly typed so calls still end control flow — see `bad` in manifest.ts.
+/**
+ * Abort with a message. Explicitly typed `never` so calls still end control
+ * flow -- see `bad` in manifest.ts.
+ *
+ * No longer prints a usage banner: Optique owns usage and help now, and
+ * reprinting the whole grammar after a runtime failure ("no such manifest")
+ * buried the actual error.
+ */
 const fail: (msg: string) => never = (msg) => {
   console.error(msg);
-  console.error();
-  console.error(USAGE);
   process.exit(1);
 };
 
@@ -136,26 +132,8 @@ const parseBound = (s: string, end: boolean): number => {
   return Date.UTC(year, (month ?? 1) - 1, day ?? 1) / 1000;
 };
 
-const cmdDownload = async (argv: string[]): Promise<void> => {
-  const id = argv[0];
-  if (!id || id.startsWith('-')) {
-    const ids = listManifestIds(PROJECT_ROOT);
-    fail(
-      `download requires a source name\n\nKnown sources:\n` +
-        (ids.length ? ids.map((s) => `  ${s}`).join('\n') : '  (none)')
-    );
-  }
-  const { values } = parseArgs({
-    args: argv.slice(1),
-    options: {
-      remote: { type: 'string' },
-      local: { type: 'boolean' },
-      key: { type: 'string' },
-      'dry-run': { type: 'boolean' },
-      force: { type: 'boolean' },
-      all: { type: 'boolean' },
-    },
-  });
+const cmdDownload = async (o: DownloadArgs): Promise<void> => {
+  const id = o.source;
 
   const infoR = readSourceInfo(manifestPath(id, PROJECT_ROOT));
   if (infoR.isErr) fail(infoR.error.message);
@@ -173,7 +151,7 @@ const cmdDownload = async (argv: string[]): Promise<void> => {
   console.log(`${item.files.length} files, ${humanBytes(item.totalBytes)}`);
 
   // Image/thumbnail payloads are excluded per-manifest; --all overrides.
-  if (info.downloadExclude.length && !values.all) {
+  if (info.downloadExclude.length && !o.all) {
     const before = item.files.length;
     const beforeBytes = item.totalBytes;
     item.files = item.files.filter(
@@ -191,9 +169,9 @@ const cmdDownload = async (argv: string[]): Promise<void> => {
 
   const runnerR = await makeRunner({
     projectRoot: PROJECT_ROOT,
-    host: values.remote,
-    forceLocal: values.local,
-    key: values.key,
+    host: o.remote,
+    forceLocal: o.local,
+    key: o.key,
   });
   if (runnerR.isErr) fail(runnerR.error.message);
   const runner = runnerR.value;
@@ -206,8 +184,8 @@ const cmdDownload = async (argv: string[]): Promise<void> => {
       item,
       dest,
       runner,
-      force: values.force,
-      dryRun: values['dry-run'],
+      force: o.force,
+      dryRun: o['dry-run'],
     });
     if (outcome.isErr) fail(outcome.error.message);
     const results = outcome.value;
@@ -227,25 +205,8 @@ const cmdDownload = async (argv: string[]): Promise<void> => {
   }
 };
 
-const cmdPrepare = async (argv: string[]): Promise<void> => {
-  const id = argv[0];
-  if (!id || id.startsWith('-')) {
-    const ids = listManifestIds(PROJECT_ROOT);
-    fail(
-      `prepare requires a source name\n\nKnown sources:\n` +
-        (ids.length ? ids.map((s) => `  ${s}`).join('\n') : '  (none)')
-    );
-  }
-  const { values } = parseArgs({
-    args: argv.slice(1),
-    options: {
-      remote: { type: 'string' },
-      local: { type: 'boolean' },
-      key: { type: 'string' },
-      'dry-run': { type: 'boolean' },
-      force: { type: 'boolean' },
-    },
-  });
+const cmdPrepare = async (o: PrepareArgs): Promise<void> => {
+  const id = o.source;
 
   const infoR = readSourceInfo(manifestPath(id, PROJECT_ROOT));
   if (infoR.isErr) fail(infoR.error.message);
@@ -253,9 +214,9 @@ const cmdPrepare = async (argv: string[]): Promise<void> => {
 
   const runnerR = await makeRunner({
     projectRoot: PROJECT_ROOT,
-    host: values.remote,
-    forceLocal: values.local,
-    key: values.key,
+    host: o.remote,
+    forceLocal: o.local,
+    key: o.key,
   });
   if (runnerR.isErr) fail(runnerR.error.message);
   const runner = runnerR.value;
@@ -277,8 +238,8 @@ const cmdPrepare = async (argv: string[]): Promise<void> => {
       info,
       dir,
       runner,
-      dryRun: values['dry-run'],
-      force: values.force,
+      dryRun: o['dry-run'],
+      force: o.force,
       vars: {
         PROJECT: PROJECT_ROOT,
         // Absolute path to this entry point, so manifests don't hard-code
@@ -291,7 +252,7 @@ const cmdPrepare = async (argv: string[]): Promise<void> => {
     if (res.isErr) {
       console.error(res.error.message);
       process.exitCode = 1;
-    } else if (!res.value.skipped && !values['dry-run']) {
+    } else if (!res.value.skipped && !o['dry-run']) {
       console.log(
         `\n${res.value.ran} step(s) completed -> ${info.prepareOutput}/`
       );
@@ -308,29 +269,17 @@ const cmdPrepare = async (argv: string[]): Promise<void> => {
  * Extracts HTML pages from a WARC into a directory. Invoked from manifest
  * prepare steps; the de-chunk + brotli handling is impractical in shell.
  */
-const cmdWarcExtract = async (argv: string[]): Promise<void> => {
-  const { values } = parseArgs({
-    args: argv,
-    options: {
-      warc: { type: 'string' },
-      out: { type: 'string' },
-      host: { type: 'string', default: 'boards\\.4chan(?:nel)?\\.org' },
-      remote: { type: 'string' },
-      local: { type: 'boolean' },
-      key: { type: 'string' },
-    },
-  });
-  if (!values.warc || !values.out)
-    fail('warc-extract requires --warc and --out');
-  const hostRe = new RegExp(values.host);
+const cmdWarcExtract = async (o: WarcExtractArgs): Promise<void> => {
+  if (!o.warc || !o.out) fail('warc-extract requires --warc and --out');
+  const hostRe = new RegExp(o.host);
 
   // Parsing happens here rather than on the target: the NAS has no Node, and
   // these WARCs are single-digit MB, so the round trip is cheap.
   const runnerR = await makeRunner({
     projectRoot: PROJECT_ROOT,
-    host: values.remote,
-    forceLocal: values.local,
-    key: values.key,
+    host: o.remote,
+    forceLocal: o.local,
+    key: o.key,
   });
   if (runnerR.isErr) fail(runnerR.error.message);
   const runner = runnerR.value;
@@ -338,25 +287,24 @@ const cmdWarcExtract = async (argv: string[]): Promise<void> => {
     // --warc may name a single file or a directory of them; archives like
     // fybertech ship many WARCs from one crawl.
     const probe = await runner.exec(
-      `test -d ${shQuote(values.warc)} && echo dir || echo file`
+      `test -d ${shQuote(o.warc)} && echo dir || echo file`
     );
     let warcs: string[];
     if (probe.stdout.trim() === 'dir') {
       const ls = await runner.exec(
-        `find ${shQuote(values.warc)} -type f \\( -name '*.warc' -o -name '*.warc.gz' \\) | sort`
+        `find ${shQuote(o.warc)} -type f \\( -name '*.warc' -o -name '*.warc.gz' \\) | sort`
       );
       warcs = ls.stdout
         .split('\n')
         .map((s) => s.trim())
         .filter(Boolean);
-      if (warcs.length === 0)
-        fail(`no .warc/.warc.gz files under ${values.warc}`);
+      if (warcs.length === 0) fail(`no .warc/.warc.gz files under ${o.warc}`);
       console.log(`${warcs.length} WARC file(s)`);
     } else {
-      warcs = [values.warc];
+      warcs = [o.warc];
     }
 
-    const outDir = values.out.replace(/\/$/, '');
+    const outDir = o.out.replace(/\/$/, '');
     let n = 0;
     for (const w of warcs) {
       const rawR = await runner.readFile(w);
@@ -372,8 +320,7 @@ const cmdWarcExtract = async (argv: string[]): Promise<void> => {
         n++;
       }
     }
-    if (n === 0)
-      fail(`no HTML pages matching /${values.host}/ in ${values.warc}`);
+    if (n === 0) fail(`no HTML pages matching /${o.host}/ in ${o.warc}`);
     console.log(`extracted ${n} page(s)`);
   } finally {
     await runner.close();
@@ -481,23 +428,9 @@ const ingestOne = async (
   }
 };
 
-const cmdIngest = async (argv: string[]): Promise<void> => {
-  const id = argv[0];
-  if (!id || id.startsWith('-')) {
-    const ids = listManifestIds(PROJECT_ROOT);
-    fail(
-      `ingest requires a source name\n\nKnown sources:\n` +
-        (ids.length ? ids.map((s) => `  ${s}`).join('\n') : '  (none)')
-    );
-  }
-  const { values } = parseArgs({
-    args: argv.slice(1),
-    options: {
-      db: { type: 'string' },
-      board: { type: 'string', multiple: true },
-    },
-  });
-  if (!values.db) fail('ingest requires --db');
+const cmdIngest = async (o: IngestArgs): Promise<void> => {
+  const id = o.source;
+  if (!connectionString(o)) fail('ingest requires --db');
 
   // A source whose prepare step hasn't run is a normal state to hit; say so
   // plainly instead of dressing it up as a usage error.
@@ -514,7 +447,7 @@ const cmdIngest = async (argv: string[]): Promise<void> => {
   }
   const { manifest, inputs } = resolved.value;
 
-  const db = await openDb(values.db);
+  const db = await openDb(connectionString(o));
   try {
     const sourceId = await getOrCreateSource(db, manifest.name, manifest.link);
     console.log(
@@ -525,13 +458,13 @@ const cmdIngest = async (argv: string[]): Promise<void> => {
       manifest,
       sourceId,
       inputs,
-      values.board
+      o.board.length ? [...o.board] : undefined
     );
     console.log(summary);
     // A --board run covers part of the source, so it is progress, not
     // completion -- leaving completed_at null keeps ingest-all honest about
     // the boards this run never looked at.
-    if (values.board?.length) {
+    if (o.board?.length) {
       console.log(
         'not marked complete: --board ingests only part of the source'
       );
@@ -570,23 +503,11 @@ const fmtSecs = (t0: number): string => {
  * at the end, and on the current corpus they are ~72GB of write amplification
  * that ingest gets nothing from.
  */
-const cmdIndexes = async (argv: string[]): Promise<void> => {
-  const action = argv[0];
-  if (!action || !['build', 'drop', 'status'].includes(action)) {
-    fail('indexes requires one of: build, drop, status');
-  }
-  const { values } = parseArgs({
-    args: argv.slice(1),
-    options: {
-      db: { type: 'string' },
-      memory: { type: 'string' },
-      tablespace: { type: 'string' },
-      only: { type: 'string', multiple: true },
-    },
-  });
-  if (!values.db) fail('indexes requires --db');
+const cmdIndexes = async (o: IndexesArgs): Promise<void> => {
+  const action = o.subcommand;
+  if (!connectionString(o)) fail('indexes requires --db');
 
-  const db = await openDb(values.db);
+  const db = await openDb(connectionString(o));
   try {
     const before = await queryIndexStatus(db);
 
@@ -625,19 +546,19 @@ const cmdIndexes = async (argv: string[]): Promise<void> => {
     // because autovacuum_work_mem inherits the global, and three autovacuum
     // workers each holding several GB alongside an ingest is not the trade
     // being made here.
-    const memory = values.memory ?? '4GB';
+    const memory = o.memory ?? '4GB';
     // Which disk the indexes land on. Set as default_tablespace on the build
     // session rather than written into QUERY_INDEXES, for the same reason
     // maintenance_work_mem is: it is a property of this machine's disks, not
     // of the schema, and hardcoding it would make the DDL untrue anywhere
     // else. It also keeps drop/status working unchanged -- they match on
     // index name, which does not depend on location.
-    const { tablespace } = values;
+    const { tablespace } = o;
     // Build a subset. The GIN full-text index is the bulk of the total and
     // scales with text volume rather than row count, so its size is the least
     // predictable; building the cheap btrees first tells you what is left
     // before the expensive one commits to it.
-    const { only } = values;
+    const { only } = o;
     let missing = before.filter((i) => !i.exists);
     if (only?.length) {
       const known = new Set(QUERY_INDEXES.map((q) => q.name));
@@ -741,18 +662,7 @@ const readySources = (): ReadySource[] => {
  * one of them rejected by ON CONFLICT. Only a clean adapter return marks a
  * source done -- see markSourceCompleted.
  */
-const cmdIngestAll = async (argv: string[]): Promise<void> => {
-  const { values } = parseArgs({
-    args: argv,
-    options: {
-      db: { type: 'string' },
-      'dry-run': { type: 'boolean' },
-      exclude: { type: 'string', multiple: true },
-      redo: { type: 'string', multiple: true },
-      force: { type: 'boolean' },
-    },
-  });
-
+const cmdIngestAll = async (o: IngestAllArgs): Promise<void> => {
   let ready: ReadySource[];
   try {
     ready = readySources();
@@ -770,7 +680,7 @@ const cmdIngestAll = async (argv: string[]): Promise<void> => {
   // done. A typo here silently re-ingests something you meant to skip (which
   // is slow but not wrong, since ingest is idempotent), so unmatched names
   // are called out rather than ignored.
-  const excluded = new Set(values.exclude ?? []);
+  const excluded = new Set(o.exclude ?? []);
   const unknown = [...excluded].filter((id) => !ready.some((r) => r.id === id));
   if (unknown.length) {
     fail(`--exclude names no ready source: ${unknown.join(', ')}`);
@@ -782,7 +692,7 @@ const cmdIngestAll = async (argv: string[]): Promise<void> => {
     );
   }
 
-  const redo = new Set(values.redo ?? []);
+  const redo = new Set(o.redo ?? []);
   const unknownRedo = [...redo].filter((id) => !ready.some((r) => r.id === id));
   if (unknownRedo.length) {
     fail(`--redo names no ready source: ${unknownRedo.join(', ')}`);
@@ -792,7 +702,7 @@ const cmdIngestAll = async (argv: string[]): Promise<void> => {
   // actually be skipped when it has one. Without --db it still lists the ready
   // set, but says plainly that it cannot see completion rather than implying
   // every source listed would run.
-  if (values['dry-run'] && !values.db) {
+  if (o['dry-run'] && !connectionString(o)) {
     console.log(
       `${ready.length} ready source(s) (no --db: cannot tell which are already complete):`
     );
@@ -802,15 +712,13 @@ const cmdIngestAll = async (argv: string[]): Promise<void> => {
     return;
   }
 
-  if (!values.db) fail('ingest-all requires --db');
+  if (!connectionString(o)) fail('ingest-all requires --db');
 
   const results: { name: string; ok: boolean; posts: number; secs: number }[] =
     [];
-  const db = await openDb(values.db);
+  const db = await openDb(connectionString(o));
   try {
-    const done = values.force
-      ? new Map<string, Date>()
-      : await completedSources(db);
+    const done = o.force ? new Map<string, Date>() : await completedSources(db);
     // --redo and --force only decide what the skip check below sees; neither
     // writes. A re-run that succeeds refreshes completed_at through the same
     // markSourceCompleted call every other run uses, and a re-run that fails
@@ -823,7 +731,7 @@ const cmdIngestAll = async (argv: string[]): Promise<void> => {
     const skipped = ready.filter((r) => done.has(r.manifest.name));
     ready = ready.filter((r) => !done.has(r.manifest.name));
 
-    if (values['dry-run']) {
+    if (o['dry-run']) {
       for (const { id, manifest } of skipped) {
         const at = done
           .get(manifest.name)
@@ -920,15 +828,7 @@ const cmdIngestAll = async (argv: string[]): Promise<void> => {
  * rather than on whatever the local SMB mount happens to be showing (that
  * mount drops periodically and would otherwise report everything missing).
  */
-const cmdListManifests = async (argv: string[]): Promise<void> => {
-  const { values } = parseArgs({
-    args: argv,
-    options: {
-      remote: { type: 'string' },
-      local: { type: 'boolean' },
-      key: { type: 'string' },
-    },
-  });
+const cmdListManifests = async (o: ListManifestsArgs): Promise<void> => {
   const ids = listManifestIds(PROJECT_ROOT);
   if (ids.length === 0) {
     console.log(`no manifests in ${SOURCES_DIR}/`);
@@ -937,9 +837,9 @@ const cmdListManifests = async (argv: string[]): Promise<void> => {
 
   const runnerR = await makeRunner({
     projectRoot: PROJECT_ROOT,
-    host: values.remote,
-    forceLocal: values.local,
-    key: values.key,
+    host: o.remote,
+    forceLocal: o.local,
+    key: o.key,
   });
   if (runnerR.isErr) fail(runnerR.error.message);
   const runner = runnerR.value;
@@ -1028,13 +928,9 @@ const cmdListManifests = async (argv: string[]): Promise<void> => {
  * boards exist and when is their data from" immediately; the counts are raw
  * per-archive contributions and can double-count a post held twice.
  */
-const cmdBoards = async (argv: string[]): Promise<void> => {
-  const { values } = parseArgs({
-    args: argv,
-    options: { db: { type: 'string' } },
-  });
-  if (!values.db) fail('boards requires --db');
-  const db = await openDb(values.db);
+const cmdBoards = async (o: BoardsArgs): Promise<void> => {
+  if (!connectionString(o)) fail('boards requires --db');
+  const db = await openDb(connectionString(o));
   try {
     if (!(await hasStats(db))) {
       fail('post_stats is empty — run: cli.ts refresh-stats --db <file>');
@@ -1071,13 +967,9 @@ const cmdBoards = async (argv: string[]): Promise<void> => {
  * Ingest keeps it current, so this is for backfilling a store that predates
  * the table. One full pass over `posts`.
  */
-const cmdRefreshStats = async (argv: string[]): Promise<void> => {
-  const { values } = parseArgs({
-    args: argv,
-    options: { db: { type: 'string' } },
-  });
-  if (!values.db) fail('refresh-stats requires --db');
-  const db = await openDb(values.db);
+const cmdRefreshStats = async (o: RefreshStatsArgs): Promise<void> => {
+  if (!connectionString(o)) fail('refresh-stats requires --db');
+  const db = await openDb(connectionString(o));
   try {
     console.log('rebuilding post_stats (one full pass over posts) ...');
     const t0 = Date.now();
@@ -1109,7 +1001,7 @@ interface FilterValues {
 
 /** WHERE clauses + params shared by `count` and `search`. */
 const phraseFilters = (
-  values: FilterValues
+  o: FilterValues
 ): {
   where: string;
   params: (string | number)[];
@@ -1118,17 +1010,17 @@ const phraseFilters = (
     "p.search_vector @@ phraseto_tsquery('simple', $1)",
     'p.site = $2',
   ];
-  const params: (string | number)[] = [values.phrase!, values.site];
-  if (values.board) {
-    params.push(values.board);
+  const params: (string | number)[] = [o.phrase!, o.site];
+  if (o.board) {
+    params.push(o.board);
     where.push(`p.board = $${params.length}`);
   }
-  if (values.from) {
-    params.push(parseBound(values.from, false));
+  if (o.from) {
+    params.push(parseBound(o.from, false));
     where.push(`p.ts_utc >= $${params.length}`);
   }
-  if (values.to) {
-    params.push(parseBound(values.to, true));
+  if (o.to) {
+    params.push(parseBound(o.to, true));
     where.push(`p.ts_utc < $${params.length}`);
   }
   return { where: where.join(' AND '), params };
@@ -1140,27 +1032,24 @@ const BUCKET_FORMATS: Record<string, string> = {
   year: 'YYYY',
 };
 
-const cmdCount = async (argv: string[]): Promise<void> => {
-  const { values } = parseArgs({
-    args: argv,
-    options: { ...FILTER_OPTIONS, by: { type: 'string', default: 'month' } },
-  });
-  if (!values.db || !values.phrase) fail('count requires --db and --phrase');
-  if (values.by !== 'total' && !(values.by in BUCKET_FORMATS)) {
+const cmdCount = async (o: CountArgs): Promise<void> => {
+  if (!connectionString(o) || !o.phrase)
+    fail('count requires --db and --phrase');
+  if (o.by !== 'total' && !(o.by in BUCKET_FORMATS)) {
     fail(
       `--by must be one of: ${Object.keys(BUCKET_FORMATS).join(', ')}, total`
     );
   }
 
-  const { where, params } = phraseFilters(values);
+  const { where, params } = phraseFilters(o);
 
   // A plain COUNT(*) is correct because posts holds one row per post: the
   // UNIQUE (site, board, post_no) constraint means an archive that also had
   // the post contributed no second row to count.
   const bucketExpr =
-    values.by === 'total'
+    o.by === 'total'
       ? "'total'"
-      : `to_char(to_timestamp(p.ts_utc) AT TIME ZONE 'UTC', '${BUCKET_FORMATS[values.by]}')`;
+      : `to_char(to_timestamp(p.ts_utc) AT TIME ZONE 'UTC', '${BUCKET_FORMATS[o.by]}')`;
   const sql = `
     SELECT ${bucketExpr} AS bucket,
            COUNT(*) AS posts
@@ -1170,7 +1059,7 @@ const cmdCount = async (argv: string[]): Promise<void> => {
     ORDER BY bucket
   `;
 
-  const db = await openDb(values.db);
+  const db = await openDb(connectionString(o));
   try {
     const { rows } = await db.query<{ bucket: string | null; posts: number }>(
       sql,
@@ -1185,23 +1074,20 @@ const cmdCount = async (argv: string[]): Promise<void> => {
       console.log(`${r.bucket ?? '(no date)'}\t${r.posts}`);
       total += r.posts;
     }
-    if (values.by !== 'total') console.log(`total\t${total}`);
+    if (o.by !== 'total') console.log(`total\t${total}`);
   } finally {
     await db.end();
   }
 };
 
-const cmdSearch = async (argv: string[]): Promise<void> => {
-  const { values } = parseArgs({
-    args: argv,
-    options: { ...FILTER_OPTIONS, limit: { type: 'string', default: '20' } },
-  });
-  if (!values.db || !values.phrase) fail('search requires --db and --phrase');
-  const limit = Number(values.limit);
+const cmdSearch = async (o: SearchArgs): Promise<void> => {
+  if (!connectionString(o) || !o.phrase)
+    fail('search requires --db and --phrase');
+  const limit = Number(o.limit);
   if (!Number.isInteger(limit) || limit < 1)
-    fail(`invalid --limit: ${values.limit}`);
+    fail(`invalid --limit: ${o.limit}`);
 
-  const { where, params } = phraseFilters(values);
+  const { where, params } = phraseFilters(o);
   // No GROUP BY: posts holds one row per post, so there are no copies to
   // collapse. Dropping it also lets the LIMIT short-circuit -- grouping
   // forced every match to be materialized and sorted before the first row
@@ -1232,7 +1118,7 @@ const cmdSearch = async (argv: string[]): Promise<void> => {
     body_text: string | null;
   }
 
-  const db = await openDb(values.db);
+  const db = await openDb(connectionString(o));
   try {
     const { rows } = await db.query<Hit>(sql, [...params, limit]);
     if (rows.length === 0) {
@@ -1378,37 +1264,20 @@ const LIST_QUERIES: Record<
   },
 };
 
-const cmdList = async (argv: string[]): Promise<void> => {
-  const what = argv[0];
-  // `manifests` reads sources/, not the database, so it takes no --db
-  if (what === 'manifests') {
-    await cmdListManifests(argv.slice(1));
-    return;
-  }
-  const query = what ? LIST_QUERIES[what] : undefined;
-  if (!query) {
-    fail(
-      `list expects one of: ${Object.keys(LIST_QUERIES).join(', ')}, manifests`
-    );
-  }
-  const { values } = parseArgs({
-    args: argv.slice(1),
-    options: {
-      db: { type: 'string' },
-      site: { type: 'string' },
-    },
-  });
-  if (!values.db) fail('list requires --db');
+const cmdList = async (o: ListQueryArgs): Promise<void> => {
+  // The grammar already picked the subcommand, so there is nothing left to
+  // validate here -- 'list-boards' etc. map straight onto the query table.
+  const query = LIST_QUERIES[o.action.slice('list-'.length)];
 
   const params: string[] = [];
   let where = '';
-  if (values.site) {
+  if (o.site) {
     where = 'WHERE p.site = $1';
-    params.push(values.site);
+    params.push(o.site);
   }
   const sql = query.sql.replace('{WHERE}', where);
 
-  const db = await openDb(values.db);
+  const db = await openDb(connectionString(o));
   try {
     const { rows } = await db.query<Record<string, string | number | null>>(
       sql,
@@ -1427,41 +1296,58 @@ const cmdList = async (argv: string[]): Promise<void> => {
   }
 };
 
-const [cmd, ...rest] = process.argv.slice(2);
-switch (cmd) {
+const args = await runAsync(cli, {
+  contexts: [envContext, configContext],
+  contextOptions: { getConfigPath: () => join(PROJECT_ROOT, CONFIG_FILE) },
+  programName: 'cli.ts',
+  // Both spellings: `cli.ts --help` and `cli.ts help indexes`. Without this
+  // Optique registers neither and --help is just an unknown option.
+  help: 'both',
+});
+
+// Exhaustive over the grammar's discriminant: a command added to parsers.ts
+// without a case here is a compile error, not a silent no-op.
+switch (args.action) {
   case 'download':
-    await cmdDownload(rest);
+    await cmdDownload(args);
     break;
   case 'prepare':
-    await cmdPrepare(rest);
+    await cmdPrepare(args);
     break;
   case 'warc-extract':
-    await cmdWarcExtract(rest);
+    await cmdWarcExtract(args);
     break;
   case 'ingest':
-    await cmdIngest(rest);
+    await cmdIngest(args);
     break;
   case 'ingest-all':
-    await cmdIngestAll(rest);
+    await cmdIngestAll(args);
     break;
   case 'indexes':
-    await cmdIndexes(rest);
+    await cmdIndexes(args);
     break;
   case 'boards':
-    await cmdBoards(rest);
+    await cmdBoards(args);
     break;
   case 'refresh-stats':
-    await cmdRefreshStats(rest);
+    await cmdRefreshStats(args);
     break;
   case 'count':
-    await cmdCount(rest);
+    await cmdCount(args);
     break;
   case 'search':
-    await cmdSearch(rest);
+    await cmdSearch(args);
     break;
-  case 'list':
-    await cmdList(rest);
+  case 'list-manifests':
+    await cmdListManifests(args);
     break;
-  default:
-    fail(cmd ? `unknown command: ${cmd}` : 'no command given');
+  case 'list-boards':
+  case 'list-sites':
+  case 'list-sources':
+    await cmdList(args);
+    break;
+  default: {
+    const never: never = args;
+    throw new Error(`unhandled command: ${JSON.stringify(never)}`);
+  }
 }
