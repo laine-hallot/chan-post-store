@@ -41,6 +41,8 @@ export default defineConfig([
       'prefer-arrow-callback': 'warn',
       'no-nested-ternary': 'warn',
       'func-style': ['warn', 'expression', {}],
+      curly: 'warn',
+      'no-lonely-if': 'warn',
       'perfectionist/sort-imports': [
         'warn',
         {
