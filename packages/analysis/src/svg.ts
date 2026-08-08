@@ -55,13 +55,13 @@ const ticks = (max: number, count = 5): number[] => {
 
 const compact = (n: number): string => {
   if (n >= 1e9) {
-    return `${(n / 1e9).toFixed(n >= 1e10 ? 0 : 1)}B`;
+    return `${(n / 1e9).toFixed(n >= 1e10 ? 0 : 3)}B`;
   }
   if (n >= 1e6) {
-    return `${(n / 1e6).toFixed(n >= 1e7 ? 0 : 1)}M`;
+    return `${(n / 1e6).toFixed(n >= 1e7 ? 0 : 3)}M`;
   }
   if (n >= 1e3) {
-    return `${(n / 1e3).toFixed(n >= 1e4 ? 0 : 1)}k`;
+    return `${(n / 1e3).toFixed(n >= 1e4 ? 0 : 3)}k`;
   }
   return String(n);
 };

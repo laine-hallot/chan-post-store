@@ -26,7 +26,8 @@ import {
   postsByYearForBoard,
   totals,
   type Totals,
-  type YearBucket,
+  type YearSourceBucket,
+  type PostBuckets,
 } from './query.ts';
 import { renderChart, type ChartData, type Series } from './svg.ts';
 
@@ -132,6 +133,11 @@ const program = defineProgram({
         }),
         false
       ),
+      perSource: optional(
+        flag('--per-source', {
+          description: message`Split stats by source`,
+        })
+      ),
     }),
     dbOptions
   ),
@@ -196,18 +202,24 @@ if (!cached) {
  * one board across every archive — so the board name stands in as the series
  * label, keeping the shape the chart expects.
  */
-const readBuckets = async (): Promise<YearBucket[]> => {
+const readBuckets = async (): Promise<
+  PostBuckets | { grouping: 'board'; rows: { year: string; posts: number }[] }
+> => {
   if (cached) {
-    const filter = values.board
-      ? { site: values.site, board: values.board }
-      : undefined;
-    return bucketsFromStats(db, filter);
+    const filter = {
+      ...(values.board ? { site: values.site, board: values.board } : {}),
+      ...(values.perSource ? { grouping: 'source' as const } : {}),
+    };
+    return await bucketsFromStats(db, filter);
   }
   if (values.board) {
     const rows = await postsByYearForBoard(db, values.site, values.board);
-    return rows.map((r) => ({ ...r, source: `/${values.board}/` }));
+    return {
+      grouping: 'board',
+      rows: rows.map((r) => ({ ...r, source: `/${values.board}/` })),
+    };
   }
-  return postsByYearAndSource(db);
+  return { grouping: 'source', rows: await postsByYearAndSource(db) };
 };
 
 /**
@@ -226,10 +238,10 @@ const buckets = await readBuckets();
 const tot = await readTotals();
 await db.end();
 console.log(
-  `aggregated ${buckets.length} buckets in ${((Date.now() - t0) / 1000).toFixed(1)}s`
+  `aggregated ${buckets.rows.length} buckets in ${((Date.now() - t0) / 1000).toFixed(1)}s`
 );
 
-if (buckets.length === 0) {
+if (buckets.rows.length === 0) {
   console.error(
     values.board
       ? `no dated posts for /${values.board}/ on ${values.site}`
@@ -240,7 +252,7 @@ if (buckets.length === 0) {
 
 // Fill gaps so a year with no posts still occupies a row; an absent year
 // reads as "no coverage", which is the point of the chart.
-const years = buckets.map((b) => b.year).sort();
+const years = buckets.rows.map((b) => b.year).sort();
 const lo = Number(years[0]);
 const hi = Number(years[years.length - 1]);
 const allYears: string[] = [];
@@ -248,24 +260,31 @@ for (let y = lo; y <= hi; y++) {
   allYears.push(String(y));
 }
 
-// Largest first, so the sources that dominate the chart take the leading slots
-// and the reading order of the legend matches the visual weight of the bars.
-const totalBySource = new Map<string, number>();
-for (const b of buckets) {
-  totalBySource.set(b.source, (totalBySource.get(b.source) ?? 0) + b.posts);
-}
-const sourceNames = [...totalBySource.keys()].sort(
-  (a, z) => (totalBySource.get(z) ?? 0) - (totalBySource.get(a) ?? 0)
-);
-if (sourceNames.length > COLORS.length) {
-  // Better to stop than to hand two archives the same colour: the chart's
-  // whole job is telling them apart.
-  console.error(
-    `${sourceNames.length} sources but only ${COLORS.length} validated colors.\n` +
-      `Add slots from the reference palette (validating the new set) or chart a subset with --board.`
+const collectSourceNames = (rows: YearSourceBucket[]): string[] => {
+  // Largest first, so the sources that dominate the chart take the leading slots
+  // and the reading order of the legend matches the visual weight of the bars.
+  const totalBySource = new Map<string, number>();
+  for (const b of rows) {
+    totalBySource.set(b.source, (totalBySource.get(b.source) ?? 0) + b.posts);
+  }
+  const sourceNames = [...totalBySource.keys()].sort(
+    (a, z) => (totalBySource.get(z) ?? 0) - (totalBySource.get(a) ?? 0)
   );
-  process.exit(1);
-}
+  if (sourceNames.length > COLORS.length) {
+    // Better to stop than to hand two archives the same colour: the chart's
+    // whole job is telling them apart.
+    console.error(
+      `${sourceNames.length} sources but only ${COLORS.length} validated colors.\n` +
+        `Add slots from the reference palette (validating the new set) or chart a subset with --board.`
+    );
+    process.exit(1);
+  }
+  return sourceNames;
+};
+
+const sourceNames =
+  buckets.grouping === 'source' ? collectSourceNames(buckets.rows) : ['Posts'];
+
 const series: Series[] = sourceNames.map((name, i) => ({
   name,
   color: COLORS[i],
@@ -275,25 +294,32 @@ const grid = new Map<string, Map<string, number>>();
 for (const y of allYears) {
   grid.set(y, new Map());
 }
-for (const b of buckets) {
-  grid.get(b.year)?.set(b.source, b.posts);
+if (buckets.grouping === 'source') {
+  for (const b of buckets.rows) {
+    grid.get(b.year)?.set(b.source, b.posts);
+  }
+} else {
+  for (const b of buckets.rows) {
+    console.log({ [b.year]: b.posts });
+    grid.get(b.year)?.set('Posts', b.posts);
+  }
 }
 
-const fmt = (n: number): string => n.toLocaleString('en-US');
+const yearFormat = (n: number): string => n.toLocaleString('en-US');
 
 // Sum of what is actually charted, so the headline matches the bars.
-const charted = buckets.reduce((n, b) => n + b.posts, 0);
+const charted = buckets.rows.reduce((n, b) => n + b.posts, 0);
 
 let title: string;
 let subtitle: string;
 if (values.board) {
-  const active = buckets
+  const active = buckets.rows
     .filter((b) => b.posts > 0)
     .map((b) => b.year)
     .sort();
   title = `/${values.board}/ — posts by year`;
   subtitle =
-    `${fmt(charted)} posts, ${active[0]} to ${active[active.length - 1]}` +
+    `${yearFormat(charted)} posts, ${active[0]} to ${active[active.length - 1]}` +
     (series.length > 1 ? `, across ${series.length} archives` : '') +
     '. Each post is counted once, attributed to the archive that supplied it.';
 } else {
@@ -302,11 +328,24 @@ if (values.board) {
       ? `${new Date(tot!.minTs * 1000).toISOString().slice(0, 7)} to ${new Date(tot!.maxTs * 1000).toISOString().slice(0, 7)}`
       : 'unknown span';
   const undated = tot!.posts - charted;
-  title = 'Post coverage by year and archive';
-  subtitle =
-    `${fmt(charted)} dated posts across ${series.length} sources, ${span}.` +
-    (undated > 0 ? ` ${fmt(undated)} undated posts are not shown.` : '') +
-    ' Each post is counted once, attributed to the archive that supplied it first.';
+  title =
+    buckets.grouping === 'source'
+      ? 'Post coverage by year and archive'
+      : 'Post coverage by year';
+  if (buckets.grouping === 'source') {
+    subtitle =
+      `${yearFormat(charted)} dated posts across ${series.length} sources, ${span}.` +
+      (undated > 0
+        ? ` ${yearFormat(undated)} undated posts are not shown.`
+        : '') +
+      ' Each post is counted once, attributed to the archive that supplied it first.';
+  } else {
+    subtitle =
+      `${yearFormat(charted)} posts dated ${span}.` +
+      (undated > 0
+        ? ` ${yearFormat(undated)} undated posts are not shown.`
+        : '');
+  }
 }
 
 const data: ChartData = {

@@ -30,6 +30,12 @@ pg.types.setTypeParser(1700, (v: string) => parseFloat(v));
 export interface YearBucket {
   /** Calendar year, e.g. "2015". */
   year: string;
+  posts: number;
+}
+
+export interface YearSourceBucket {
+  /** Calendar year, e.g. "2015". */
+  year: string;
   /** Source name as stored in `sources`. */
   source: string;
   posts: number;
@@ -96,6 +102,26 @@ export const hasQueryIndexes = async (
   return { srcTs: rows[0]?.srcts != null, boardTs: rows[0]?.boardts != null };
 };
 
+const bucketsFromStatsSourceGrouped = async (
+  db: Pool,
+  filter: { site?: string; board?: string }
+): Promise<YearSourceBucket[]> => {
+  const { rows } = await db.query<YearSourceBucket>(
+    `SELECT s.name AS source, ps.year::text AS year, SUM(ps.posts)::bigint AS posts
+       FROM post_stats ps
+       JOIN sources s ON s.id = ps.source_id
+      WHERE ps.site LIKE $1 AND ps.board LIKE $2 AND ps.year IS NOT NULL
+      GROUP BY s.name, ps.year
+      ORDER BY ps.year, s.name`,
+    [filter.site ?? '%', filter.board ?? '%']
+  );
+  return rows;
+};
+
+export type PostBuckets =
+  | { grouping: 'source'; rows: YearSourceBucket[] }
+  | { grouping: 'year'; rows: YearBucket[] };
+
 /**
  * Year/source grid straight out of post_stats.
  *
@@ -104,22 +130,22 @@ export const hasQueryIndexes = async (
  */
 export const bucketsFromStats = async (
   db: Pool,
-  filter?: { site: string; board: string }
-): Promise<YearBucket[]> => {
-  const where = filter
-    ? 'WHERE ps.site = $1 AND ps.board = $2 AND ps.year IS NOT NULL'
-    : 'WHERE ps.year IS NOT NULL';
-  const args = filter ? [filter.site, filter.board] : [];
-  const { rows } = await db.query<YearBucket>(
-    `SELECT s.name AS source, ps.year::text AS year, SUM(ps.posts)::bigint AS posts
-       FROM post_stats ps
-       JOIN sources s ON s.id = ps.source_id
-      ${where}
-      GROUP BY s.name, ps.year
-      ORDER BY ps.year, s.name`,
-    args
-  );
-  return rows;
+  filter: { site?: string; board?: string; grouping?: 'source' }
+): Promise<PostBuckets> => {
+  if (filter.grouping === 'source') {
+    const rows = await bucketsFromStatsSourceGrouped(db, filter);
+    return { grouping: 'source', rows };
+  } else {
+    const { rows } = await db.query<YearSourceBucket>(
+      `SELECT ps.year::text AS year, SUM(ps.posts)::bigint AS posts
+         FROM post_stats ps
+        WHERE ps.site LIKE $1 AND ps.board LIKE $2 AND ps.year IS NOT NULL
+        GROUP BY ps.year
+        ORDER BY ps.year`,
+      [filter.site ?? '%', filter.board ?? '%']
+    );
+    return { grouping: 'year', rows };
+  }
 };
 
 /** Corpus totals from post_stats: a few hundred rows, not 400M. */
@@ -183,7 +209,9 @@ export const timestampSpan = async (
  *
  * Requires idx_posts_src_ts. Prefer bucketsFromStats.
  */
-export const postsByYearAndSource = async (db: Pool): Promise<YearBucket[]> => {
+export const postsByYearAndSource = async (
+  db: Pool
+): Promise<YearSourceBucket[]> => {
   const { rows: sources } = await db.query<{ id: number; name: string }>(
     'SELECT id, name FROM sources ORDER BY name'
   );
@@ -196,7 +224,7 @@ export const postsByYearAndSource = async (db: Pool): Promise<YearBucket[]> => {
   const firstYear = new Date(span.minTs * 1000).getUTCFullYear();
   const lastYear = new Date(span.maxTs * 1000).getUTCFullYear();
 
-  const out: YearBucket[] = [];
+  const out: YearSourceBucket[] = [];
   for (const s of sources) {
     for (let y = firstYear; y <= lastYear; y++) {
       const { rows } = await db.query<{ n: number }>(
