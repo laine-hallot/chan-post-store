@@ -48,17 +48,19 @@ export const identifierFromLink = (link: string): string | undefined => {
 export const fetchItem = async (id: string): Promise<Result<IaItem, Error>> => {
   const url = `https://archive.org/metadata/${encodeURIComponent(id)}`;
   const res = await fetch(url);
-  if (!res.ok)
+  if (!res.ok) {
     return Result.err(
       new Error(`metadata fetch failed for ${id}: HTTP ${res.status}`)
     );
+  }
   const doc = (await res.json()) as {
     metadata?: { identifier?: string; title?: string };
     files?: Record<string, unknown>[];
   };
   // The API answers 200 with {} for an identifier that doesn't exist.
-  if (!doc.metadata || !doc.files)
+  if (!doc.metadata || !doc.files) {
     return Result.err(new Error(`no such item on archive.org: ${id}`));
+  }
 
   const files: IaFile[] = doc.files.map((f) => ({
     name: String(f.name),
@@ -142,10 +144,11 @@ export const downloadItem = async (
 
   if (!opts.dryRun) {
     const mk = await runner.exec(`mkdir -p ${shQuote(dest)}`);
-    if (mk.code !== 0)
+    if (mk.code !== 0) {
       return Result.err(
         new Error(`could not create ${dest}: ${mk.stderr.trim()}`)
       );
+    }
   }
 
   // Item file names can themselves be nested (threads/xml/a.tar.gz), and curl

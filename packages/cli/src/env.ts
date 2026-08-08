@@ -142,7 +142,9 @@ export interface DbOptions {
  * the deliberate absence of any encoding step on the password -- see above.
  */
 export const connectionString = (o: DbOptions): string => {
-  if (o.db) return o.db;
+  if (o.db) {
+    return o.db;
+  }
   if (!o.dbUser || !o.dbName) {
     throw new Error(
       'no database connection configured\n' +

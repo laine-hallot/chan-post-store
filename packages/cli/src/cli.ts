@@ -89,16 +89,22 @@ const fail: (msg: string) => never = (msg) => {
  * unit of their precision so they can be used as an exclusive upper bound. */
 const parseBound = (s: string, end: boolean): number => {
   const m = /^(\d{4})(?:-(\d{2}))?(?:-(\d{2}))?$/.exec(s);
-  if (!m) fail(`invalid date: ${s}`);
+  if (!m) {
+    fail(`invalid date: ${s}`);
+  }
   let [year, month, day] = [
     Number(m[1]),
     m[2] ? Number(m[2]) : null,
     m[3] ? Number(m[3]) : null,
   ];
   if (end) {
-    if (day != null) day++;
-    else if (month != null) month++;
-    else year++;
+    if (day != null) {
+      day++;
+    } else if (month != null) {
+      month++;
+    } else {
+      year++;
+    }
   }
   return Date.UTC(year, (month ?? 1) - 1, day ?? 1) / 1000;
 };
@@ -107,16 +113,22 @@ const cmdDownload = async (o: DownloadArgs): Promise<void> => {
   const id = o.source;
 
   const infoR = readSourceInfo(manifestPath(id, PROJECT_ROOT));
-  if (infoR.isErr) fail(infoR.error.message);
+  if (infoR.isErr) {
+    fail(infoR.error.message);
+  }
   const info = infoR.value;
-  if (!info.link) fail(`${info.file}: source.link is required to download`);
+  if (!info.link) {
+    fail(`${info.file}: source.link is required to download`);
+  }
   const identifier = identifierFromLink(info.link);
   if (!identifier) {
     fail(`${info.file}: source.link is not an archive.org URL: ${info.link}`);
   }
 
   const itemR = await fetchItem(identifier);
-  if (itemR.isErr) fail(itemR.error.message);
+  if (itemR.isErr) {
+    fail(itemR.error.message);
+  }
   const item = itemR.value;
   console.log(`${item.identifier}: ${item.title ?? '(untitled)'}`);
   console.log(`${item.files.length} files, ${humanBytes(item.totalBytes)}`);
@@ -144,7 +156,9 @@ const cmdDownload = async (o: DownloadArgs): Promise<void> => {
     forceLocal: o.local,
     key: o.key,
   });
-  if (runnerR.isErr) fail(runnerR.error.message);
+  if (runnerR.isErr) {
+    fail(runnerR.error.message);
+  }
   const runner = runnerR.value;
   try {
     const dest = runner.path(
@@ -158,7 +172,9 @@ const cmdDownload = async (o: DownloadArgs): Promise<void> => {
       force: o.force,
       dryRun: o['dry-run'],
     });
-    if (outcome.isErr) fail(outcome.error.message);
+    if (outcome.isErr) {
+      fail(outcome.error.message);
+    }
     const results = outcome.value;
 
     const by = (s: string): number =>
@@ -168,7 +184,9 @@ const cmdDownload = async (o: DownloadArgs): Promise<void> => {
     );
     const failed = results.filter((r) => r.status === 'failed');
     if (failed.length) {
-      for (const f of failed) console.error(`  ${f.name}: ${f.detail}`);
+      for (const f of failed) {
+        console.error(`  ${f.name}: ${f.detail}`);
+      }
       process.exitCode = 1;
     }
   } finally {
@@ -180,7 +198,9 @@ const cmdPrepare = async (o: PrepareArgs): Promise<void> => {
   const id = o.source;
 
   const infoR = readSourceInfo(manifestPath(id, PROJECT_ROOT));
-  if (infoR.isErr) fail(infoR.error.message);
+  if (infoR.isErr) {
+    fail(infoR.error.message);
+  }
   const info = infoR.value;
 
   const runnerR = await makeRunner({
@@ -189,7 +209,9 @@ const cmdPrepare = async (o: PrepareArgs): Promise<void> => {
     forceLocal: o.local,
     key: o.key,
   });
-  if (runnerR.isErr) fail(runnerR.error.message);
+  if (runnerR.isErr) {
+    fail(runnerR.error.message);
+  }
   const runner = runnerR.value;
   try {
     const dir = runner.path(
@@ -241,7 +263,9 @@ const cmdPrepare = async (o: PrepareArgs): Promise<void> => {
  * prepare steps; the de-chunk + brotli handling is impractical in shell.
  */
 const cmdWarcExtract = async (o: WarcExtractArgs): Promise<void> => {
-  if (!o.warc || !o.out) fail('warc-extract requires --warc and --out');
+  if (!o.warc || !o.out) {
+    fail('warc-extract requires --warc and --out');
+  }
   const hostRe = new RegExp(o.host);
 
   // Parsing happens here rather than on the target: the NAS has no Node, and
@@ -252,7 +276,9 @@ const cmdWarcExtract = async (o: WarcExtractArgs): Promise<void> => {
     forceLocal: o.local,
     key: o.key,
   });
-  if (runnerR.isErr) fail(runnerR.error.message);
+  if (runnerR.isErr) {
+    fail(runnerR.error.message);
+  }
   const runner = runnerR.value;
   try {
     // --warc may name a single file or a directory of them; archives like
@@ -269,7 +295,9 @@ const cmdWarcExtract = async (o: WarcExtractArgs): Promise<void> => {
         .split('\n')
         .map((s) => s.trim())
         .filter(Boolean);
-      if (warcs.length === 0) fail(`no .warc/.warc.gz files under ${o.warc}`);
+      if (warcs.length === 0) {
+        fail(`no .warc/.warc.gz files under ${o.warc}`);
+      }
       console.log(`${warcs.length} WARC file(s)`);
     } else {
       warcs = [o.warc];
@@ -279,19 +307,25 @@ const cmdWarcExtract = async (o: WarcExtractArgs): Promise<void> => {
     let n = 0;
     for (const w of warcs) {
       const rawR = await runner.readFile(w);
-      if (rawR.isErr) fail(rawR.error.message);
+      if (rawR.isErr) {
+        fail(rawR.error.message);
+      }
       const raw = rawR.value;
       // Items ship the WARC gzipped; accept either form.
       const buf = w.endsWith('.gz') ? gunzipSync(raw) : raw;
       for (const rec of htmlPages(buf, hostRe)) {
         const name = uriToFilename(rec.uri!);
         const wrote = await runner.writeFile(`${outDir}/${name}`, rec.body);
-        if (wrote.isErr) fail(wrote.error.message);
+        if (wrote.isErr) {
+          fail(wrote.error.message);
+        }
         console.log(`  ${name} (${rec.body.length} bytes) <- ${rec.uri}`);
         n++;
       }
     }
-    if (n === 0) fail(`no HTML pages matching /${o.host}/ in ${o.warc}`);
+    if (n === 0) {
+      fail(`no HTML pages matching /${o.host}/ in ${o.warc}`);
+    }
     console.log(`extracted ${n} page(s)`);
   } finally {
     await runner.close();
@@ -391,7 +425,9 @@ const ingestOne = async (
     for (const file of inputs) {
       // warosu backups ship one dump per board, so a source can be several
       // files; each is streamed in turn into the same source id.
-      if (inputs.length > 1) console.log(`  ${file}`);
+      if (inputs.length > 1) {
+        console.log(`  ${file}`);
+      }
       const stats = await ingest(db, {
         file,
         sourceId,
@@ -415,7 +451,9 @@ const ingestOne = async (
 
 const cmdIngest = async (o: IngestArgs): Promise<void> => {
   const id = o.source;
-  if (!connectionString(o)) fail('ingest requires --db');
+  if (!connectionString(o)) {
+    fail('ingest requires --db');
+  }
 
   // A source whose prepare step hasn't run is a normal state to hit; say so
   // plainly instead of dressing it up as a usage error.
@@ -474,8 +512,12 @@ const quoteIdent = (s: string): string => `"${s.replace(/"/g, '""')}"`;
 /** Elapsed since `t0`, as a human duration. Index builds run into hours. */
 const fmtSecs = (t0: number): string => {
   const s = (Date.now() - t0) / 1000;
-  if (s < 90) return `${s.toFixed(1)}s`;
-  if (s < 5400) return `${(s / 60).toFixed(1)}m`;
+  if (s < 90) {
+    return `${s.toFixed(1)}s`;
+  }
+  if (s < 5400) {
+    return `${(s / 60).toFixed(1)}m`;
+  }
   return `${(s / 3600).toFixed(2)}h`;
 };
 
@@ -490,7 +532,9 @@ const fmtSecs = (t0: number): string => {
  */
 const cmdIndexes = async (o: IndexesArgs): Promise<void> => {
   const action = o.subcommand;
-  if (!connectionString(o)) fail('indexes requires --db');
+  if (!connectionString(o)) {
+    fail('indexes requires --db');
+  }
 
   const db = await openDb(connectionString(o));
   try {
@@ -548,11 +592,12 @@ const cmdIndexes = async (o: IndexesArgs): Promise<void> => {
     if (only?.length) {
       const known = new Set(QUERY_INDEXES.map((q) => q.name));
       for (const n of only) {
-        if (!known.has(n))
+        if (!known.has(n)) {
           fail(
             `unknown index ${n}; --only takes one of: ` +
               QUERY_INDEXES.map((q) => q.name).join(', ')
           );
+        }
       }
       missing = missing.filter((i) => only.includes(i.name));
     }
@@ -567,7 +612,9 @@ const cmdIndexes = async (o: IndexesArgs): Promise<void> => {
     );
     for (const i of missing) {
       const spec = QUERY_INDEXES.find((q) => q.name === i.name);
-      if (!spec) continue;
+      if (!spec) {
+        continue;
+      }
       const bar = makeBar({});
       bar.start(`${i.name}`);
       const t0 = Date.now();
@@ -697,7 +744,9 @@ const cmdIngestAll = async (o: IngestAllArgs): Promise<void> => {
     return;
   }
 
-  if (!connectionString(o)) fail('ingest-all requires --db');
+  if (!connectionString(o)) {
+    fail('ingest-all requires --db');
+  }
 
   const results: { name: string; ok: boolean; posts: number; secs: number }[] =
     [];
@@ -710,7 +759,9 @@ const cmdIngestAll = async (o: IngestAllArgs): Promise<void> => {
     // leaves the previous timestamp alone rather than destroying the record
     // of when the source last did finish.
     for (const { id, manifest } of ready) {
-      if (redo.has(id)) done.delete(manifest.name);
+      if (redo.has(id)) {
+        done.delete(manifest.name);
+      }
     }
 
     const skipped = ready.filter((r) => done.has(r.manifest.name));
@@ -803,7 +854,9 @@ const cmdIngestAll = async (o: IngestAllArgs): Promise<void> => {
       Math.round(r.secs * 10) / 10,
     ])
   );
-  if (results.some((r) => !r.ok)) process.exit(1);
+  if (results.some((r) => !r.ok)) {
+    process.exit(1);
+  }
 };
 
 /**
@@ -826,7 +879,9 @@ const cmdListManifests = async (o: ListManifestsArgs): Promise<void> => {
     forceLocal: o.local,
     key: o.key,
   });
-  if (runnerR.isErr) fail(runnerR.error.message);
+  if (runnerR.isErr) {
+    fail(runnerR.error.message);
+  }
   const runner = runnerR.value;
   try {
     const rows: (string | number | null)[][] = [];
@@ -836,7 +891,9 @@ const cmdListManifests = async (o: ListManifestsArgs): Promise<void> => {
       let status = 'ready';
       try {
         const infoR = readSourceInfo(manifestPath(id, PROJECT_ROOT));
-        if (infoR.isErr) throw infoR.error;
+        if (infoR.isErr) {
+          throw infoR.error;
+        }
         const info = infoR.value;
         const base = runner.path(
           runner.rootIsDatasets ? info.dirFromDatasets : info.dir
@@ -858,7 +915,9 @@ const cmdListManifests = async (o: ListManifestsArgs): Promise<void> => {
           // manifest.path is absolute once resolved; express it relative to
           // the dataset dir so it works through a datasets-rooted runner too.
           const rel = relative(resolve(PROJECT_ROOT, info.dir), m.path) || '.';
-          if (!rel.startsWith('..')) ingestRel = rel;
+          if (!rel.startsWith('..')) {
+            ingestRel = rel;
+          }
         } else {
           adapter = '-';
           broken = mR.error.kind === 'invalid';
@@ -871,7 +930,9 @@ const cmdListManifests = async (o: ListManifestsArgs): Promise<void> => {
         const cmds = ['source', 'extracted', 'out'].map((s) =>
           nonEmpty(`${base}/${s}`, s[0], '-')
         );
-        if (ingestRel) cmds.push(nonEmpty(`${base}/${ingestRel}`, 'y', 'n'));
+        if (ingestRel) {
+          cmds.push(nonEmpty(`${base}/${ingestRel}`, 'y', 'n'));
+        }
         const probe = await runner.exec(cmds.join('; '));
         const outv = probe.stdout.trim();
         stages = outv.slice(0, 3);
@@ -887,9 +948,13 @@ const cmdListManifests = async (o: ListManifestsArgs): Promise<void> => {
           : stages.endsWith('o');
         // A dead end outranks both: it is not waiting on anything, so listing
         // it as "pending" would invite a repeat survey of the item.
-        if (broken) status = 'error';
-        else if (info.deadEnd) status = 'dead-end';
-        else status = hasInput && adapter !== '-' ? 'ready' : 'pending';
+        if (broken) {
+          status = 'error';
+        } else if (info.deadEnd) {
+          status = 'dead-end';
+        } else {
+          status = hasInput && adapter !== '-' ? 'ready' : 'pending';
+        }
       } catch (e) {
         status =
           e instanceof ManifestError && e.kind === 'pending'
@@ -914,7 +979,9 @@ const cmdListManifests = async (o: ListManifestsArgs): Promise<void> => {
  * per-archive contributions and can double-count a post held twice.
  */
 const cmdBoards = async (o: BoardsArgs): Promise<void> => {
-  if (!connectionString(o)) fail('boards requires --db');
+  if (!connectionString(o)) {
+    fail('boards requires --db');
+  }
   const db = await openDb(connectionString(o));
   try {
     if (!(await hasStats(db))) {
@@ -953,7 +1020,9 @@ const cmdBoards = async (o: BoardsArgs): Promise<void> => {
  * the table. One full pass over `posts`.
  */
 const cmdRefreshStats = async (o: RefreshStatsArgs): Promise<void> => {
-  if (!connectionString(o)) fail('refresh-stats requires --db');
+  if (!connectionString(o)) {
+    fail('refresh-stats requires --db');
+  }
   const db = await openDb(connectionString(o));
   try {
     console.log('rebuilding post_stats (one full pass over posts) ...');
@@ -1018,8 +1087,9 @@ const BUCKET_FORMATS: Record<string, string> = {
 };
 
 const cmdCount = async (o: CountArgs): Promise<void> => {
-  if (!connectionString(o) || !o.phrase)
+  if (!connectionString(o) || !o.phrase) {
     fail('count requires --db and --phrase');
+  }
   if (o.by !== 'total' && !(o.by in BUCKET_FORMATS)) {
     fail(
       `--by must be one of: ${Object.keys(BUCKET_FORMATS).join(', ')}, total`
@@ -1059,18 +1129,22 @@ const cmdCount = async (o: CountArgs): Promise<void> => {
       console.log(`${r.bucket ?? '(no date)'}\t${r.posts}`);
       total += r.posts;
     }
-    if (o.by !== 'total') console.log(`total\t${total}`);
+    if (o.by !== 'total') {
+      console.log(`total\t${total}`);
+    }
   } finally {
     await db.end();
   }
 };
 
 const cmdSearch = async (o: SearchArgs): Promise<void> => {
-  if (!connectionString(o) || !o.phrase)
+  if (!connectionString(o) || !o.phrase) {
     fail('search requires --db and --phrase');
+  }
   const limit = Number(o.limit);
-  if (!Number.isInteger(limit) || limit < 1)
+  if (!Number.isInteger(limit) || limit < 1) {
     fail(`invalid --limit: ${o.limit}`);
+  }
 
   const { where, params } = phraseFilters(o);
   // No GROUP BY: posts holds one row per post, so there are no copies to
@@ -1116,10 +1190,15 @@ const cmdSearch = async (o: SearchArgs): Promise<void> => {
         : '(no date)';
       const who = `${r.name ?? 'Anonymous'}${r.tripcode ?? ''}`;
       let header = `[${when}] /${r.board}/${r.post_no}`;
-      if (r.is_op) header += ' (OP)';
-      else header += ` in ${r.thread_no}`;
+      if (r.is_op) {
+        header += ' (OP)';
+      } else {
+        header += ` in ${r.thread_no}`;
+      }
       header += ` — ${who}`;
-      if (r.subject) header += ` — “${r.subject}”`;
+      if (r.subject) {
+        header += ` — “${r.subject}”`;
+      }
       console.log(header);
       if (r.body_text) {
         console.log(r.body_text.replace(/^/gm, '  '));
@@ -1148,7 +1227,9 @@ const printTable = (
     rows.every((r) => r[i] == null || typeof r[i] === 'number')
   );
   const fmt = (v: string | number | null): string => {
-    if (v == null) return '-';
+    if (v == null) {
+      return '-';
+    }
     return typeof v === 'number' ? v.toLocaleString('en-US') : v;
   };
   const cells = bodyAndFoot.map((r) => r.map(fmt));
@@ -1163,7 +1244,9 @@ const printTable = (
   const rule = line(widths.map((w) => '-'.repeat(w)));
   console.log(line(headers));
   console.log(rule);
-  for (const r of cells.slice(0, rows.length)) console.log(line(r));
+  for (const r of cells.slice(0, rows.length)) {
+    console.log(line(r));
+  }
   if (footer) {
     console.log(rule);
     console.log(line(cells[rows.length]));
@@ -1192,7 +1275,9 @@ const totalsRow = (
         const vals = rows
           .map((r) => r[i])
           .filter((v): v is string => v != null);
-        if (vals.length === 0) return null;
+        if (vals.length === 0) {
+          return null;
+        }
         return rule === 'min'
           ? vals.reduce((a, b) => (a < b ? a : b))
           : vals.reduce((a, b) => (a > b ? a : b));

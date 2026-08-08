@@ -216,7 +216,9 @@ const readBuckets = async (): Promise<YearBucket[]> => {
  * board's own span is already in the buckets.
  */
 const readTotals = async (): Promise<Totals | null> => {
-  if (cached) return totalsFromStats(db);
+  if (cached) {
+    return totalsFromStats(db);
+  }
   return values.board ? null : totals(db);
 };
 
@@ -242,7 +244,9 @@ const years = buckets.map((b) => b.year).sort();
 const lo = Number(years[0]);
 const hi = Number(years[years.length - 1]);
 const allYears: string[] = [];
-for (let y = lo; y <= hi; y++) allYears.push(String(y));
+for (let y = lo; y <= hi; y++) {
+  allYears.push(String(y));
+}
 
 // Largest first, so the sources that dominate the chart take the leading slots
 // and the reading order of the legend matches the visual weight of the bars.
@@ -268,8 +272,12 @@ const series: Series[] = sourceNames.map((name, i) => ({
 }));
 
 const grid = new Map<string, Map<string, number>>();
-for (const y of allYears) grid.set(y, new Map());
-for (const b of buckets) grid.get(b.year)?.set(b.source, b.posts);
+for (const y of allYears) {
+  grid.set(y, new Map());
+}
+for (const b of buckets) {
+  grid.get(b.year)?.set(b.source, b.posts);
+}
 
 const fmt = (n: number): string => n.toLocaleString('en-US');
 

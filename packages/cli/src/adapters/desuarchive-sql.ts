@@ -120,14 +120,18 @@ export const ingestDesuarchiveSql = async (
 
   /** Insert every complete tuple in `buf`, keeping the trailing fragment. */
   const drainBuffer = async (): Promise<void> => {
-    if (!active) return;
+    if (!active) {
+      return;
+    }
     const { board, idx } = active;
     const { tuples, rest } = takeCompleteTuples(buf);
     buf = rest;
     for (const tuple of tuples) {
       try {
         const vals = parseTuples(tuple, 0).next().value;
-        if (!vals) continue;
+        if (!vals) {
+          continue;
+        }
         if (Number(vals[idx.subnum]) !== 0) {
           stats.skippedGhost++;
           continue;
@@ -154,8 +158,11 @@ export const ingestDesuarchiveSql = async (
               mediaMd5: vals[idx.media_hash] ?? null,
             })
             .then((ok) => {
-              if (ok) stats.posts++;
-              else stats.skippedDup++;
+              if (ok) {
+                stats.posts++;
+              } else {
+                stats.skippedDup++;
+              }
             })
         );
         if (++sinceCommit >= COMMIT_EVERY) {
@@ -176,8 +183,11 @@ export const ingestDesuarchiveSql = async (
     // --- inside a CREATE TABLE body ---------------------------------------
     if (creating !== null) {
       const col = /^\s*`([^`]+)`/.exec(line);
-      if (col) tableCols.get(creating)!.push(col[1]);
-      else if (line.startsWith(')')) creating = null;
+      if (col) {
+        tableCols.get(creating)!.push(col[1]);
+      } else if (line.startsWith(')')) {
+        creating = null;
+      }
       continue;
     }
 
@@ -206,11 +216,15 @@ export const ingestDesuarchiveSql = async (
       continue;
     }
 
-    if (!line.startsWith('INSERT INTO `')) continue;
+    if (!line.startsWith('INSERT INTO `')) {
+      continue;
+    }
     const tick = line.indexOf('`', 13);
     const table = line.slice(13, tick);
     const valuesAt = line.indexOf(' VALUES', tick);
-    if (valuesAt < 0) continue;
+    if (valuesAt < 0) {
+      continue;
+    }
 
     active = null;
     const cols = tableCols.get(table);
@@ -218,8 +232,12 @@ export const ingestDesuarchiveSql = async (
     // Before the tuple parse, so an excluded board costs only the statement
     // header. Tallied per INSERT statement rather than per post -- these dumps
     // use extended inserts, so the count is statements, not rows.
-    if (boardFilter.reject(board)) continue;
-    if (opts.boards && !opts.boards.includes(board)) continue;
+    if (boardFilter.reject(board)) {
+      continue;
+    }
+    if (opts.boards && !opts.boards.includes(board)) {
+      continue;
+    }
 
     // The INSERT's own column list is authoritative; fall back to the
     // CREATE TABLE order only when the statement carries no list.
@@ -228,13 +246,17 @@ export const ingestDesuarchiveSql = async (
     if (!order || !REQUIRED_COLS.every((c) => order.includes(c))) {
       // Either a side table (no `comment`) or a dump that omitted something
       // we need. Both are skips, but the latter should not look like success.
-      if (listed) stats.badLines++;
+      if (listed) {
+        stats.badLines++;
+      }
       continue;
     }
     const idx: Record<string, number> = {};
     order.forEach((c, i) => (idx[c] = i));
     active = { board, idx };
-    if (!stats.tables.includes(table)) stats.tables.push(table);
+    if (!stats.tables.includes(table)) {
+      stats.tables.push(table);
+    }
 
     // mysqlchump puts VALUES at end of line, but tolerate tuples trailing on
     // the same line so a single-line statement still works.
@@ -243,7 +265,9 @@ export const ingestDesuarchiveSql = async (
   }
 
   // A statement left open at EOF means the dump was truncated mid-tuple.
-  if (buf.trim().length > 0) stats.badLines++;
+  if (buf.trim().length > 0) {
+    stats.badLines++;
+  }
 
   await inserter.finish();
   await Promise.all(pending);

@@ -50,7 +50,9 @@ const threadFiles = function* (
       const path = join(boardDir, entry.name);
       if (entry.isDirectory()) {
         const m = dirPat.exec(entry.name);
-        if (!m) continue;
+        if (!m) {
+          continue;
+        }
         for (const ext of ['.json', '.txt']) {
           const nested = join(path, entry.name + ext);
           if (existsSync(nested)) {
@@ -60,7 +62,9 @@ const threadFiles = function* (
         }
       } else if (entry.isFile()) {
         const m = filePat.exec(entry.name);
-        if (m) yield { path, threadNo: Number(m[1]) };
+        if (m) {
+          yield { path, threadNo: Number(m[1]) };
+        }
       }
     }
   } finally {
@@ -74,8 +78,12 @@ const listBoards = (root: string, only?: string[]): string[] => {
   try {
     let entry;
     while ((entry = dir.readSync()) !== null) {
-      if (!entry.isDirectory()) continue;
-      if (only && !only.includes(entry.name)) continue;
+      if (!entry.isDirectory()) {
+        continue;
+      }
+      if (only && !only.includes(entry.name)) {
+        continue;
+      }
       boards.push(entry.name);
     }
   } finally {
@@ -121,7 +129,9 @@ export const ingestJsonApi = async (
   const boardFilter = makeBoardFilter(opts.excludeBoards);
   for (const board of listBoards(opts.root, opts.boards)) {
     // Whole board skipped before any thread file is opened; tallied once.
-    if (boardFilter.reject(board)) continue;
+    if (boardFilter.reject(board)) {
+      continue;
+    }
     const boardDir = join(opts.root, board);
     for (const { path: file, threadNo } of threadFiles(boardDir, board)) {
       let posts: ApiPost[];
@@ -164,8 +174,11 @@ export const ingestJsonApi = async (
               mediaMd5: p.md5 ?? null,
             })
             .then((ok) => {
-              if (ok) stats.posts++;
-              else stats.skippedPosts++;
+              if (ok) {
+                stats.posts++;
+              } else {
+                stats.skippedPosts++;
+              }
             })
         );
       }

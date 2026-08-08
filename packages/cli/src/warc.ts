@@ -27,12 +27,16 @@ const deChunk = (buf: Buffer): Buffer => {
   let i = 0;
   for (;;) {
     const nl = buf.indexOf('\r\n', i, 'latin1');
-    if (nl < 0) break;
+    if (nl < 0) {
+      break;
+    }
     const size = parseInt(
       buf.subarray(i, nl).toString('latin1').split(';')[0],
       16
     );
-    if (!Number.isFinite(size) || size <= 0) break;
+    if (!Number.isFinite(size) || size <= 0) {
+      break;
+    }
     out.push(buf.subarray(nl + 2, nl + 2 + size));
     i = nl + 2 + size + 2;
   }
@@ -41,15 +45,23 @@ const deChunk = (buf: Buffer): Buffer => {
 
 const decode = (payload: Buffer, httpHeaders: string): Buffer => {
   let out = payload;
-  if (/transfer-encoding:\s*chunked/i.test(httpHeaders)) out = deChunk(out);
+  if (/transfer-encoding:\s*chunked/i.test(httpHeaders)) {
+    out = deChunk(out);
+  }
   const enc = /content-encoding:\s*([\w-]+)/i
     .exec(httpHeaders)?.[1]
     ?.toLowerCase();
   try {
     // 4chan is behind Cloudflare, so captures are usually brotli.
-    if (enc === 'br') return brotliDecompressSync(out);
-    if (enc === 'gzip') return gunzipSync(out);
-    if (enc === 'deflate') return inflateSync(out);
+    if (enc === 'br') {
+      return brotliDecompressSync(out);
+    }
+    if (enc === 'gzip') {
+      return gunzipSync(out);
+    }
+    if (enc === 'deflate') {
+      return inflateSync(out);
+    }
   } catch {
     // A body we can't decode is returned as-is; callers filter by content.
   }
@@ -67,23 +79,33 @@ export const readResponses = function* (warc: Buffer): Generator<WarcRecord> {
   let pos = 0;
   while (pos < s.length) {
     const start = s.indexOf(SEP, pos);
-    if (start < 0) break;
+    if (start < 0) {
+      break;
+    }
     let next = s.indexOf(SEP, start + SEP.length);
-    if (next < 0) next = s.length;
+    if (next < 0) {
+      next = s.length;
+    }
     pos = next;
 
     const recStart = start + SEP.length;
     const he = s.indexOf('\r\n\r\n', recStart);
-    if (he < 0 || he > next) continue;
+    if (he < 0 || he > next) {
+      continue;
+    }
 
     const hdr = s.slice(recStart, he);
     const type = /^WARC-Type:\s*(\S+)/im.exec(hdr)?.[1] ?? '';
-    if (type !== 'response') continue;
+    if (type !== 'response') {
+      continue;
+    }
 
     const body = warc.subarray(he + 4, next);
     const bs = body.toString('latin1');
     const hh = bs.indexOf('\r\n\r\n');
-    if (hh < 0) continue;
+    if (hh < 0) {
+      continue;
+    }
     const httpHeaders = bs.slice(0, hh);
 
     yield {
@@ -111,10 +133,16 @@ export const htmlPages = function* (
   hostPattern: RegExp
 ): Generator<WarcRecord> {
   for (const r of readResponses(warc)) {
-    if (!r.uri || !hostPattern.test(r.uri)) continue;
-    if (!/text\/html/i.test(r.contentType ?? '')) continue;
+    if (!r.uri || !hostPattern.test(r.uri)) {
+      continue;
+    }
+    if (!/text\/html/i.test(r.contentType ?? '')) {
+      continue;
+    }
     const status = Number(/^HTTP\/[\d.]+\s+(\d{3})/.exec(r.httpHeaders)?.[1]);
-    if (!(status >= 200 && status < 300)) continue;
+    if (!(status >= 200 && status < 300)) {
+      continue;
+    }
     yield r;
   }
 };

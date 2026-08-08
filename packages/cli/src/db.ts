@@ -244,7 +244,9 @@ export const getOrCreateSource = async (
     'SELECT id FROM sources WHERE name = $1',
     [name]
   );
-  if (!rows[0]) throw new Error(`failed to create source ${name}`);
+  if (!rows[0]) {
+    throw new Error(`failed to create source ${name}`);
+  }
   return rows[0].id;
 };
 

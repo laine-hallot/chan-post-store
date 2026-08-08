@@ -121,7 +121,9 @@ export class PostInserter {
       mediaFilename: stripNulls(p.mediaFilename),
       mediaMd5: stripNulls(p.mediaMd5),
     });
-    if (this.#buffer.length >= BATCH_SIZE) await this.#flush();
+    if (this.#buffer.length >= BATCH_SIZE) {
+      await this.#flush();
+    }
     return promise;
   }
 
@@ -241,8 +243,12 @@ export class PostInserter {
     if (cell) {
       cell.posts++;
       if (p.tsUtc != null) {
-        if (cell.minTs == null || p.tsUtc < cell.minTs) cell.minTs = p.tsUtc;
-        if (cell.maxTs == null || p.tsUtc > cell.maxTs) cell.maxTs = p.tsUtc;
+        if (cell.minTs == null || p.tsUtc < cell.minTs) {
+          cell.minTs = p.tsUtc;
+        }
+        if (cell.maxTs == null || p.tsUtc > cell.maxTs) {
+          cell.maxTs = p.tsUtc;
+        }
       }
     } else {
       this.#stats.set(key, { posts: 1, minTs: p.tsUtc, maxTs: p.tsUtc });

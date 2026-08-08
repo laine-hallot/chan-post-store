@@ -215,7 +215,9 @@ export class RemoteRunner implements Runner {
     // Wait for the control socket to appear, or for the master to give up.
     const deadline = Date.now() + 15_000;
     for (;;) {
-      if (existsSync(this.ctl)) return;
+      if (existsSync(this.ctl)) {
+        return;
+      }
       if (this.master.exitCode != null) {
         const hint = this.key
           ? `  install the key: ssh-copy-id -i ${this.key}.pub ${this.host}`
@@ -245,7 +247,9 @@ export class RemoteRunner implements Runner {
   }
 
   path(rel: string): string {
-    if (rel.startsWith('/')) return rel;
+    if (rel.startsWith('/')) {
+      return rel;
+    }
     return `${this.root.replace(/\/$/, '')}/${rel}`;
   }
 
@@ -288,7 +292,9 @@ export class RemoteRunner implements Runner {
   }
 
   async close(): Promise<void> {
-    if (!this.master) return;
+    if (!this.master) {
+      return;
+    }
     await run('ssh', ['-S', this.ctl, '-O', 'exit', this.host], false).catch(
       () => {}
     );
@@ -299,13 +305,19 @@ export class RemoteRunner implements Runner {
 
 /** Minimal KEY=value parser; no export/quotes handling beyond trimming. */
 export const readEnvFile = (file: string): Record<string, string> => {
-  if (!existsSync(file)) return {};
+  if (!existsSync(file)) {
+    return {};
+  }
   const out: Record<string, string> = {};
   for (const line of readFileSync(file, 'utf8').split('\n')) {
     const t = line.trim();
-    if (!t || t.startsWith('#')) continue;
+    if (!t || t.startsWith('#')) {
+      continue;
+    }
     const i = t.indexOf('=');
-    if (i < 0) continue;
+    if (i < 0) {
+      continue;
+    }
     out[t.slice(0, i).trim()] = t
       .slice(i + 1)
       .trim()
@@ -336,7 +348,9 @@ export const makeRunner = async (
 ): Promise<Result<Runner, Error>> => {
   const env = readEnvFile(join(cfg.projectRoot, '.env'));
   const host = cfg.forceLocal ? undefined : (cfg.host ?? env.NAS_HOST);
-  if (!host) return Result.ok(new LocalRunner(cfg.projectRoot));
+  if (!host) {
+    return Result.ok(new LocalRunner(cfg.projectRoot));
+  }
 
   const root = cfg.rootOverride ?? env.NAS_ROOT;
   if (!root) {

@@ -123,7 +123,9 @@ export const readManifest = (
   file: string,
   projectRoot: string
 ): Result<Manifest, ManifestError> => {
-  if (!existsSync(file)) return bad(file, 'no such manifest');
+  if (!existsSync(file)) {
+    return bad(file, 'no such manifest');
+  }
 
   let raw: unknown;
   try {
@@ -131,8 +133,9 @@ export const readManifest = (
   } catch (e) {
     return bad(file, `invalid JSON: ${(e as Error).message}`);
   }
-  if (typeof raw !== 'object' || raw === null)
+  if (typeof raw !== 'object' || raw === null) {
     return bad(file, 'expected a JSON object');
+  }
 
   const doc = raw as {
     source?: Record<string, unknown>;
@@ -140,16 +143,22 @@ export const readManifest = (
   };
   const { source } = doc;
   const { ingest } = doc;
-  if (!source) return bad(file, 'missing "source" block');
-  if (!ingest) return bad(file, 'missing "ingest" block');
+  if (!source) {
+    return bad(file, 'missing "source" block');
+  }
+  if (!ingest) {
+    return bad(file, 'missing "ingest" block');
+  }
 
   const { name } = source;
-  if (typeof name !== 'string' || name === '')
+  if (typeof name !== 'string' || name === '') {
     return bad(file, 'source.name is required');
+  }
 
   const { link } = source;
-  if (link != null && typeof link !== 'string')
+  if (link != null && typeof link !== 'string') {
     return bad(file, 'source.link must be a string');
+  }
 
   // Scaffolded-but-unfinished manifests are an expected state, not corruption:
   // the prepare pipeline hasn't produced this source's data yet.
@@ -168,12 +177,14 @@ export const readManifest = (
   ) {
     return bad(file, `ingest.adapter must be one of: ${ADAPTERS.join(', ')}`);
   }
-  if (typeof path !== 'string')
+  if (typeof path !== 'string') {
     return bad(file, 'ingest.path must be a string');
+  }
 
   const site = ingest.site ?? '4chan';
-  if (typeof site !== 'string' || site === '')
+  if (typeof site !== 'string' || site === '') {
     return bad(file, 'ingest.site must be a non-empty string');
+  }
 
   // Boards this archive carries that are not boards of `site` -- the archive's
   // own discussion board, another imageboard the crawl caught, or a name that
@@ -211,7 +222,9 @@ export const readManifest = (
 export const readSourceInfo = (
   file: string
 ): Result<SourceInfo, ManifestError> => {
-  if (!existsSync(file)) return bad(file, 'no such manifest');
+  if (!existsSync(file)) {
+    return bad(file, 'no such manifest');
+  }
   let raw: unknown;
   try {
     raw = JSON.parse(readFileSync(file, 'utf8'));
@@ -222,10 +235,13 @@ export const readSourceInfo = (
     source?: Record<string, unknown>;
     files?: { source?: unknown };
   };
-  if (!doc.source) return bad(file, 'missing "source" block');
+  if (!doc.source) {
+    return bad(file, 'missing "source" block');
+  }
   const { name } = doc.source;
-  if (typeof name !== 'string' || name === '')
+  if (typeof name !== 'string' || name === '') {
     return bad(file, 'source.name is required');
+  }
   const { link } = doc.source;
 
   const id = basename(file, '.json');
@@ -242,8 +258,9 @@ export const readSourceInfo = (
   const prep = (doc as { prepare?: unknown }).prepare;
   const steps: PrepareStep[] = [];
   if (prep != null) {
-    if (!Array.isArray(prep))
+    if (!Array.isArray(prep)) {
       return bad(file, '"prepare" must be an array of steps');
+    }
     for (const [i, raw] of prep.entries()) {
       const s = raw as { name?: unknown; run?: unknown };
       if (typeof s?.run !== 'string' || s.run === '') {
@@ -272,11 +289,13 @@ export const readSourceInfo = (
   const dl = (doc as { download?: { exclude?: unknown } }).download;
   const downloadExclude: RegExp[] = [];
   if (dl?.exclude != null) {
-    if (!Array.isArray(dl.exclude))
+    if (!Array.isArray(dl.exclude)) {
       return bad(file, '"download.exclude" must be an array of regexes');
+    }
     for (const [i, pat] of dl.exclude.entries()) {
-      if (typeof pat !== 'string')
+      if (typeof pat !== 'string') {
         return bad(file, `download.exclude[${i}] must be a string`);
+      }
       try {
         downloadExclude.push(new RegExp(pat, 'i'));
       } catch (e) {
@@ -310,13 +329,17 @@ export const readSourceInfo = (
 
 /** Resolves a source id (or a direct path to a manifest file) to its file. */
 export const manifestPath = (idOrPath: string, projectRoot: string): string => {
-  if (idOrPath.endsWith('.json')) return resolve(projectRoot, idOrPath);
+  if (idOrPath.endsWith('.json')) {
+    return resolve(projectRoot, idOrPath);
+  }
   return join(projectRoot, SOURCES_DIR, `${idOrPath}.json`);
 };
 
 export const listManifestIds = (projectRoot: string): string[] => {
   const dir = join(projectRoot, SOURCES_DIR);
-  if (!existsSync(dir)) return [];
+  if (!existsSync(dir)) {
+    return [];
+  }
   return readdirSync(dir)
     .filter((f) => f.endsWith('.json'))
     .map((f) => basename(f, '.json'))
@@ -350,7 +373,9 @@ export const ingestInputs = (m: Manifest): Result<string[], ManifestError> => {
     return Result.ok([m.path]);
   }
 
-  if (!statSync(m.path).isDirectory()) return Result.ok([m.path]);
+  if (!statSync(m.path).isDirectory()) {
+    return Result.ok([m.path]);
+  }
   const sql = readdirSync(m.path)
     .filter((f) => f.toLowerCase().endsWith('.sql'))
     .sort()

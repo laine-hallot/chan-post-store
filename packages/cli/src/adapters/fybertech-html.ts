@@ -62,7 +62,9 @@ const DATE =
 
 export const parseFyberDate = (s: string): number | null => {
   const m = DATE.exec(s);
-  if (!m) return null;
+  if (!m) {
+    return null;
+  }
   const [, mo, dd, yy, hh, mi, ss] = m;
   const wall =
     Date.UTC(
@@ -99,9 +101,13 @@ const looseText = (el: Node): string => {
 const dateWithin = (el: HTMLElement): number | null => {
   const span = el.querySelector('.posttime')?.textContent;
   const fromSpan = parseFyberDate(span ?? '');
-  if (fromSpan != null) return fromSpan;
+  if (fromSpan != null) {
+    return fromSpan;
+  }
   const fromLoose = parseFyberDate(looseText(el));
-  if (fromLoose != null) return fromLoose;
+  if (fromLoose != null) {
+    return fromLoose;
+  }
   // Neither shape matched, so the date is nested inside another element. A
   // capcode post wraps the name in coloured spans and the date ends up inside
   // that block rather than beside it -- moot's `## Admin` posts do exactly
@@ -143,7 +149,9 @@ const pick = (root: HTMLElement, sel: string): string | null => {
  * those would otherwise be stored as though the poster had typed them.
  */
 const bodyOf = (el: HTMLElement | null): string | null => {
-  if (!el) return null;
+  if (!el) {
+    return null;
+  }
   const text = parse(el.innerHTML.replace(/<br\s*\/?>/gi, '\n')).textContent;
   return cleanBodyText(text);
 };
@@ -156,7 +164,9 @@ const bodyOf = (el: HTMLElement | null): string | null => {
  * that is what the other adapters store.
  */
 const fileNameFrom = (text: string | null): string | null => {
-  if (!text) return null;
+  if (!text) {
+    return null;
+  }
   const paren = /\(([^)]*)\)\s*$/.exec(text);
   if (paren) {
     const parts = paren[1].split(',').map((p) => p.trim());
@@ -166,8 +176,9 @@ const fileNameFrom = (text: string | null): string | null => {
       last &&
       !/^\d+x\d+$/.test(last) &&
       !/^\d+(\.\d+)?\s*[KMG]?B$/i.test(last)
-    )
+    ) {
       return last;
+    }
   }
   const served = /File\s*:?\s*([^\s-]+)/.exec(text);
   return served ? served[1] : null;
@@ -189,7 +200,9 @@ const readLater = (doc: HTMLElement): ParsedPost[] => {
   for (const p of doc.querySelectorAll('.post')) {
     const noText = pick(p, '.post_no');
     const postNo = Number(noText);
-    if (!Number.isInteger(postNo) || postNo <= 0) continue;
+    if (!Number.isInteger(postNo) || postNo <= 0) {
+      continue;
+    }
     const isOp = first;
     first = false;
     out.push({
@@ -245,7 +258,9 @@ const readClassic = (doc: HTMLElement, threadNo: number): ParsedPost[] => {
   // --- the replies ---
   for (const td of doc.querySelectorAll('td.reply')) {
     const postNo = Number(td.getAttribute('id'));
-    if (!Number.isInteger(postNo) || postNo <= 0) continue;
+    if (!Number.isInteger(postNo) || postNo <= 0) {
+      continue;
+    }
     out.push({
       postNo,
       isOp: false,
@@ -270,7 +285,9 @@ const readAnyGeneration = (
   doc: HTMLElement,
   threadNo: number
 ): ParsedPost[] => {
-  if (doc.querySelector('.post_com')) return readLater(doc);
+  if (doc.querySelector('.post_com')) {
+    return readLater(doc);
+  }
   if (doc.querySelector('td.reply, span.postername')) {
     return readClassic(doc, threadNo);
   }
@@ -325,14 +342,20 @@ export const ingestFybertechHtml = async (
       threadNoFromFile = Number(m[1]);
     } else {
       const m = /^([a-z0-9]+)_(\d+)\.html?$/i.exec(page.name);
-      if (!m) continue; // index.cgi and friends: not a thread page at all
+      if (!m) {
+        continue;
+      } // index.cgi and friends: not a thread page at all
       board = m[1];
       threadNoFromFile = Number(m[2]);
-      if (opts.boards && !opts.boards.includes(board)) continue;
+      if (opts.boards && !opts.boards.includes(board)) {
+        continue;
+      }
     }
     // Outside the branches deliberately: both layouts must be filtered, and
     // the --board check above covers only the flat one. Tallied per page.
-    if (boardFilter.reject(board)) continue;
+    if (boardFilter.reject(board)) {
+      continue;
+    }
 
     // An unopenable page must not end the run: handmade archives carry
     // filenames whose bytes are not valid UTF-8, and such a name survives
@@ -400,8 +423,11 @@ export const ingestFybertechHtml = async (
             mediaMd5: null, // fybertech's pages do not carry file hashes
           })
           .then((ok) => {
-            if (ok) stats.posts++;
-            else stats.skippedDup++;
+            if (ok) {
+              stats.posts++;
+            } else {
+              stats.skippedDup++;
+            }
           })
       );
     }

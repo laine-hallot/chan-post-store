@@ -35,21 +35,29 @@ export interface Bar {
 const quietBar = (): Bar => {
   let last = Date.now();
   const tick = (msg?: string): void => {
-    if (!msg) return;
+    if (!msg) {
+      return;
+    }
     const now = Date.now();
-    if (now - last < HEARTBEAT_MS) return;
+    if (now - last < HEARTBEAT_MS) {
+      return;
+    }
     last = now;
     console.error(msg);
   };
   return {
     start: (msg): void => {
-      if (msg) console.error(msg);
+      if (msg) {
+        console.error(msg);
+      }
       last = Date.now();
     },
     message: tick,
     advance: (_step, msg): void => tick(msg),
     stop: (msg): void => {
-      if (msg) console.error(msg);
+      if (msg) {
+        console.error(msg);
+      }
     },
   };
 };
@@ -60,7 +68,9 @@ const quietBar = (): Bar => {
  * don't branch on whether a total was available.
  */
 export const makeBar = (opts: { max?: number; size?: number }): Bar => {
-  if (!process.stderr.isTTY) return quietBar();
+  if (!process.stderr.isTTY) {
+    return quietBar();
+  }
 
   if (opts.max != null) {
     const b = progress({

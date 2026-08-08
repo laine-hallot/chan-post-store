@@ -130,11 +130,17 @@ const DIALECTS: Dialect[] = [
  * Returns null for MySQL's zero date and anything unparseable.
  */
 const parseDateTime = (s: string | null): number | null => {
-  if (!s) return null;
+  if (!s) {
+    return null;
+  }
   const m = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})/.exec(s);
-  if (!m) return null;
+  if (!m) {
+    return null;
+  }
   const [y, mo, d, h, mi, se] = m.slice(1).map(Number);
-  if (y === 0) return null; // '0000-00-00 00:00:00'
+  if (y === 0) {
+    return null;
+  } // '0000-00-00 00:00:00'
   const wall = Date.UTC(y, mo - 1, d, h, mi, se) / 1000;
   return Number.isFinite(wall) ? nyWallToUtc(wall) : null;
 };
@@ -158,9 +164,13 @@ const parseDateTime = (s: string | null): number | null => {
 const fromUrl = (
   url: string | null
 ): { board: string; site: string } | null => {
-  if (!url) return null;
+  if (!url) {
+    return null;
+  }
   const m = /^[a-z]+:\/\/([^/]+)\/([^/]+)\//i.exec(url);
-  if (!m) return null;
+  if (!m) {
+    return null;
+  }
   const host = m[1].toLowerCase();
   const site =
     host === '4chan.org' || host.endsWith('.4chan.org') ? '4chan' : host;
@@ -206,9 +216,13 @@ class ThreadIndex {
   }
 
   #grow(need: number): void {
-    if (need < this.#no.length) return;
+    if (need < this.#no.length) {
+      return;
+    }
     let n = this.#no.length;
-    while (n <= need) n *= 2;
+    while (n <= need) {
+      n *= 2;
+    }
     const no = new Uint32Array(n);
     no.set(this.#no);
     const key = new Uint16Array(n);
@@ -230,7 +244,9 @@ class ThreadIndex {
     }
     this.#no[id] = threadNo;
     this.#key[id] = k;
-    if (id > this.max) this.max = id;
+    if (id > this.max) {
+      this.max = id;
+    }
   }
 
   get(id: number): {
@@ -239,7 +255,9 @@ class ThreadIndex {
     site: string;
     excluded: boolean;
   } | null {
-    if (id <= 0 || id >= this.#no.length || this.#no[id] === 0) return null;
+    if (id <= 0 || id >= this.#no.length || this.#no[id] === 0) {
+      return null;
+    }
     const k = this.#key[id];
     const [site, board] = this.#names[k].split('\0');
     return { threadNo: this.#no[id], board, site, excluded: this.#excluded[k] };
@@ -258,7 +276,9 @@ const scan = async (
   onBytes?: (n: number) => void
 ): Promise<void> => {
   const input = createReadStream(file, { highWaterMark: 4 * 1024 * 1024 });
-  if (onBytes) input.on('data', (c: string | Buffer) => onBytes(c.length));
+  if (onBytes) {
+    input.on('data', (c: string | Buffer) => onBytes(c.length));
+  }
   const lines = createInterface({ input, crlfDelay: Infinity });
 
   let creating: string | null = null;
@@ -268,20 +288,27 @@ const scan = async (
 
   /** Emit every complete tuple in `buf`, keeping the trailing fragment. */
   const drain = async (): Promise<void> => {
-    if (!idx) return;
+    if (!idx) {
+      return;
+    }
     const { tuples, rest } = takeCompleteTuples(buf);
     buf = rest;
     for (const t of tuples) {
       const vals = parseTuples(t, 0).next().value;
-      if (vals) await onRow(vals, idx);
+      if (vals) {
+        await onRow(vals, idx);
+      }
     }
   };
 
   for await (const line of lines) {
     if (creating !== null) {
       const col = /^\s*`([^`]+)`/.exec(line);
-      if (col) cols.get(creating)!.push(col[1]);
-      else if (line.startsWith(')')) creating = null;
+      if (col) {
+        cols.get(creating)!.push(col[1]);
+      } else if (line.startsWith(')')) {
+        creating = null;
+      }
       continue;
     }
 
@@ -306,15 +333,23 @@ const scan = async (
       cols.set(creating, []);
       continue;
     }
-    if (!line.startsWith('INSERT INTO `')) continue;
+    if (!line.startsWith('INSERT INTO `')) {
+      continue;
+    }
     const tick = line.indexOf('`', 13);
-    if (line.slice(13, tick) !== wanted) continue;
+    if (line.slice(13, tick) !== wanted) {
+      continue;
+    }
     const valuesAt = line.indexOf(' VALUES', tick);
-    if (valuesAt < 0) continue;
+    if (valuesAt < 0) {
+      continue;
+    }
 
     const listed = insertColumns(line, tick + 1, valuesAt);
     const order = listed ?? cols.get(wanted);
-    if (!order || order.length === 0) continue;
+    if (!order || order.length === 0) {
+      continue;
+    }
     if (!idx || listed) {
       idx = {};
       order.forEach((c, i) => (idx![c] = i));
@@ -375,7 +410,9 @@ export const ingestPostsThreadsSql = async (
         dialect =
           DIALECTS.find((d) => d.threadCols.every((c) => have.includes(c))) ??
           null;
-        if (!dialect) return;
+        if (!dialect) {
+          return;
+        }
         stats.tables.push(`threads(${dialect.name})`);
       }
       const t = dialect.threads;
@@ -433,7 +470,9 @@ export const ingestPostsThreadsSql = async (
     cols,
     async (vals, idx) => {
       const p = D.posts;
-      if (stats.tables.length === 1) stats.tables.push(`posts(${D.name})`);
+      if (stats.tables.length === 1) {
+        stats.tables.push(`posts(${D.name})`);
+      }
       const ref = Number(vals[idx[p.threadRef]]);
       const postNo = Number(vals[idx[p.postNo]]);
       if (!Number.isFinite(ref) || !Number.isFinite(postNo)) {
@@ -451,7 +490,9 @@ export const ingestPostsThreadsSql = async (
         stats.excludedPosts++;
         return;
       }
-      if (opts.boards && !opts.boards.includes(t.board)) return;
+      if (opts.boards && !opts.boards.includes(t.board)) {
+        return;
+      }
 
       const body = vals[idx[p.body]];
       collectPending(
@@ -472,8 +513,11 @@ export const ingestPostsThreadsSql = async (
             mediaMd5: null,
           })
           .then((ok) => {
-            if (ok) stats.posts++;
-            else stats.skippedDup++;
+            if (ok) {
+              stats.posts++;
+            } else {
+              stats.skippedDup++;
+            }
           })
       );
       if (++sinceCommit >= COMMIT_EVERY) {

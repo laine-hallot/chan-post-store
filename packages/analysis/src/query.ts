@@ -68,7 +68,9 @@ export const hasPostStats = async (db: Pool): Promise<boolean> => {
   const { rows } = await db.query<{ reg: string | null }>(
     "SELECT to_regclass('public.post_stats')::text AS reg"
   );
-  if (!rows[0]?.reg) return false;
+  if (!rows[0]?.reg) {
+    return false;
+  }
   const { rows: n } = await db.query<{ n: number }>(
     'SELECT count(*)::bigint AS n FROM post_stats'
   );
@@ -161,8 +163,12 @@ export const timestampSpan = async (
       [s.id]
     );
     const r = rows[0];
-    if (r?.lo != null) minTs = minTs == null ? r.lo : Math.min(minTs, r.lo);
-    if (r?.hi != null) maxTs = maxTs == null ? r.hi : Math.max(maxTs, r.hi);
+    if (r?.lo != null) {
+      minTs = minTs == null ? r.lo : Math.min(minTs, r.lo);
+    }
+    if (r?.hi != null) {
+      maxTs = maxTs == null ? r.hi : Math.max(maxTs, r.hi);
+    }
   }
   return { minTs, maxTs };
 };
@@ -183,7 +189,9 @@ export const postsByYearAndSource = async (db: Pool): Promise<YearBucket[]> => {
   );
 
   const span = await timestampSpan(db);
-  if (span.minTs == null || span.maxTs == null) return [];
+  if (span.minTs == null || span.maxTs == null) {
+    return [];
+  }
 
   const firstYear = new Date(span.minTs * 1000).getUTCFullYear();
   const lastYear = new Date(span.maxTs * 1000).getUTCFullYear();
@@ -196,7 +204,9 @@ export const postsByYearAndSource = async (db: Pool): Promise<YearBucket[]> => {
         [s.id, Date.UTC(y, 0, 1) / 1000, Date.UTC(y + 1, 0, 1) / 1000]
       );
       const n = rows[0]?.n ?? 0;
-      if (n > 0) out.push({ year: String(y), source: s.name, posts: n });
+      if (n > 0) {
+        out.push({ year: String(y), source: s.name, posts: n });
+      }
     }
   }
   return out;
@@ -233,7 +243,9 @@ export const postsByYearForBoard = async (
   board: string
 ): Promise<{ year: string; posts: number }[]> => {
   const span = await boardSpan(db, site, board);
-  if (span.minTs == null || span.maxTs == null) return [];
+  if (span.minTs == null || span.maxTs == null) {
+    return [];
+  }
 
   const out: { year: string; posts: number }[] = [];
   const first = new Date(span.minTs * 1000).getUTCFullYear();

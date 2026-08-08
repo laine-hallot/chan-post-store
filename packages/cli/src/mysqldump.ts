@@ -14,12 +14,16 @@ const offsetCache = new Map<number, number>();
 const nyOffsetAt = (utcSec: number): number => {
   const hour = Math.floor(utcSec / 3600);
   const cached = offsetCache.get(hour);
-  if (cached !== undefined) return cached;
+  if (cached !== undefined) {
+    return cached;
+  }
   const tzName = nyFormat
     .formatToParts(utcSec * 1000)
     .find((p) => p.type === 'timeZoneName')!.value;
   const m = /GMT([+-])(\d{1,2})(?::(\d{2}))?/.exec(tzName);
-  if (!m) throw new Error(`cannot parse timezone offset: ${tzName}`);
+  if (!m) {
+    throw new Error(`cannot parse timezone offset: ${tzName}`);
+  }
   const sign = m[1] === '-' ? -1 : 1;
   const offset = sign * (Number(m[2]) * 3600 + Number(m[3] ?? 0) * 60);
   offsetCache.set(hour, offset);
@@ -78,11 +82,15 @@ export const insertColumns = (
   valuesAt: number
 ): string[] | null => {
   const between = line.slice(from, valuesAt).trim();
-  if (!between.startsWith('(') || !between.endsWith(')')) return null;
+  if (!between.startsWith('(') || !between.endsWith(')')) {
+    return null;
+  }
   const out: string[] = [];
   const re = /`([^`]+)`/g;
   let m: RegExpExecArray | null;
-  while ((m = re.exec(between)) !== null) out.push(m[1]);
+  while ((m = re.exec(between)) !== null) {
+    out.push(m[1]);
+  }
   return out.length > 0 ? out : null;
 };
 
@@ -121,8 +129,12 @@ export const takeCompleteTuples = (
   let consumed = 0;
 
   while (i < n) {
-    while (i < n && buf[i] !== '(') i++;
-    if (i >= n) break;
+    while (i < n && buf[i] !== '(') {
+      i++;
+    }
+    if (i >= n) {
+      break;
+    }
     const start = i;
     i++;
     let depth = 1;
@@ -149,11 +161,14 @@ export const takeCompleteTuples = (
           }
           i++;
         }
-        if (!ended) break; // literal runs past the end of what we have
+        if (!ended) {
+          break;
+        } // literal runs past the end of what we have
         continue;
       }
-      if (c === '(') depth++;
-      else if (c === ')' && --depth === 0) {
+      if (c === '(') {
+        depth++;
+      } else if (c === ')' && --depth === 0) {
         i++;
         closed = true;
         break;
@@ -161,7 +176,9 @@ export const takeCompleteTuples = (
       i++;
     }
 
-    if (!closed) break; // incomplete: leave it in `rest` for the next chunk
+    if (!closed) {
+      break;
+    } // incomplete: leave it in `rest` for the next chunk
     out.push(buf.slice(start, i));
     consumed = i;
   }
@@ -180,8 +197,12 @@ export const parseTuples = function* (
   let i = start;
   const n = line.length;
   while (i < n) {
-    while (i < n && line[i] !== '(') i++;
-    if (i >= n) return;
+    while (i < n && line[i] !== '(') {
+      i++;
+    }
+    if (i >= n) {
+      return;
+    }
     i++;
     const vals: (string | null)[] = [];
     for (;;) {
@@ -192,14 +213,18 @@ export const parseTuples = function* (
       // splits it into extra fields. That corrupts silently: a post whose
       // comment contains a comma yields more values than the table has
       // columns, shifting everything after it.
-      while (i < n && (line[i] === ' ' || line[i] === '\t')) i++;
+      while (i < n && (line[i] === ' ' || line[i] === '\t')) {
+        i++;
+      }
       if (line[i] === "'") {
         i++;
         let out = '';
         let seg = i;
         for (;;) {
           const ch = line[i];
-          if (ch === undefined) throw new Error('unterminated string');
+          if (ch === undefined) {
+            throw new Error('unterminated string');
+          }
           if (ch === '\\') {
             const esc = line[i + 1];
             out += line.slice(seg, i) + (ESCAPES[esc] ?? esc);
@@ -222,8 +247,12 @@ export const parseTuples = function* (
         vals.push(out);
       } else {
         let j = i;
-        while (j < n && line[j] !== ',' && line[j] !== ')') j++;
-        if (j >= n) throw new Error('unterminated tuple');
+        while (j < n && line[j] !== ',' && line[j] !== ')') {
+          j++;
+        }
+        if (j >= n) {
+          throw new Error('unterminated tuple');
+        }
         const tok = line.slice(i, j).trim();
         vals.push(tok === 'NULL' ? null : tok);
         i = j;

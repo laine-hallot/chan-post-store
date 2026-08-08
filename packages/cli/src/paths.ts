@@ -23,7 +23,9 @@ export const SOURCES_DIR = 'sources';
 export const findProjectRoot = (): string => {
   let dir = dirname(fileURLToPath(import.meta.url));
   for (;;) {
-    if (existsSync(join(dir, SOURCES_DIR))) return dir;
+    if (existsSync(join(dir, SOURCES_DIR))) {
+      return dir;
+    }
     const up = dirname(dir);
     if (up === dir) {
       throw new Error(

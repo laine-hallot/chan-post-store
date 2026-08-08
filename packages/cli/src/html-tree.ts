@@ -56,17 +56,23 @@ const htmlNamesIn = (dir: string): { name: string; raw: Buffer }[] => {
   const out: { name: string; raw: Buffer }[] = [];
   for (const raw of raws) {
     const name = raw.toString('utf8');
-    if (!/\.html?$/i.test(name)) continue;
+    if (!/\.html?$/i.test(name)) {
+      continue;
+    }
     // Directories can end in .html too; only files are pages.
     try {
-      if (!statSync(joinBytes(dir, raw)).isFile()) continue;
+      if (!statSync(joinBytes(dir, raw)).isFile()) {
+        continue;
+      }
     } catch {
       continue;
     }
     out.push({ name, raw });
   }
   return out.sort((a, z) => {
-    if (a.name < z.name) return -1;
+    if (a.name < z.name) {
+      return -1;
+    }
     return a.name > z.name ? 1 : 0;
   });
 };
@@ -90,8 +96,12 @@ const subdirsIn = (dir: string): string[] => {
   try {
     let e;
     while ((e = d.readSync()) !== null) {
-      if (!e.isDirectory()) continue;
-      if (ASSET_DIR.test(e.name)) continue;
+      if (!e.isDirectory()) {
+        continue;
+      }
+      if (ASSET_DIR.test(e.name)) {
+        continue;
+      }
       out.push(e.name);
     }
   } finally {
@@ -127,7 +137,9 @@ export const listHtmlPages = (
   }));
 
   for (const board of subdirsIn(root)) {
-    if (boards && !boards.includes(board)) continue;
+    if (boards && !boards.includes(board)) {
+      continue;
+    }
     const dir = join(root, board);
     for (const { name, raw } of htmlNamesIn(dir)) {
       out.push({ path: joinBytes(dir, raw), name, board });

@@ -56,13 +56,17 @@ const NONE: BoardFilter = {
  * per row.
  */
 export const makeBoardFilter = (exclude?: readonly string[]): BoardFilter => {
-  if (!exclude || exclude.length === 0) return NONE;
+  if (!exclude || exclude.length === 0) {
+    return NONE;
+  }
   const set = new Set(exclude.map((b) => b.toLowerCase()));
   const counts = new Map<string, number>();
   return {
     reject(board: string): boolean {
       const key = board.toLowerCase();
-      if (!set.has(key)) return false;
+      if (!set.has(key)) {
+        return false;
+      }
       // Keyed on the normalized name, not the raw one: a dump that writes the
       // same board both ways would otherwise report it as two separate
       // exclusions, understating each.
@@ -70,7 +74,9 @@ export const makeBoardFilter = (exclude?: readonly string[]): BoardFilter => {
       return true;
     },
     summary(): string {
-      if (counts.size === 0) return '';
+      if (counts.size === 0) {
+        return '';
+      }
       const parts = [...counts]
         .sort((a, b) => b[1] - a[1])
         .map(([b, n]) => `${b} (${n})`);

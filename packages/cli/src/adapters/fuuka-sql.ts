@@ -109,7 +109,9 @@ export const ingestFuukaSql = async (
       continue;
     }
 
-    if (!line.startsWith('INSERT INTO `')) continue;
+    if (!line.startsWith('INSERT INTO `')) {
+      continue;
+    }
     const tick = line.indexOf('`', 13);
     const table = line.slice(13, tick);
 
@@ -129,15 +131,21 @@ export const ingestFuukaSql = async (
           const idx: Record<string, number> = {};
           cols.forEach((c, i) => (idx[c] = i));
           accept = { table, board, idx };
-          if (!stats.tables.includes(table)) stats.tables.push(table);
+          if (!stats.tables.includes(table)) {
+            stats.tables.push(table);
+          }
         }
       }
     }
-    if (!accept) continue;
+    if (!accept) {
+      continue;
+    }
 
     const { board } = accept;
     const valuesAt = line.indexOf(' VALUES ', tick);
-    if (valuesAt < 0) continue;
+    if (valuesAt < 0) {
+      continue;
+    }
 
     // An explicit column list on the INSERT overrides the CREATE TABLE order,
     // because it is what the tuples actually follow. Cached on the accept
@@ -191,8 +199,11 @@ export const ingestFuukaSql = async (
               mediaMd5: vals[idx.media_hash] ?? null,
             })
             .then((ok) => {
-              if (ok) stats.posts++;
-              else stats.skippedDup++;
+              if (ok) {
+                stats.posts++;
+              } else {
+                stats.skippedDup++;
+              }
             })
         );
         if (++sinceCommit >= COMMIT_EVERY) {

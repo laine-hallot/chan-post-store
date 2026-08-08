@@ -50,7 +50,9 @@ interface IngestStats {
 /** Text of the first match, or null when absent or empty. */
 const text = (root: HTMLElement, sel: string): string | null => {
   const el = root.querySelector(sel);
-  if (!el) return null;
+  if (!el) {
+    return null;
+  }
   const t = el.textContent;
   return t === '' ? null : t;
 };
@@ -73,7 +75,9 @@ const readPost = (
   // id is pc<postno> on the wrapper.
   const id = container.getAttribute('id') ?? '';
   const postNo = Number(id.replace(/^pc/, ''));
-  if (!Number.isInteger(postNo) || postNo <= 0) return null;
+  if (!Number.isInteger(postNo) || postNo <= 0) {
+    return null;
+  }
 
   const isOp = container.classList.contains('opContainer');
 
@@ -102,7 +106,9 @@ const readPost = (
   if (body) {
     // Drop the truncation notice before reading the text, so it is not stored
     // as though the poster had written it.
-    for (const abbr of body.querySelectorAll('.abbr')) abbr.remove();
+    for (const abbr of body.querySelectorAll('.abbr')) {
+      abbr.remove();
+    }
     // <br> carries the line breaks; textContent would run the lines together.
     // cleanBodyText then sweeps up markup the parser left as literal text --
     // broken or unclosed tags inside a post survive textContent otherwise.
@@ -145,22 +151,32 @@ const threadIdentity = (
   const thread = /^boards\.4chan(?:nel)?\.org_([a-z0-9]+)_thread_(\d+)/i.exec(
     fileName
   );
-  if (thread) return { board: thread[1], threadNo: Number(thread[2]) };
+  if (thread) {
+    return { board: thread[1], threadNo: Number(thread[2]) };
+  }
   const board = /^boards\.4chan(?:nel)?\.org_([a-z0-9]+)\b/i.exec(fileName);
-  if (board) return { board: board[1], threadNo: null };
+  if (board) {
+    return { board: board[1], threadNo: null };
+  }
   // <board>_<threadno>.html -- how third-party mirrors name their saved pages.
   // Some of those pages are the site's own markup rather than the mirror's own
   // template (fybertech has 20 such), so this adapter reads them; the mirror's
   // rendered pages are a different family and belong to their own adapter.
   const mirrored = /^([a-z0-9]+)_(\d+)\.html?$/i.exec(fileName);
-  if (mirrored) return { board: mirrored[1], threadNo: Number(mirrored[2]) };
+  if (mirrored) {
+    return { board: mirrored[1], threadNo: Number(mirrored[2]) };
+  }
   // Fall back to the page's own canonical link when the filename is opaque.
   const href =
     doc.querySelector('link[rel="canonical"]')?.getAttribute('href') ?? '';
   const canon = /\/([a-z0-9]+)\/thread\/(\d+)/i.exec(href);
-  if (canon) return { board: canon[1], threadNo: Number(canon[2]) };
+  if (canon) {
+    return { board: canon[1], threadNo: Number(canon[2]) };
+  }
   const bonly = /\/([a-z0-9]+)\/?$/i.exec(href);
-  if (bonly) return { board: bonly[1], threadNo: null };
+  if (bonly) {
+    return { board: bonly[1], threadNo: null };
+  }
   return null;
 };
 
@@ -221,9 +237,13 @@ export const ingestChanHtml = async (
       stats.badFiles++;
       continue;
     }
-    if (opts.boards && !opts.boards.includes(id.board)) continue;
+    if (opts.boards && !opts.boards.includes(id.board)) {
+      continue;
+    }
     // Tallied per page, not per post: the page is never parsed for posts.
-    if (boardFilter.reject(id.board)) continue;
+    if (boardFilter.reject(id.board)) {
+      continue;
+    }
 
     // No postContainer means this is not 4chan's own markup: a third-party
     // mirror's rendered template, an error page, or something else. Counted
@@ -235,7 +255,9 @@ export const ingestChanHtml = async (
       continue;
     }
     stats.files++;
-    if (id.threadNo != null) stats.threads++;
+    if (id.threadNo != null) {
+      stats.threads++;
+    }
 
     let currentThread = id.threadNo;
     for (const container of doc.querySelectorAll('.postContainer')) {
@@ -243,7 +265,9 @@ export const ingestChanHtml = async (
       const provisional = Number(
         (container.getAttribute('id') ?? '').replace(/^pc/, '')
       );
-      if (isOp) currentThread = id.threadNo ?? provisional;
+      if (isOp) {
+        currentThread = id.threadNo ?? provisional;
+      }
       const p = readPost(container);
       if (!p) {
         stats.badFiles++;
@@ -269,8 +293,11 @@ export const ingestChanHtml = async (
             mediaMd5: p.mediaMd5,
           })
           .then((ok) => {
-            if (ok) stats.posts++;
-            else stats.skippedDup++;
+            if (ok) {
+              stats.posts++;
+            } else {
+              stats.skippedDup++;
+            }
           })
       );
     }

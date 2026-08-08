@@ -38,21 +38,31 @@ const PAL = {
  * at the last tick below max would let bars run past the end of the scale.
  */
 const ticks = (max: number, count = 5): number[] => {
-  if (max <= 0) return [0, 1];
+  if (max <= 0) {
+    return [0, 1];
+  }
   const raw = max / count;
   const mag = 10 ** Math.floor(Math.log10(raw));
   const norm = raw / mag;
   const step = ([1, 2, 5].find((n) => norm <= n) ?? 10) * mag;
   const out: number[] = [];
-  for (let v = 0; v < max - step * 1e-9; v += step) out.push(v);
+  for (let v = 0; v < max - step * 1e-9; v += step) {
+    out.push(v);
+  }
   out.push(out.length ? out[out.length - 1] + step : step);
   return out;
 };
 
 const compact = (n: number): string => {
-  if (n >= 1e9) return `${(n / 1e9).toFixed(n >= 1e10 ? 0 : 1)}B`;
-  if (n >= 1e6) return `${(n / 1e6).toFixed(n >= 1e7 ? 0 : 1)}M`;
-  if (n >= 1e3) return `${(n / 1e3).toFixed(n >= 1e4 ? 0 : 1)}k`;
+  if (n >= 1e9) {
+    return `${(n / 1e9).toFixed(n >= 1e10 ? 0 : 1)}B`;
+  }
+  if (n >= 1e6) {
+    return `${(n / 1e6).toFixed(n >= 1e7 ? 0 : 1)}M`;
+  }
+  if (n >= 1e3) {
+    return `${(n / 1e3).toFixed(n >= 1e4 ? 0 : 1)}k`;
+  }
   return String(n);
 };
 
@@ -106,7 +116,9 @@ export const renderChart = (d: ChartData): string => {
         line = line ? `${line} ${word}` : word;
       }
     }
-    if (line) subtitleLines.push(line);
+    if (line) {
+      subtitleLines.push(line);
+    }
   }
   // Lay the legend out before sizing the canvas: with six sources the entries
   // do not fit on one row, and the header has to reserve height for however
@@ -142,8 +154,9 @@ export const renderChart = (d: ChartData): string => {
 
   let max = 0;
   for (const y of d.years) {
-    for (const s of d.series)
+    for (const s of d.series) {
       max = Math.max(max, d.values.get(y)?.get(s.name) ?? 0);
+    }
   }
   const tv = ticks(max);
   const scale = (v: number): number => (v / tv[tv.length - 1]) * plotW;
