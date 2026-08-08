@@ -1,7 +1,7 @@
 import type { InferValue } from '@optique/core/parser';
 import type { Pool } from 'pg';
 
-import type { Manifest } from './manifest.ts';
+import type { Adapter, Manifest } from './manifest.ts';
 
 import { log } from '@clack/prompts';
 import { runAsync } from '@optique/run';
@@ -299,6 +299,27 @@ const cmdWarcExtract = async (o: WarcExtractArgs): Promise<void> => {
 };
 
 /**
+ * The mysqldump-family adapters, which all take the same options and differ
+ * only in the dialect they parse. `warosu-sql` is the fallback rather than an
+ * entry, since it is what the remaining SQL adapters fall through to.
+ */
+// The value type is a union rather than one signature: each adapter declares
+// its own `IngestStats` with its own diagnostic counters, and the call site
+// reads only the fields they share.
+const SQL_INGESTERS: Partial<
+  Record<
+    Adapter,
+    | typeof ingestDesuarchiveSql
+    | typeof ingestFuukaSql
+    | typeof ingestPostsThreadsSql
+  >
+> = {
+  'desuarchive-sql': ingestDesuarchiveSql,
+  'fuuka-sql': ingestFuukaSql,
+  'posts-threads-sql': ingestPostsThreadsSql,
+};
+
+/**
  * Runs one manifest's adapter and returns a formatted summary line, shared
  * by `cmdIngest` (single source, given on the command line) and
  * `cmdIngestAll` (every `ready` source, run in sequence).
@@ -364,14 +385,7 @@ const ingestOne = async (
         ` ${stats.skippedNative} in 4chan's own markup — ingest those with chan-html)`,
     };
   } else {
-    const ingest =
-      manifest.adapter === 'fuuka-sql'
-        ? ingestFuukaSql
-        : manifest.adapter === 'desuarchive-sql'
-          ? ingestDesuarchiveSql
-          : manifest.adapter === 'posts-threads-sql'
-            ? ingestPostsThreadsSql
-            : ingestWarosuSql;
+    const ingest = SQL_INGESTERS[manifest.adapter] ?? ingestWarosuSql;
     let posts = 0;
     const tables: string[] = [];
     for (const file of inputs) {
@@ -1133,8 +1147,10 @@ const printTable = (
   const numeric = headers.map((_, i) =>
     rows.every((r) => r[i] == null || typeof r[i] === 'number')
   );
-  const fmt = (v: string | number | null): string =>
-    v == null ? '-' : typeof v === 'number' ? v.toLocaleString('en-US') : v;
+  const fmt = (v: string | number | null): string => {
+    if (v == null) return '-';
+    return typeof v === 'number' ? v.toLocaleString('en-US') : v;
+  };
   const cells = bodyAndFoot.map((r) => r.map(fmt));
   const widths = headers.map((h, i) =>
     Math.max(h.length, ...cells.map((r) => r[i].length))

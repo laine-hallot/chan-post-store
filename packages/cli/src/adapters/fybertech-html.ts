@@ -260,6 +260,23 @@ const readClassic = (doc: HTMLElement, threadNo: number): ParsedPost[] => {
   return out;
 };
 
+/**
+ * Picks the reader for this page's markup generation. The crawl spans two of
+ * them (plus 4chan's own, handled by `chan-html`), so the layout is detected
+ * per page rather than assumed for the tree; an empty result means neither
+ * matched and the caller counts the page as unparsed.
+ */
+const readAnyGeneration = (
+  doc: HTMLElement,
+  threadNo: number
+): ParsedPost[] => {
+  if (doc.querySelector('.post_com')) return readLater(doc);
+  if (doc.querySelector('td.reply, span.postername')) {
+    return readClassic(doc, threadNo);
+  }
+  return [];
+};
+
 export const ingestFybertechHtml = async (
   db: Pool,
   opts: {
@@ -350,11 +367,7 @@ export const ingestFybertechHtml = async (
       continue;
     }
 
-    const posts = doc.querySelector('.post_com')
-      ? readLater(doc)
-      : doc.querySelector('td.reply, span.postername')
-        ? readClassic(doc, threadNo)
-        : [];
+    const posts = readAnyGeneration(doc, threadNo);
     if (posts.length === 0) {
       stats.badFiles++;
       continue;

@@ -25,6 +25,8 @@ import {
   postsByYearAndSource,
   postsByYearForBoard,
   totals,
+  type Totals,
+  type YearBucket,
 } from './query.ts';
 import { renderChart, type ChartData, type Series } from './svg.ts';
 
@@ -188,22 +190,38 @@ if (!cached) {
   }
 }
 
-const buckets = cached
-  ? await bucketsFromStats(
-      db,
-      values.board ? { site: values.site, board: values.board } : undefined
-    )
-  : values.board
-    ? (await postsByYearForBoard(db, values.site, values.board)).map((r) => ({
-        ...r,
-        source: `/${values.board}/`,
-      }))
-    : await postsByYearAndSource(db);
-const tot = cached
-  ? await totalsFromStats(db)
-  : values.board
-    ? null
-    : await totals(db);
+/**
+ * The year/source grid, from post_stats when it is populated and from `posts`
+ * otherwise. The board fallback has no source column of its own — it counts
+ * one board across every archive — so the board name stands in as the series
+ * label, keeping the shape the chart expects.
+ */
+const readBuckets = async (): Promise<YearBucket[]> => {
+  if (cached) {
+    const filter = values.board
+      ? { site: values.site, board: values.board }
+      : undefined;
+    return bucketsFromStats(db, filter);
+  }
+  if (values.board) {
+    const rows = await postsByYearForBoard(db, values.site, values.board);
+    return rows.map((r) => ({ ...r, source: `/${values.board}/` }));
+  }
+  return postsByYearAndSource(db);
+};
+
+/**
+ * Corpus totals for the summary line. Null on the board-scoped fallback:
+ * corpus-wide totals next to one board's chart would only mislead, and the
+ * board's own span is already in the buckets.
+ */
+const readTotals = async (): Promise<Totals | null> => {
+  if (cached) return totalsFromStats(db);
+  return values.board ? null : totals(db);
+};
+
+const buckets = await readBuckets();
+const tot = await readTotals();
 await db.end();
 console.log(
   `aggregated ${buckets.length} buckets in ${((Date.now() - t0) / 1000).toFixed(1)}s`

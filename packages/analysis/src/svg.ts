@@ -42,7 +42,7 @@ const ticks = (max: number, count = 5): number[] => {
   const raw = max / count;
   const mag = 10 ** Math.floor(Math.log10(raw));
   const norm = raw / mag;
-  const step = (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10) * mag;
+  const step = ([1, 2, 5].find((n) => norm <= n) ?? 10) * mag;
   const out: number[] = [];
   for (let v = 0; v < max - step * 1e-9; v += step) out.push(v);
   out.push(out.length ? out[out.length - 1] + step : step);

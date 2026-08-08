@@ -39,6 +39,7 @@ export default defineConfig([
       '@typescript-eslint/no-confusing-non-null-assertion': 'warn',
       '@typescript-eslint/prefer-as-const': 'warn',
       'prefer-arrow-callback': 'warn',
+      'no-nested-ternary': 'warn',
       'func-style': ['warn', 'expression', {}],
       'perfectionist/sort-imports': [
         'warn',

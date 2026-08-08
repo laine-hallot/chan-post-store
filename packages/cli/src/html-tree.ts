@@ -65,7 +65,10 @@ const htmlNamesIn = (dir: string): { name: string; raw: Buffer }[] => {
     }
     out.push({ name, raw });
   }
-  return out.sort((a, z) => (a.name < z.name ? -1 : a.name > z.name ? 1 : 0));
+  return out.sort((a, z) => {
+    if (a.name < z.name) return -1;
+    return a.name > z.name ? 1 : 0;
+  });
 };
 
 /** Joins a string directory and a raw filename into a byte path. */
