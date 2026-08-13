@@ -36,13 +36,49 @@ export interface Manifest {
   stageDir?: string;
 }
 
-/** One shell command in a source's prepare pipeline. */
-export interface PrepareStep {
+/**
+ * Configuration for the `reconcile-boards` builtin.
+ *
+ * Paths are relative, as everywhere else in a manifest: `root` to the dataset
+ * dir, `boardsFrom` to the project root.
+ */
+export interface ReconcileBoardsStep {
+  /** Tree of `<board>/<threadno>.html` directories, e.g. `out/4chan`. */
+  root: string;
+  /** Board timeline supplying the site's real slugs; see board-timeline.ts. */
+  boardsFrom: string;
+}
+// NOTE: this step deliberately has no "foreign"/exclusion list. It moves and
+// renames files so that ingest can trust the tree; deciding that a directory
+// is not a legitimate board is a different question, answered by
+// `ingest.exclude-boards` and enforced per-adapter. An earlier version did
+// both, matching declared-foreign names against each page's <title>, and that
+// combination was actively harmful: it named `/tr/` and `/cwc/`, which turned
+// out to be 40 /vp/ threads and one /r9k/ thread wearing joke display names,
+// so 41 real pages would have been dropped from the ingest.
+
+/**
+ * One step in a source's prepare pipeline: either a shell command, or a
+ * builtin this CLI implements.
+ *
+ * Builtins exist because some staging work is not expressible as a shell
+ * one-liner over a mount -- reconciling a mirror's board directories against
+ * each page's own markup means reading 23,295 files and deciding per page.
+ * Doing it as a `local:` step shelling back into a separate top-level command
+ * split one concern across two entry points; prepare is where a source's data
+ * gets filtered and transformed for ingest, so it belongs here.
+ */
+export type PrepareStep = {
   /** Short label shown while running. */
   name: string;
-  /** Shell command, run through the runner with cwd = the dataset dir. */
-  run: string;
-}
+} & (
+  | {
+      /** Shell command, run through the runner with cwd = the dataset dir. */
+      run: string;
+      reconcileBoards?: undefined;
+    }
+  | { run?: undefined; reconcileBoards: ReconcileBoardsStep }
+);
 
 /** The subset `download`/`prepare` need; readable without an ingest block. */
 export interface SourceInfo {
@@ -262,14 +298,50 @@ export const readSourceInfo = (
       return bad(file, '"prepare" must be an array of steps');
     }
     for (const [i, raw] of prep.entries()) {
-      const s = raw as { name?: unknown; run?: unknown };
+      const s = raw as {
+        name?: unknown;
+        run?: unknown;
+        'reconcile-boards'?: unknown;
+      };
+      const name =
+        typeof s?.name === 'string' && s.name ? s.name : `step ${i + 1}`;
+      const rb = s?.['reconcile-boards'];
+      if (rb != null) {
+        if (typeof s.run === 'string') {
+          return bad(
+            file,
+            `prepare[${i}] has both "run" and "reconcile-boards"; a step is one or the other`
+          );
+        }
+        const c = rb as {
+          root?: unknown;
+          'boards-from'?: unknown;
+        };
+        if (typeof c.root !== 'string' || c.root === '') {
+          return bad(file, `prepare[${i}]."reconcile-boards".root is required`);
+        }
+        // Required, with no built-in board list to fall back on: it decides
+        // which mismatches are filing errors and which are pages from another
+        // imageboard, and an absent list silently makes every board unknown.
+        if (typeof c['boards-from'] !== 'string' || c['boards-from'] === '') {
+          return bad(
+            file,
+            `prepare[${i}]."reconcile-boards".boards-from is required (path to a board timeline, project-root relative)`
+          );
+        }
+        steps.push({
+          name,
+          reconcileBoards: {
+            root: c.root,
+            boardsFrom: c['boards-from'],
+          },
+        });
+        continue;
+      }
       if (typeof s?.run !== 'string' || s.run === '') {
         return bad(file, `prepare[${i}].run must be a non-empty shell command`);
       }
-      steps.push({
-        name: typeof s.name === 'string' && s.name ? s.name : `step ${i + 1}`,
-        run: s.run,
-      });
+      steps.push({ name, run: s.run });
     }
   }
 

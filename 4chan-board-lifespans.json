@@ -1,0 +1,2367 @@
+{
+  "meta": {
+    "source": "Bibliotheca Anonoma '4chan/History' timeline (wiki.bibanon.org/4chan/History): 2003-mid-2012 from page fetch, 2013-2026 from full timeline+citations wiki source provided by user; 2003-2004 cross-checked against archived 4chan.net news page and moot's Something Awful posts. Compiled 2026-08-08, extended 2026-08-12",
+    "date_semantics": "ISO dates, US Eastern as reported by 4chan news posts. Truncated dates (YYYY or YYYY-MM) indicate precision, not the 1st of the period.",
+    "confidence": {
+      "cited": "event and date come from the Bibanon wiki or better; per-entry 'confidence' preserves the old grading: A = dated news post / primary source, B = wiki-dated but sourcing indirect or uninspected, C = approximate / bracketed between sightings",
+      "citation_needed": "from general knowledge only; no date field — era hints live in notes as 'reportedly ~YYYY'. Do not use for validation until promoted with a wiki or primary-source date"
+    },
+    "notes": [
+      "type is 'created' or 'removed'; a slug can appear multiple times across incarnations (see name field)",
+      "/tl/ (Torrents/Loli, 2004-12) was hosted off-site on not4chan.org and is excluded",
+      "2004-12-24 textboards on dis.4chan.org (/pol/, /vip/, /sci/, /prog/, etc.) are a separate system and excluded; collide with later imageboard slugs if any archive ingested textboard dumps",
+      "/jp/ renamed Japan/General -> Otaku Culture 2010-02-20 (no created/removed event)",
+      "Server-side data wipes on 2003-10-29 ('everything had to be pruned') and 2003-11-02 (all SQL tables dropped, PRUNED news post) mean no database-derived archive can contain genuine posts predating 2003-11-02; earlier content exists only as external saves",
+      "oekaki.4chan.net went down in the late-Oct 2003 server migration and was still offline as of the 10/29/03 news post ('The oekaki board isn't up, I'll try to get that back in a few days')",
+      "2025-04-25 relaunch day: threads were erratically moved across boards for hours (/a/ catalog to /g/, /lgbt/ and /po/ threads to /tv/, threads to /test/) before being moved back — archives capturing that window may show posts under the wrong board",
+      "hidden boards exist that never appear on the boardlist (/test/, post-2021 /asp/, /j/ referenced in 2025) — presence of a slug in an archive does not imply public listing",
+      "citations: each cited event lists citation ids resolvable in the top-level citations array. Entries with only a 'wiki-YYYY' id are stated in the wiki timeline without a captured external link; 'primary-*' ids are primary sources found during this session. URL citations were auto-extracted from the wiki's ref blocks adjacent to each event (capped at 6 per event) — labels/urls not individually verified."
+    ]
+  },
+  "site_outages": [
+    {
+      "start": "2003-10-20",
+      "end": "2003-10-29",
+      "note": "server migration outage; start fuzzy (~10-16 crash then move to United Colo ~10-21), end from HOORAY news post 10/29 ('went back up a few hours ago')",
+      "confidence": "B"
+    },
+    {
+      "start": "2004-06-20",
+      "end": "2004-08-07",
+      "note": "entire site offline ~6 weeks",
+      "confidence": "A"
+    },
+    {
+      "start": "2006-08-23",
+      "end": "2006-08-25",
+      "note": "img.4chan.org down; /b/ /an/ /c/ /cm/ /g/ /k/ /m/ /o/ /p/ /r/ /s/ /t/ /v/ /w/ inaccessible",
+      "confidence": "A"
+    },
+    {
+      "start": "2008-08-07",
+      "end": "2008-08-11",
+      "note": "DNS outage",
+      "confidence": "B"
+    },
+    {
+      "start": "2025-04-01",
+      "end": "2025-04-02",
+      "note": "April Fools 2025 'Department of 4chan Efficiency': posting progressively blocked on most boards through the day (only /b/ /bant/ /f/ /r9k/ /s4s/ /trash/ /vip/ left open); partial, not a full outage",
+      "confidence": "A"
+    },
+    {
+      "start": "2025-04-14",
+      "end": "2025-04-25",
+      "note": "post-hack outage, '10 days and 15 hours', site back 2025-04-25 1PM EDT; ~800GB of content pruned",
+      "confidence": "A"
+    }
+  ],
+  "cited": [
+    {
+      "type": "created",
+      "slug": "/b/",
+      "name": "Anime/Random",
+      "date": "2003-10-01",
+      "confidence": "A",
+      "citations": ["c001", "c002", "c003", "c004", "c005", "c006"]
+    },
+    {
+      "type": "created",
+      "slug": "/w/",
+      "name": "Wallpapers/Anime",
+      "date": "2003-10-01",
+      "note": "per moot's Something Awful post, 2003-10-02 02:43 GMT (= Oct 1 10:43PM EDT, timezone confirmed from viewing account settings): '/w/ - Wallpapers is also live now!' Posted 11 minutes after the TEST news post (Oct 1 10:32PM EDT), during mainpage setup — /w/ was live on the site's first day, before /c/ /d/ /y/ and possibly before /h/. Never announced on the news page; wiki's 10-06 batch date is wrong. Corroborated by BANNERS news post referencing 'three links' (image boards) when only /b/ and /h/ were announced",
+      "confidence": "A",
+      "citations": ["primary-sa-moot", "primary-4channet-news"]
+    },
+    {
+      "type": "created",
+      "slug": "/h/",
+      "name": "Hentai",
+      "date": "2003-10-02",
+      "confidence": "A",
+      "citations": [
+        "primary-4channet-news",
+        "c007",
+        "c008",
+        "c009",
+        "c010",
+        "c011",
+        "c012"
+      ]
+    },
+    {
+      "type": "created",
+      "slug": "/c/",
+      "name": "Anime/Cute",
+      "date": "2003-10-06",
+      "note": "confirmed by archived news post, UPDATES 10/06/03 1:33AM EDT",
+      "confidence": "A",
+      "citations": [
+        "primary-4channet-news",
+        "c013",
+        "c014",
+        "c015",
+        "c016",
+        "c017",
+        "c018"
+      ]
+    },
+    {
+      "type": "created",
+      "slug": "/d/",
+      "name": "Hentai/Alternative",
+      "date": "2003-10-06",
+      "note": "confirmed by archived news post, UPDATES 10/06/03 1:33AM EDT",
+      "confidence": "A",
+      "citations": [
+        "primary-4channet-news",
+        "c013",
+        "c014",
+        "c015",
+        "c016",
+        "c017",
+        "c018"
+      ]
+    },
+    {
+      "type": "created",
+      "slug": "/y/",
+      "name": "Yaoi",
+      "date": "2003-10-06",
+      "note": "confirmed by archived news post, MORE UPDATES 10/06/03 7:50PM EDT; first user-managed board",
+      "confidence": "A",
+      "citations": [
+        "primary-4channet-news",
+        "c013",
+        "c014",
+        "c015",
+        "c016",
+        "c017",
+        "c018"
+      ]
+    },
+    {
+      "type": "created",
+      "slug": "oekaki.4chan.net",
+      "name": "4chan Oekaki BBS",
+      "date": "2003-10-06",
+      "note": "Not a traditional board, basically a seperate site running under a subdomain. Bibliotheca Anonoma gives it the same slug /i/ as the later Oekaki board but it was actually under the subdomain oekaki.4chan.net",
+      "confidence": "A",
+      "citations": ["primary-4channet-news", "primary-wayback-oekaki"]
+    },
+    {
+      "type": "created",
+      "slug": "/g/",
+      "name": "Guro",
+      "date": "2003-10-09",
+      "confidence": "A",
+      "citations": ["primary-4channet-news", "c019", "c020"]
+    },
+    {
+      "type": "created",
+      "slug": "/s/",
+      "name": "Sexy Beautiful Women",
+      "date": "2003-10-09",
+      "confidence": "A",
+      "citations": ["primary-4channet-news", "c019", "c020"]
+    },
+    {
+      "type": "created",
+      "slug": "/a/",
+      "name": "Anime",
+      "date": "2003-11-08",
+      "confidence": "A",
+      "citations": ["primary-4channet-news", "c021", "c022"]
+    },
+    {
+      "type": "created",
+      "slug": "/l/",
+      "name": "Lolikon",
+      "date": "2003-11-08",
+      "confidence": "A",
+      "citations": ["primary-4channet-news", "c021", "c022"]
+    },
+    {
+      "type": "created",
+      "slug": "/r/",
+      "name": "Trains",
+      "date": "2003-11-10",
+      "confidence": "A",
+      "citations": ["wiki-2003"]
+    },
+    {
+      "type": "removed",
+      "slug": "/r/",
+      "name": "Trains",
+      "date": "2003-11-22",
+      "confidence": "A",
+      "citations": ["c023", "c024"]
+    },
+    {
+      "type": "created",
+      "slug": "/t/",
+      "name": "Torrents",
+      "date": "2003-12-16",
+      "confidence": "A",
+      "citations": ["wiki-2003"]
+    },
+    {
+      "type": "removed",
+      "slug": "/l/",
+      "name": "Lolikon",
+      "date": "2003-12-29",
+      "note": "temporary deletion after CP flood",
+      "confidence": "A",
+      "citations": ["c025", "c026", "c027", "c028"]
+    },
+    {
+      "type": "created",
+      "slug": "/l/",
+      "name": "Lolikon",
+      "date": "2004-01-08",
+      "note": "return",
+      "confidence": "A",
+      "citations": ["wiki-2004"]
+    },
+    {
+      "type": "created",
+      "slug": "/r/",
+      "name": "Request",
+      "date": "2004-01-08",
+      "confidence": "A",
+      "citations": ["c029", "c030"]
+    },
+    {
+      "type": "removed",
+      "slug": "/t/",
+      "name": "Torrents",
+      "date": "2004-01-25",
+      "confidence": "A",
+      "citations": ["c031"]
+    },
+    {
+      "type": "created",
+      "slug": "/t/",
+      "name": "Torrents",
+      "date": "2004-02-19",
+      "note": "return, without tracker",
+      "confidence": "A",
+      "citations": ["c032"]
+    },
+    {
+      "type": "created",
+      "slug": "/f/",
+      "name": "Flash",
+      "date": "2004-02-19",
+      "confidence": "A",
+      "citations": ["c032"]
+    },
+    {
+      "type": "created",
+      "slug": "/p/",
+      "name": "Photo",
+      "date": "2004-02-28",
+      "note": "earliest known sighting, unannounced",
+      "confidence": "B",
+      "citations": ["c033"]
+    },
+    {
+      "type": "created",
+      "slug": "/q/",
+      "name": "EMERGENCY DISCUSSION",
+      "date": "2004-03-01",
+      "confidence": "A",
+      "citations": ["c034", "c035"]
+    },
+    {
+      "type": "removed",
+      "slug": "/q/",
+      "name": "EMERGENCY DISCUSSION",
+      "date": "2004-03-08",
+      "note": "'likely deleted at this point'",
+      "confidence": "B",
+      "citations": ["c036"]
+    },
+    {
+      "type": "removed",
+      "slug": "/g/",
+      "name": "Guro",
+      "date": "2004-03-28",
+      "note": "'around this time', back by 2004-08-16",
+      "confidence": "C",
+      "citations": ["wiki-2004"]
+    },
+    {
+      "type": "removed",
+      "slug": "/g/",
+      "name": "Guro",
+      "date": "2004-03-28",
+      "note": "'around this time', back by 2004-08-16",
+      "confidence": "C",
+      "citations": ["wiki-2004"]
+    },
+    {
+      "type": "created",
+      "slug": "/cm/",
+      "name": "Cute/Male",
+      "date": "2004-03-31",
+      "note": "created 03-30 or 03-31",
+      "confidence": "B",
+      "citations": ["c037"]
+    },
+    {
+      "type": "created",
+      "slug": "/m/",
+      "name": "Mecha",
+      "date": "2004-08",
+      "note": "existed by 2004-08-16 saved thread; exact date unknown",
+      "confidence": "C",
+      "citations": ["wiki-2004"]
+    },
+    {
+      "type": "created",
+      "slug": "/u/",
+      "name": "Yuri",
+      "date": "2004-08",
+      "note": "existed by 2004-08-16 saved thread; possibly as early as 2004-03",
+      "confidence": "C",
+      "citations": ["wiki-2004"]
+    },
+    {
+      "type": "created",
+      "slug": "/n/",
+      "name": "Trains",
+      "date": "2004-08",
+      "note": "existed by ~2004-08-14; exact date unknown",
+      "confidence": "C",
+      "citations": ["wiki-2004"]
+    },
+    {
+      "type": "created",
+      "slug": "/g/",
+      "name": "Guro",
+      "date": "2004-08-16",
+      "note": "return; sighted in board list, actual date unknown",
+      "confidence": "C",
+      "citations": ["wiki-2004"]
+    },
+    {
+      "type": "created",
+      "slug": "/k/",
+      "name": "Weapons",
+      "date": "2004-09-08",
+      "confidence": "A",
+      "citations": ["wiki-2004"]
+    },
+    {
+      "type": "created",
+      "slug": "/o/",
+      "name": "Auto",
+      "date": "2004-09-08",
+      "confidence": "A",
+      "citations": ["wiki-2004"]
+    },
+    {
+      "type": "created",
+      "slug": "/sm/",
+      "name": "Shota/Male",
+      "date": "2004-09-08",
+      "confidence": "A",
+      "citations": ["wiki-2004"]
+    },
+    {
+      "type": "created",
+      "slug": "/z/",
+      "name": "ZOMG NONE!!1",
+      "date": "2004-10",
+      "note": "'around this time' (early October)",
+      "confidence": "C",
+      "citations": ["wiki-2004"]
+    },
+    {
+      "type": "created",
+      "slug": "/v/",
+      "name": "Video Games",
+      "date": "2004-10-09",
+      "confidence": "A",
+      "citations": ["wiki-2004"]
+    },
+    {
+      "type": "created",
+      "slug": "/ib/",
+      "name": "Oekaki Random",
+      "date": "2004-10-09",
+      "confidence": "A",
+      "citations": ["wiki-2004"]
+    },
+    {
+      "type": "created",
+      "slug": "/ip/",
+      "name": "Oekaki Pro",
+      "date": "2004-10-09",
+      "confidence": "A",
+      "citations": ["wiki-2004"]
+    },
+    {
+      "type": "removed",
+      "slug": "/n/",
+      "name": "Trains",
+      "date": "2004-10-09",
+      "confidence": "A",
+      "citations": ["c038"]
+    },
+    {
+      "type": "removed",
+      "slug": "oekaki.4chan.net",
+      "name": "4chan Oekaki BBS",
+      "date": "2004-10-09",
+      "note": "wiki claims 'the oekaki BBS board, /i/' was deleted this day to make way for /ib/ + /ip/, but slug attribution is wrong (see created entry)",
+      "confidence": "C",
+      "citations": ["primary-wayback-oekaki"]
+    },
+    {
+      "type": "removed",
+      "slug": "/l/",
+      "name": "Lolikon",
+      "date": "2004-10-31",
+      "note": "legal threats; moved off-site to not4chan.org",
+      "confidence": "A",
+      "citations": ["wiki-2004"]
+    },
+    {
+      "type": "removed",
+      "slug": "/sm/",
+      "name": "Shota/Male",
+      "date": "2004-10-31",
+      "note": "legal threats; moved off-site to not4chan.org",
+      "confidence": "A",
+      "citations": ["wiki-2004"]
+    },
+    {
+      "type": "removed",
+      "slug": "/z/",
+      "name": "ZOMG NONE!!1",
+      "date": "2004-11-01",
+      "note": "'shortly after this time'",
+      "confidence": "C",
+      "citations": ["wiki-2004"]
+    },
+    {
+      "type": "removed",
+      "slug": "/g/",
+      "name": "Guro",
+      "date": "2004-11-15",
+      "note": "final removal of guro /g/",
+      "confidence": "A",
+      "citations": ["wiki-2004"]
+    },
+    {
+      "type": "created",
+      "slug": "/e/",
+      "name": "Ecchi",
+      "date": "2005-01-19",
+      "confidence": "A",
+      "citations": ["wiki-2005"]
+    },
+    {
+      "type": "created",
+      "slug": "/3/",
+      "name": "3DCG",
+      "date": "2005-01-19",
+      "confidence": "A",
+      "citations": ["wiki-2005"]
+    },
+    {
+      "type": "created",
+      "slug": "/g/",
+      "name": "Technology",
+      "date": "2005-01-19",
+      "note": "slug reuse; any /g/ post before this date is guro-era or corrupt",
+      "confidence": "A",
+      "citations": ["wiki-2005"]
+    },
+    {
+      "type": "created",
+      "slug": "/n/",
+      "name": "Nature & Wildlife",
+      "date": "2005-01-19",
+      "note": "slug reuse (previously Trains)",
+      "confidence": "A",
+      "citations": ["wiki-2005"]
+    },
+    {
+      "type": "created",
+      "slug": "/ic/",
+      "name": "Artwork/Critique",
+      "date": "2005-01-27",
+      "confidence": "A",
+      "citations": ["wiki-2005"]
+    },
+    {
+      "type": "created",
+      "slug": "/p/",
+      "name": "Photography",
+      "date": "2005-01-27",
+      "note": "replacement for 2004 /p/ Photo; continuity unclear",
+      "confidence": "A",
+      "citations": ["wiki-2005"]
+    },
+    {
+      "type": "created",
+      "slug": "/x/",
+      "name": "General Photo",
+      "date": "2005-01-27",
+      "confidence": "A",
+      "citations": ["wiki-2005"]
+    },
+    {
+      "type": "removed",
+      "slug": "/p/",
+      "name": "Photo",
+      "date": "2005-01-27",
+      "note": "superseded by /p/ Photography the same day; exact mechanics unclear",
+      "confidence": "B",
+      "citations": ["wiki-2005"]
+    },
+    {
+      "type": "created",
+      "slug": "/gif/",
+      "name": "Animated GIF",
+      "date": "2005-02-26",
+      "confidence": "A",
+      "citations": ["wiki-2005"]
+    },
+    {
+      "type": "created",
+      "slug": "/hr/",
+      "name": "High Resolution",
+      "date": "2005-02-26",
+      "confidence": "A",
+      "citations": ["wiki-2005"]
+    },
+    {
+      "type": "created",
+      "slug": "/wg/",
+      "name": "Wallpapers/General",
+      "date": "2005-02-26",
+      "confidence": "A",
+      "citations": ["wiki-2005"]
+    },
+    {
+      "type": "removed",
+      "slug": "/x/",
+      "name": "General Photo",
+      "date": "2005-02-26",
+      "confidence": "A",
+      "citations": ["wiki-2005"]
+    },
+    {
+      "type": "created",
+      "slug": "/fur/",
+      "name": "Furry",
+      "date": "2005-04-01",
+      "note": "April Fools board that briefly stayed",
+      "confidence": "A",
+      "citations": ["c039"]
+    },
+    {
+      "type": "removed",
+      "slug": "/fur/",
+      "name": "Furry",
+      "date": "2005-04-03",
+      "note": "all posters banned morning of 04-03; board gone around then",
+      "confidence": "B",
+      "citations": ["wiki-2005"]
+    },
+    {
+      "type": "removed",
+      "slug": "/3/",
+      "name": "3DCG",
+      "date": "2005-06",
+      "note": "bracketed 2005-05-12..2005-06-06 by screenshots",
+      "confidence": "C",
+      "citations": ["wiki-2005"]
+    },
+    {
+      "type": "removed",
+      "slug": "/5/",
+      "name": "secret board (pictures of 5)",
+      "date": "2006-02-06",
+      "note": "died with orz server crash; creation date unknown",
+      "confidence": "B",
+      "citations": ["wiki-2006"]
+    },
+    {
+      "type": "created",
+      "slug": "/co/",
+      "name": "Comics & Cartoons",
+      "date": "2006-04-06",
+      "note": "trial; permanent 2007-01-09",
+      "confidence": "A",
+      "citations": ["wiki-2006"]
+    },
+    {
+      "type": "created",
+      "slug": "/po/",
+      "name": "Papercraft & Origami",
+      "date": "2006-04-06",
+      "note": "trial; permanent 2007-01-09",
+      "confidence": "A",
+      "citations": ["wiki-2006"]
+    },
+    {
+      "type": "created",
+      "slug": "/sp/",
+      "name": "Sports",
+      "date": "2006-04-06",
+      "confidence": "A",
+      "citations": ["wiki-2006"]
+    },
+    {
+      "type": "created",
+      "slug": "/cgl/",
+      "name": "Cosplay & EGL",
+      "date": "2006-04-08",
+      "confidence": "A",
+      "citations": ["wiki-2006"]
+    },
+    {
+      "type": "created",
+      "slug": "/ck/",
+      "name": "Food & Cooking",
+      "date": "2006-04-08",
+      "confidence": "A",
+      "citations": ["wiki-2006"]
+    },
+    {
+      "type": "created",
+      "slug": "/mu/",
+      "name": "Music",
+      "date": "2006-04-08",
+      "confidence": "A",
+      "citations": ["wiki-2006"]
+    },
+    {
+      "type": "created",
+      "slug": "/tv/",
+      "name": "Television",
+      "date": "2006-04-08",
+      "confidence": "A",
+      "citations": ["wiki-2006"]
+    },
+    {
+      "type": "created",
+      "slug": "/n/",
+      "name": "News",
+      "date": "2006-04-08",
+      "note": "slug reuse; previous /n/ renamed to /an/",
+      "confidence": "A",
+      "citations": ["wiki-2006"]
+    },
+    {
+      "type": "removed",
+      "slug": "/n/",
+      "name": "Nature & Wildlife",
+      "date": "2006-04-08",
+      "note": "renamed to /an/",
+      "confidence": "A",
+      "citations": ["wiki-2006"]
+    },
+    {
+      "type": "created",
+      "slug": "/an/",
+      "name": "Animals & Nature",
+      "date": "2006-04-08",
+      "note": "rename of /n/ Nature & Wildlife; post-number continuity unclear",
+      "confidence": "A",
+      "citations": ["wiki-2006"]
+    },
+    {
+      "type": "created",
+      "slug": "/i/",
+      "name": "Oekaki",
+      "date": "2006-04-08",
+      "note": "merger of /ib/ + /ip/; post counts possibly merged",
+      "confidence": "A",
+      "citations": ["wiki-2006"]
+    },
+    {
+      "type": "removed",
+      "slug": "/ib/",
+      "name": "Oekaki Random",
+      "date": "2006-04-08",
+      "note": "merged into /i/",
+      "confidence": "A",
+      "citations": ["wiki-2006"]
+    },
+    {
+      "type": "removed",
+      "slug": "/ip/",
+      "name": "Oekaki Pro",
+      "date": "2006-04-08",
+      "note": "merged into /i/",
+      "confidence": "A",
+      "citations": ["wiki-2006"]
+    },
+    {
+      "type": "created",
+      "slug": "/yg/",
+      "name": "Yogurt",
+      "date": "2006-04-08",
+      "note": "mystery board, short-lived; removal date unknown",
+      "confidence": "A",
+      "citations": ["wiki-2006"]
+    },
+    {
+      "type": "created",
+      "slug": "/con/",
+      "name": "Conventions",
+      "date": "2006-08-04",
+      "note": "Otakon-only board",
+      "confidence": "A",
+      "citations": ["c040", "c041"]
+    },
+    {
+      "type": "removed",
+      "slug": "/con/",
+      "name": "Conventions",
+      "date": "2006-08-06",
+      "note": "deleted hours after Otakon ended (con ran 08-04..08-06)",
+      "confidence": "C",
+      "citations": ["wiki-2006"]
+    },
+    {
+      "type": "removed",
+      "slug": "/sp/",
+      "name": "Sports",
+      "date": "2006-12-09",
+      "confidence": "A",
+      "citations": ["wiki-2006"]
+    },
+    {
+      "type": "created",
+      "slug": "/tg/",
+      "name": "Traditional Games",
+      "date": "2007-02-15",
+      "confidence": "A",
+      "citations": ["c042", "c043"]
+    },
+    {
+      "type": "created",
+      "slug": "/x/",
+      "name": "Paranormal",
+      "date": "2007-02-15",
+      "note": "slug reuse; /x/ posts 2005-02-26..2007-02-15 are impossible",
+      "confidence": "A",
+      "citations": ["c042", "c043"]
+    },
+    {
+      "type": "created",
+      "slug": "/rs/",
+      "name": "Rapidshare",
+      "date": "2007-09-05",
+      "confidence": "A",
+      "citations": ["wiki-2007"]
+    },
+    {
+      "type": "created",
+      "slug": "/fa/",
+      "name": "Fashion",
+      "date": "2008-02-19",
+      "confidence": "A",
+      "citations": ["wiki-2008"]
+    },
+    {
+      "type": "created",
+      "slug": "/fit/",
+      "name": "Health & Fitness",
+      "date": "2008-02-19",
+      "confidence": "A",
+      "citations": ["wiki-2008"]
+    },
+    {
+      "type": "created",
+      "slug": "/hc/",
+      "name": "Hardcore",
+      "date": "2008-02-19",
+      "confidence": "A",
+      "citations": ["wiki-2008"]
+    },
+    {
+      "type": "created",
+      "slug": "/toy/",
+      "name": "Toys",
+      "date": "2008-02-19",
+      "confidence": "A",
+      "citations": ["wiki-2008"]
+    },
+    {
+      "type": "created",
+      "slug": "/trv/",
+      "name": "Travel",
+      "date": "2008-02-19",
+      "confidence": "A",
+      "citations": ["wiki-2008"]
+    },
+    {
+      "type": "created",
+      "slug": "/n/",
+      "name": "Transportation",
+      "date": "2008-02-19",
+      "note": "slug reuse (4th meaning of /n/)",
+      "confidence": "A",
+      "citations": ["wiki-2008"]
+    },
+    {
+      "type": "removed",
+      "slug": "/n/",
+      "name": "News",
+      "date": "2008-02-19",
+      "confidence": "A",
+      "citations": ["wiki-2008"]
+    },
+    {
+      "type": "created",
+      "slug": "/jp/",
+      "name": "Japan/General",
+      "date": "2008-02-20",
+      "note": "renamed Otaku Culture 2010-02-20",
+      "confidence": "A",
+      "citations": ["wiki-2008"]
+    },
+    {
+      "type": "created",
+      "slug": "/r9k/",
+      "name": "ROBOT9000",
+      "date": "2008-02-20",
+      "confidence": "A",
+      "citations": ["wiki-2008"]
+    },
+    {
+      "type": "removed",
+      "slug": "/hc/",
+      "name": "Hardcore",
+      "date": "2009-11-22",
+      "note": "bracketed 2009-11-20..2009-11-24",
+      "confidence": "C",
+      "citations": ["wiki-2009"]
+    },
+    {
+      "type": "created",
+      "slug": "/adv/",
+      "name": "Advice",
+      "date": "2010-01-25",
+      "confidence": "A",
+      "citations": ["wiki-2010"]
+    },
+    {
+      "type": "created",
+      "slug": "/lit/",
+      "name": "Literature",
+      "date": "2010-01-25",
+      "confidence": "A",
+      "citations": ["wiki-2010"]
+    },
+    {
+      "type": "created",
+      "slug": "/new/",
+      "name": "News",
+      "date": "2010-01-25",
+      "confidence": "A",
+      "citations": ["wiki-2010"]
+    },
+    {
+      "type": "created",
+      "slug": "/int/",
+      "name": "International",
+      "date": "2010-01-25",
+      "confidence": "A",
+      "citations": ["wiki-2010"]
+    },
+    {
+      "type": "created",
+      "slug": "/sci/",
+      "name": "Science & Math",
+      "date": "2010-01-25",
+      "note": "distinct from 2004 /sci/ textboard",
+      "confidence": "A",
+      "citations": ["wiki-2010"]
+    },
+    {
+      "type": "created",
+      "slug": "/3/",
+      "name": "3DCG",
+      "date": "2010-01-25",
+      "note": "revival; /3/ posts mid-2005..2010-01-25 are impossible",
+      "confidence": "A",
+      "citations": ["wiki-2010"]
+    },
+    {
+      "type": "created",
+      "slug": "/vp/",
+      "name": "Pokemon",
+      "date": "2010-07-14",
+      "confidence": "A",
+      "citations": ["wiki-2010"]
+    },
+    {
+      "type": "created",
+      "slug": "/soc/",
+      "name": "Social",
+      "date": "2011-01-09",
+      "confidence": "A",
+      "citations": ["wiki-2011"]
+    },
+    {
+      "type": "removed",
+      "slug": "/r9k/",
+      "name": "ROBOT9000",
+      "date": "2011-01-17",
+      "confidence": "A",
+      "citations": ["wiki-2011"]
+    },
+    {
+      "type": "removed",
+      "slug": "/new/",
+      "name": "News",
+      "date": "2011-01-17",
+      "confidence": "A",
+      "citations": ["wiki-2011"]
+    },
+    {
+      "type": "created",
+      "slug": "/r9k/",
+      "name": "ROBOT9001",
+      "date": "2011-10-23",
+      "note": "return; impossible window 2011-01-17..2011-10-23",
+      "confidence": "A",
+      "citations": ["c044"]
+    },
+    {
+      "type": "created",
+      "slug": "/pol/",
+      "name": "Politically Incorrect",
+      "date": "2011-10-23",
+      "note": "imageboard /pol/ posts before this date are impossible; distinct from 2004 /pol/ textboard",
+      "confidence": "A",
+      "citations": ["c044"]
+    },
+    {
+      "type": "created",
+      "slug": "/hc/",
+      "name": "Hardcore",
+      "date": "2011-10-23",
+      "note": "return",
+      "confidence": "A",
+      "citations": ["c044"]
+    },
+    {
+      "type": "created",
+      "slug": "/diy/",
+      "name": "Do It Yourself",
+      "date": "2011-10-23",
+      "confidence": "A",
+      "citations": ["wiki-2011"]
+    },
+    {
+      "type": "removed",
+      "slug": "/new/",
+      "name": "News",
+      "date": "2011-11",
+      "note": "accidental revival taken back down; date unknown",
+      "confidence": "C",
+      "citations": ["wiki-2011"]
+    },
+    {
+      "type": "created",
+      "slug": "/new/",
+      "name": "News",
+      "date": "2011-11-08",
+      "note": "accidental revival, no mods/rules; duration unknown",
+      "confidence": "C",
+      "citations": ["wiki-2011"]
+    },
+    {
+      "type": "created",
+      "slug": "/mlp/",
+      "name": "My Little Pony",
+      "date": "2012-02-16",
+      "confidence": "A",
+      "citations": ["c045", "c046", "c047", "c048", "c049"]
+    },
+    {
+      "type": "created",
+      "slug": "/vg/",
+      "name": "Video Game Generals",
+      "date": "2012-02-16",
+      "confidence": "A",
+      "citations": ["c045", "c046", "c047", "c048", "c049"]
+    },
+    {
+      "type": "created",
+      "slug": "/hm/",
+      "name": "Handsome Men",
+      "date": "2012-02-16",
+      "confidence": "A",
+      "citations": ["wiki-2012"]
+    },
+    {
+      "type": "created",
+      "slug": "/wsg/",
+      "name": "Worksafe GIF",
+      "date": "2012-06-05",
+      "confidence": "A",
+      "citations": ["wiki-2012"]
+    },
+    {
+      "type": "created",
+      "slug": "/q/",
+      "name": "4chan Discussion",
+      "date": "2012-08-08",
+      "note": "slug reuse; distinct from 2004 /q/ EMERGENCY DISCUSSION",
+      "confidence": "A",
+      "citations": ["wiki-2012"]
+    },
+    {
+      "type": "created",
+      "slug": "/lgbt/",
+      "name": "LGBT",
+      "date": "2013-03-18",
+      "confidence": "B",
+      "note": "date per wiki 2013 section ('March 18 - New Boards'), quoted by user; wiki's own sourcing not inspected",
+      "citations": ["wiki-2013"]
+    },
+    {
+      "type": "created",
+      "slug": "/asp/",
+      "name": "Alternative Sports",
+      "date": "2013-03-18",
+      "confidence": "B",
+      "note": "date per wiki 2013 section ('March 18 - New Boards'), quoted by user; wiki's own sourcing not inspected",
+      "citations": ["wiki-2013"]
+    },
+    {
+      "type": "created",
+      "slug": "/gd/",
+      "name": "Graphic Design",
+      "date": "2013-03-18",
+      "confidence": "B",
+      "note": "date per wiki 2013 section ('March 18 - New Boards'), quoted by user; wiki's own sourcing not inspected",
+      "citations": ["c050", "c051"]
+    },
+    {
+      "type": "created",
+      "slug": "/out/",
+      "name": "Outdoors",
+      "date": "2013-03-18",
+      "confidence": "B",
+      "note": "date per wiki 2013 section ('March 18 - New Boards'), quoted by user; wiki's own sourcing not inspected",
+      "citations": ["wiki-2013"]
+    },
+    {
+      "type": "created",
+      "slug": "/vr/",
+      "name": "Retro Games",
+      "date": "2013-03-18",
+      "confidence": "B",
+      "note": "date per wiki 2013 section ('March 18 - New Boards'), quoted by user; wiki's own sourcing not inspected",
+      "citations": ["wiki-2013"]
+    },
+    {
+      "type": "created",
+      "slug": "/s4s/",
+      "name": "Shit 4chan Says",
+      "date": "2013-04-01",
+      "confidence": "A",
+      "note": "April Fools board made permanent Apr 2 after overwhelmingly positive reception",
+      "citations": ["wiki-2013"]
+    },
+    {
+      "type": "removed",
+      "slug": "/q/",
+      "name": "4chan Discussion",
+      "date": "2013-09-18",
+      "confidence": "A",
+      "note": "deleted in moot's Full House Update newspost, replaced by Feedback page",
+      "citations": ["c052", "c053", "c054", "c055"]
+    },
+    {
+      "type": "created",
+      "slug": "/con/",
+      "name": "Conventions",
+      "date": "2013-09-29",
+      "confidence": "A",
+      "note": "second /con/ incarnation",
+      "citations": ["wiki-2013"]
+    },
+    {
+      "type": "removed",
+      "slug": "/con/",
+      "name": "Conventions",
+      "date": "2013-10-08",
+      "confidence": "A",
+      "note": "second incarnation ends",
+      "citations": ["wiki-2013"]
+    },
+    {
+      "type": "created",
+      "slug": "/biz/",
+      "name": "Business & Finance",
+      "date": "2014-02-13",
+      "confidence": "A",
+      "citations": ["wiki-2014"]
+    },
+    {
+      "type": "removed",
+      "slug": "/rs/",
+      "name": "Rapidshare",
+      "date": "2014-04",
+      "confidence": "C",
+      "note": "month precision: known only retrospectively ('first mainstay board removal since the deletion of /rs/ in April 2014' in the 2021 /asp/ closure entry); rules-page references cleaned up through mid-2015",
+      "citations": ["wiki-2014"]
+    },
+    {
+      "type": "created",
+      "slug": "/test/",
+      "name": "Testing",
+      "date": "2014-04-18",
+      "confidence": "B",
+      "note": "wiki writes 'New Boards: /htmlnew/ - /test/ - Testing'; hidden test board, still referenced as hidden in the 2025 April Fools event",
+      "citations": ["wiki-2014"]
+    },
+    {
+      "type": "removed",
+      "slug": "/fk/",
+      "name": "(hack-era board)",
+      "date": "2014-05-06",
+      "confidence": "B",
+      "note": "deleted during post-hack cleanup; creation not witnessed in timeline extract",
+      "citations": ["c056", "c057", "c058"]
+    },
+    {
+      "type": "created",
+      "slug": "/qa/",
+      "name": "Question & Answer",
+      "date": "2015-01-23",
+      "confidence": "A",
+      "note": "created 00:30 EST for moot's farewell stream, first post by moot 00:50 EST, unannounced until midday; briefly frozen Jan 26-27 2015 and Apr 7 2017",
+      "citations": ["c059", "c060", "c061", "c062", "c063", "c064"]
+    },
+    {
+      "type": "created",
+      "slug": "/aco/",
+      "name": "Adult Cartoons",
+      "date": "2015-10-01",
+      "confidence": "A",
+      "note": "blotter Oct 9",
+      "citations": ["c065", "c066", "c067"]
+    },
+    {
+      "type": "created",
+      "slug": "/his/",
+      "name": "History & Humanities",
+      "date": "2015-10-31",
+      "confidence": "A",
+      "citations": ["c068", "c069"]
+    },
+    {
+      "type": "created",
+      "slug": "/trash/",
+      "name": "Off-Topic",
+      "date": "2015-11-07",
+      "confidence": "A",
+      "note": "blotter Nov 9",
+      "citations": ["c070", "c071", "c072", "c073"]
+    },
+    {
+      "type": "created",
+      "slug": "/news/",
+      "name": "Current News",
+      "date": "2015-11-14",
+      "confidence": "A",
+      "note": "posting enabled 2015-11-28 (blotter same day) — expect few/no genuine posts in the 11-14..11-28 window; frontpage listing Dec 16",
+      "citations": ["c074"]
+    },
+    {
+      "type": "created",
+      "slug": "/wsr/",
+      "name": "Worksafe Requests",
+      "date": "2015-12-20",
+      "confidence": "A",
+      "note": "/r/ renamed Adult Requests same day",
+      "citations": ["c075", "c076", "c077", "c078", "c079"]
+    },
+    {
+      "type": "created",
+      "slug": "/film/",
+      "name": "Film & Movies",
+      "date": "2016-04-24",
+      "confidence": "A",
+      "note": "appeared in API unannounced",
+      "citations": ["c080", "c081", "c082", "c083", "c084"]
+    },
+    {
+      "type": "removed",
+      "slug": "/film/",
+      "name": "Film & Movies",
+      "date": "2016-04-24",
+      "confidence": "B",
+      "note": "wiki lists deletion same day; global announcements purged Apr 26 — lifespan possibly up to ~2 days",
+      "citations": ["c080", "c081", "c082", "c083", "c084"]
+    },
+    {
+      "type": "created",
+      "slug": "/qst/",
+      "name": "Quests",
+      "date": "2016-04-27",
+      "confidence": "A",
+      "note": "API + blotter Apr 28",
+      "citations": ["c085", "c086", "c087", "c088"]
+    },
+    {
+      "type": "created",
+      "slug": "/vip/",
+      "name": "Very Important Posts",
+      "date": "2016-10-04",
+      "confidence": "A",
+      "note": "4chan Pass users only; distinct from 2004 /vip/ textboard",
+      "citations": ["c089", "c090", "c091", "c092"]
+    },
+    {
+      "type": "created",
+      "slug": "/can/",
+      "name": "Animals/Cute",
+      "date": "2017-04-01",
+      "confidence": "A",
+      "note": "April Fools 2017 merged board",
+      "citations": ["wiki-2017"]
+    },
+    {
+      "type": "created",
+      "slug": "/cock/",
+      "name": "Comics & Cartoons & Cooking",
+      "date": "2017-04-01",
+      "confidence": "A",
+      "note": "April Fools 2017 merged board",
+      "citations": ["c093", "c094", "c095", "c096", "c097", "c098"]
+    },
+    {
+      "type": "created",
+      "slug": "/fap/",
+      "name": "Fashion & Photography",
+      "date": "2017-04-01",
+      "confidence": "A",
+      "note": "April Fools 2017 merged board",
+      "citations": ["wiki-2017"]
+    },
+    {
+      "type": "created",
+      "slug": "/fitlit/",
+      "name": "Well-Rounded Citizens",
+      "date": "2017-04-01",
+      "confidence": "A",
+      "note": "April Fools 2017 merged board",
+      "citations": ["c093", "c094", "c095", "c096", "c097", "c098"]
+    },
+    {
+      "type": "created",
+      "slug": "/mo/",
+      "name": "Mecha & Auto",
+      "date": "2017-04-01",
+      "confidence": "A",
+      "note": "April Fools 2017 merged board",
+      "citations": ["wiki-2017"]
+    },
+    {
+      "type": "created",
+      "slug": "/mtv/",
+      "name": "Video Killed The Radio Star",
+      "date": "2017-04-01",
+      "confidence": "A",
+      "note": "April Fools 2017 merged board",
+      "citations": ["wiki-2017"]
+    },
+    {
+      "type": "created",
+      "slug": "/mlpol/",
+      "name": "My Little Politics",
+      "date": "2017-04-01",
+      "confidence": "A",
+      "note": "April Fools 2017 merged board",
+      "citations": ["c093", "c094", "c095", "c096", "c097", "c098"]
+    },
+    {
+      "type": "created",
+      "slug": "/outsoc/",
+      "name": "Outdoor Socialization",
+      "date": "2017-04-01",
+      "confidence": "A",
+      "note": "April Fools 2017 merged board",
+      "citations": ["wiki-2017"]
+    },
+    {
+      "type": "created",
+      "slug": "/spa/",
+      "name": "Tanoshii Sports",
+      "date": "2017-04-01",
+      "confidence": "A",
+      "note": "April Fools 2017 merged board",
+      "citations": ["c093", "c094", "c095", "c096", "c097", "c098"]
+    },
+    {
+      "type": "created",
+      "slug": "/vint/",
+      "name": "International Vidya",
+      "date": "2017-04-01",
+      "confidence": "A",
+      "note": "April Fools 2017 merged board",
+      "citations": ["c093", "c094", "c095", "c096", "c097", "c098"]
+    },
+    {
+      "type": "removed",
+      "slug": "/can/",
+      "name": "Animals/Cute",
+      "date": "2017-04-02",
+      "confidence": "A",
+      "note": "merge undone; wiki notes source boards 'were never deleted, they just changed the URLs' — posts on the merged slugs exist for ~1 day",
+      "citations": ["wiki-2017"]
+    },
+    {
+      "type": "removed",
+      "slug": "/cock/",
+      "name": "Comics & Cartoons & Cooking",
+      "date": "2017-04-02",
+      "confidence": "A",
+      "note": "merge undone; wiki notes source boards 'were never deleted, they just changed the URLs' — posts on the merged slugs exist for ~1 day",
+      "citations": ["wiki-2017"]
+    },
+    {
+      "type": "removed",
+      "slug": "/fap/",
+      "name": "Fashion & Photography",
+      "date": "2017-04-02",
+      "confidence": "A",
+      "note": "merge undone; wiki notes source boards 'were never deleted, they just changed the URLs' — posts on the merged slugs exist for ~1 day",
+      "citations": ["wiki-2017"]
+    },
+    {
+      "type": "removed",
+      "slug": "/fitlit/",
+      "name": "Well-Rounded Citizens",
+      "date": "2017-04-02",
+      "confidence": "A",
+      "note": "merge undone; wiki notes source boards 'were never deleted, they just changed the URLs' — posts on the merged slugs exist for ~1 day",
+      "citations": ["wiki-2017"]
+    },
+    {
+      "type": "removed",
+      "slug": "/mo/",
+      "name": "Mecha & Auto",
+      "date": "2017-04-02",
+      "confidence": "A",
+      "note": "merge undone; wiki notes source boards 'were never deleted, they just changed the URLs' — posts on the merged slugs exist for ~1 day",
+      "citations": ["wiki-2017"]
+    },
+    {
+      "type": "removed",
+      "slug": "/mtv/",
+      "name": "Video Killed The Radio Star",
+      "date": "2017-04-02",
+      "confidence": "A",
+      "note": "merge undone; wiki notes source boards 'were never deleted, they just changed the URLs' — posts on the merged slugs exist for ~1 day",
+      "citations": ["wiki-2017"]
+    },
+    {
+      "type": "removed",
+      "slug": "/mlpol/",
+      "name": "My Little Politics",
+      "date": "2017-04-02",
+      "confidence": "A",
+      "note": "merge undone; wiki notes source boards 'were never deleted, they just changed the URLs' — posts on the merged slugs exist for ~1 day",
+      "citations": ["wiki-2017"]
+    },
+    {
+      "type": "removed",
+      "slug": "/outsoc/",
+      "name": "Outdoor Socialization",
+      "date": "2017-04-02",
+      "confidence": "A",
+      "note": "merge undone; wiki notes source boards 'were never deleted, they just changed the URLs' — posts on the merged slugs exist for ~1 day",
+      "citations": ["wiki-2017"]
+    },
+    {
+      "type": "removed",
+      "slug": "/spa/",
+      "name": "Tanoshii Sports",
+      "date": "2017-04-02",
+      "confidence": "A",
+      "note": "merge undone; wiki notes source boards 'were never deleted, they just changed the URLs' — posts on the merged slugs exist for ~1 day",
+      "citations": ["wiki-2017"]
+    },
+    {
+      "type": "removed",
+      "slug": "/vint/",
+      "name": "International Vidya",
+      "date": "2017-04-02",
+      "confidence": "A",
+      "note": "merge undone; wiki notes source boards 'were never deleted, they just changed the URLs' — posts on the merged slugs exist for ~1 day",
+      "citations": ["wiki-2017"]
+    },
+    {
+      "type": "created",
+      "slug": "/bant/",
+      "name": "International/Random",
+      "date": "2017-05-04",
+      "confidence": "A",
+      "note": "frontpage listing May 13",
+      "citations": ["c099", "c089", "c100", "c101"]
+    },
+    {
+      "type": "created",
+      "slug": "/vrpg/",
+      "name": "Video Games/RPG",
+      "date": "2020-07-31",
+      "confidence": "A",
+      "note": "first of the '/v/ermin Month' weekly additions",
+      "citations": ["c102", "c103", "c104", "c105", "c106", "c107"]
+    },
+    {
+      "type": "created",
+      "slug": "/vmg/",
+      "name": "Video Games/Mobile",
+      "date": "2020-08-07",
+      "confidence": "A",
+      "citations": ["c108", "c109", "c110", "c111", "c112", "c113"]
+    },
+    {
+      "type": "created",
+      "slug": "/vst/",
+      "name": "Video Games/Strategy",
+      "date": "2020-08-14",
+      "confidence": "A",
+      "citations": ["c114", "c115", "c116", "c117", "c118", "c119"]
+    },
+    {
+      "type": "created",
+      "slug": "/vm/",
+      "name": "Video Games/Multiplayer",
+      "date": "2020-08-21",
+      "confidence": "A",
+      "citations": ["c120", "c121", "c122", "c123", "c124", "c125"]
+    },
+    {
+      "type": "created",
+      "slug": "/vt/",
+      "name": "Virtual YouTubers",
+      "date": "2021-01-29",
+      "confidence": "A",
+      "citations": ["c147", "c148", "c149", "c150"]
+    },
+    {
+      "type": "created",
+      "slug": "/pw/",
+      "name": "Professional Wrestling",
+      "date": "2021-02-12",
+      "confidence": "A",
+      "note": "split from /asp/, closed the same day",
+      "citations": ["c126", "c127", "c128"]
+    },
+    {
+      "type": "removed",
+      "slug": "/asp/",
+      "name": "Alternative Sports & Wrestling",
+      "date": "2021-02-12",
+      "confidence": "A",
+      "note": "locked/frozen 12:37pm UTC; delisted Feb 19 but still manually accessible frozen. Renamed from 'Alternative Sports' to add '& Wrestling' 2015-11-12",
+      "citations": ["c126", "c127", "c128"]
+    },
+    {
+      "type": "created",
+      "slug": "/xs/",
+      "name": "Extreme Sports",
+      "date": "2021-02-19",
+      "confidence": "A",
+      "citations": ["c129", "c130"]
+    },
+    {
+      "type": "created",
+      "slug": "/qb/",
+      "name": "Quebec",
+      "date": "2021-04-01",
+      "confidence": "A",
+      "note": "April Fools 2021",
+      "citations": ["c131", "c132", "c133"]
+    },
+    {
+      "type": "removed",
+      "slug": "/qb/",
+      "name": "Quebec",
+      "date": "2021-04-02",
+      "confidence": "A",
+      "note": "frozen 2:19am after 16,289 posts",
+      "citations": ["c134"]
+    },
+    {
+      "type": "removed",
+      "slug": "/qa/",
+      "name": "Question & Answer",
+      "date": "2021-11-03",
+      "confidence": "A",
+      "note": "posting disabled Nov 3-4 2021 after /lgbt/ raid, board reduced to a few sticky/meta threads (frozen, not deleted); inaccessible after the 2025-04-25 post-hack relaunch (redirects to blank.html) while still listed in boards.json",
+      "citations": ["c135", "c136", "c137", "c138", "c139", "c140"]
+    },
+    {
+      "type": "removed",
+      "slug": "/f/",
+      "name": "Flash",
+      "date": "2025-04-25",
+      "confidence": "A",
+      "note": "at post-hack relaunch: uploads permanently disabled to prevent .swf exploits per official blog; board still viewable",
+      "citations": ["c141", "c142", "c143", "c144", "c145", "c146"]
+    }
+  ],
+  "citation_needed": [
+    {
+      "type": "created",
+      "slug": "/fk/",
+      "name": "(hack-era board)",
+      "note": "reportedly created during the April 2014 hack period; only its 2014-05-06 deletion is witnessed in the timeline"
+    }
+  ],
+  "citations": [
+    {
+      "id": "primary-sa-moot",
+      "description": "moot post on Something Awful forums, displayed 2003-10-02 02:43 GMT (viewing-account timezone confirmed GMT): '/w/ - Wallpapers is also live now!' + '[NPH] made us an AWSOME mainpage. Should be up within the next few hours.' Screenshot provided by user.",
+      "url": "https://forums.somethingawful.com/showthread.php?threadid=724028&userid=32422&perpage=40&pagenumber=1#post280741205",
+      "domain": "forums.somethingawful.com"
+    },
+    {
+      "id": "primary-4channet-news",
+      "description": "Wayback Machine capture of the original 4chan.net news page carrying all news posts 2003-10-01 through 2003-11-08 (TEST, WELCOME, /h/, BANNERS, UPDATES, MORE UPDATES, WAHO, HOORAY, PRUNED, UPDATE...). HTML provided by user.",
+      "url": "https://web.archive.org/web/20031122004728/http://www.4chan.net/",
+      "domain": "web.archive.org"
+    },
+    {
+      "id": "primary-wayback-oekaki",
+      "description": "Wayback Machine captures of oekaki.4chan.net/index.php (4 captures, 2003-10-14 to 2005-01-02) showing a standalone PaintBBS installation. Screenshot provided by user.",
+      "url": "https://web.archive.org/web/20031014033321/http://oekaki.4chan.net/index.php",
+      "domain": "web.archive.org"
+    },
+    {
+      "id": "c001",
+      "url": "https://web.archive.org/web/20031021144905/http://apisnetworks.com/",
+      "domain": "web.archive.org"
+    },
+    {
+      "id": "c002",
+      "url": "https://www.4chan.org/4channews.php?all#1",
+      "domain": "4chan.org"
+    },
+    {
+      "id": "c003",
+      "url": "https://archive.today/3iVup#1",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c004",
+      "url": "https://www.4chan.org/4channews.php?all#2",
+      "domain": "4chan.org"
+    },
+    {
+      "id": "c005",
+      "url": "https://archive.today/3iVup#2",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c006",
+      "url": "https://www.4chan.org/4channews.php?all#3",
+      "domain": "4chan.org"
+    },
+    {
+      "id": "c007",
+      "url": "https://web.archive.org/web/20200314123218/http://world2ch.org/dramabomb.html",
+      "domain": "web.archive.org"
+    },
+    {
+      "id": "c008",
+      "url": "https://web.archive.org/web/20111220124733/http://ww5.merchantguild.net/forums/index.php?act=ST&f=12&t=7315&s=",
+      "domain": "web.archive.org"
+    },
+    {
+      "id": "c009",
+      "url": "https://www.4chan.org/4channews.php?all#4",
+      "domain": "4chan.org"
+    },
+    {
+      "id": "c010",
+      "url": "https://archive.today/3iVup#4",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c011",
+      "url": "https://www.4chan.org/4channews.php?all#5",
+      "domain": "4chan.org"
+    },
+    {
+      "id": "c012",
+      "url": "https://archive.today/3iVup#5",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c013",
+      "url": "https://web.archive.org/web/20021015003207/http://hp.vector.co.jp/authors/VA016309/",
+      "domain": "web.archive.org"
+    },
+    {
+      "id": "c014",
+      "url": "https://badluck.livejournal.com/127300.html",
+      "domain": "badluck.livejournal.com"
+    },
+    {
+      "id": "c015",
+      "url": "https://yaoi.livejournal.com/753839.html",
+      "domain": "yaoi.livejournal.com"
+    },
+    {
+      "id": "c016",
+      "url": "https://www.4chan.org/4channews.php?all#8",
+      "domain": "4chan.org"
+    },
+    {
+      "id": "c017",
+      "url": "https://archive.today/3iVup#8",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c018",
+      "url": "https://www.4chan.org/4channews.php?all#9",
+      "domain": "4chan.org"
+    },
+    {
+      "id": "c019",
+      "url": "https://www.4chan.org/4channews.php?all#11",
+      "domain": "4chan.org"
+    },
+    {
+      "id": "c020",
+      "url": "https://archive.today/3iVup#11",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c021",
+      "url": "https://www.4chan.org/4channews.php?all#20",
+      "domain": "4chan.org"
+    },
+    {
+      "id": "c022",
+      "url": "https://archive.today/3iVup#20",
+      "domain": "archive.today"
+    },
+    {
+      "id": "wiki-2003",
+      "description": "Bibliotheca Anonoma 4chan/History wiki, 2003 section (event stated in timeline; no external link captured for this specific entry)",
+      "url": "https://wiki.bibanon.org/4chan/History"
+    },
+    {
+      "id": "c023",
+      "url": "https://www.4chan.org/4channews.php?all#21",
+      "domain": "4chan.org"
+    },
+    {
+      "id": "c024",
+      "url": "https://archive.today/3iVup#21",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c025",
+      "url": "https://www.4chan.org/4channews.php?all#29",
+      "domain": "4chan.org"
+    },
+    {
+      "id": "c026",
+      "url": "https://archive.today/3iVup#29",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c027",
+      "url": "https://www.4chan.org/4channews.php?all#30",
+      "domain": "4chan.org"
+    },
+    {
+      "id": "c028",
+      "url": "https://archive.today/3iVup#30",
+      "domain": "archive.today"
+    },
+    {
+      "id": "wiki-2004",
+      "description": "Bibliotheca Anonoma 4chan/History wiki, 2004 section (event stated in timeline; no external link captured for this specific entry)",
+      "url": "https://wiki.bibanon.org/4chan/History"
+    },
+    {
+      "id": "c029",
+      "url": "https://archive.today/3iVup#34",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c030",
+      "url": "https://archive.today/3iVup#33",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c031",
+      "url": "https://archive.today/3iVup#35",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c032",
+      "url": "https://archive.today/3iVup#41",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c033",
+      "url": "https://vyrd.bibanon.org/rx/penfifteen/hentai.html",
+      "domain": "vyrd.bibanon.org"
+    },
+    {
+      "id": "c034",
+      "url": "https://vyrd.bibanon.org/rx/penfifteen/dime_.html",
+      "domain": "vyrd.bibanon.org"
+    },
+    {
+      "id": "c035",
+      "url": "https://archive.today/3iVup#44",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c036",
+      "url": "https://archive.today/3iVup#45",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c037",
+      "url": "https://vyrd.bibanon.org/rx/penfifteen/owned.html",
+      "domain": "vyrd.bibanon.org"
+    },
+    {
+      "id": "c038",
+      "url": "https://archive.today/3iVup#63",
+      "domain": "archive.today"
+    },
+    {
+      "id": "wiki-2005",
+      "description": "Bibliotheca Anonoma 4chan/History wiki, 2005 section (event stated in timeline; no external link captured for this specific entry)",
+      "url": "https://wiki.bibanon.org/4chan/History"
+    },
+    {
+      "id": "c039",
+      "url": "https://archive.org/download/4chanCaps2005/4chan-caps-2005.zip/4chan-caps-2005%2Fdata.4chan.org%2Fb%2Fsrc%2F1118029064543.jpg",
+      "domain": "archive.org"
+    },
+    {
+      "id": "wiki-2006",
+      "description": "Bibliotheca Anonoma 4chan/History wiki, 2006 section (event stated in timeline; no external link captured for this specific entry)",
+      "url": "https://wiki.bibanon.org/4chan/History"
+    },
+    {
+      "id": "c040",
+      "url": "https://en.wikipedia.org/wiki/Adam_Walsh_Child_Protection_and_Safety_Act",
+      "domain": "en.wikipedia.org"
+    },
+    {
+      "id": "c041",
+      "url": "https://old.sage.moe/b/thread/11487192/#11488107",
+      "domain": "old.sage.moe"
+    },
+    {
+      "id": "c042",
+      "url": "https://archive.ph/44KBs#http://www.4chan.org/contests",
+      "domain": "archive.ph"
+    },
+    {
+      "id": "c043",
+      "url": "https://archive.ph/lIaJE",
+      "domain": "archive.ph"
+    },
+    {
+      "id": "wiki-2007",
+      "description": "Bibliotheca Anonoma 4chan/History wiki, 2007 section (event stated in timeline; no external link captured for this specific entry)",
+      "url": "https://wiki.bibanon.org/4chan/History"
+    },
+    {
+      "id": "wiki-2008",
+      "description": "Bibliotheca Anonoma 4chan/History wiki, 2008 section (event stated in timeline; no external link captured for this specific entry)",
+      "url": "https://wiki.bibanon.org/4chan/History"
+    },
+    {
+      "id": "wiki-2009",
+      "description": "Bibliotheca Anonoma 4chan/History wiki, 2009 section (event stated in timeline; no external link captured for this specific entry)",
+      "url": "https://wiki.bibanon.org/4chan/History"
+    },
+    {
+      "id": "wiki-2010",
+      "description": "Bibliotheca Anonoma 4chan/History wiki, 2010 section (event stated in timeline; no external link captured for this specific entry)",
+      "url": "https://wiki.bibanon.org/4chan/History"
+    },
+    {
+      "id": "wiki-2011",
+      "description": "Bibliotheca Anonoma 4chan/History wiki, 2011 section (event stated in timeline; no external link captured for this specific entry)",
+      "url": "https://wiki.bibanon.org/4chan/History"
+    },
+    {
+      "id": "c044",
+      "url": "https://web.archive.org/web/20111219041049/http://chanarchive.org/4chan/hc/25437/in-this-itt-we-will-be-of-posting-blowjobs",
+      "domain": "web.archive.org"
+    },
+    {
+      "id": "c045",
+      "url": "https://desuarchive.org/mlp/thread/3914432/#3914990",
+      "domain": "desuarchive.org"
+    },
+    {
+      "id": "c046",
+      "url": "https://megalodon.jp/2026-0627-2012-10/https://pastebin.com:443/wL6G0fcg",
+      "domain": "megalodon.jp"
+    },
+    {
+      "id": "c047",
+      "url": "https://archived.moe/v/thread/129777358/",
+      "domain": "archived.moe"
+    },
+    {
+      "id": "c048",
+      "url": "https://pastebin.com/wL6G0fcg",
+      "domain": "pastebin.com"
+    },
+    {
+      "id": "c049",
+      "url": "https://archive.ph/B1qQF",
+      "domain": "archive.ph"
+    },
+    {
+      "id": "wiki-2012",
+      "description": "Bibliotheca Anonoma 4chan/History wiki, 2012 section (event stated in timeline; no external link captured for this specific entry)",
+      "url": "https://wiki.bibanon.org/4chan/History"
+    },
+    {
+      "id": "wiki-2013",
+      "description": "Bibliotheca Anonoma 4chan/History wiki, 2013 section (event stated in timeline; no external link captured for this specific entry)",
+      "url": "https://wiki.bibanon.org/4chan/History"
+    },
+    {
+      "id": "c050",
+      "url": "https://warosu.org/3/thread/S340309#p340313",
+      "domain": "warosu.org"
+    },
+    {
+      "id": "c051",
+      "url": "https://archive.today/Wq8ph",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c052",
+      "url": "https://www.4chan.org/news#114",
+      "domain": "4chan.org"
+    },
+    {
+      "id": "c053",
+      "url": "https://www.4chan.org/4channews.php?all#oldnews",
+      "domain": "4chan.org"
+    },
+    {
+      "id": "c054",
+      "url": "https://4chan.org/feedback",
+      "domain": "4chan.org"
+    },
+    {
+      "id": "c055",
+      "url": "https://4chan.org/bans",
+      "domain": "4chan.org"
+    },
+    {
+      "id": "wiki-2014",
+      "description": "Bibliotheca Anonoma 4chan/History wiki, 2014 section (event stated in timeline; no external link captured for this specific entry)",
+      "url": "https://wiki.bibanon.org/4chan/History"
+    },
+    {
+      "id": "c056",
+      "url": "https://archive.is/CL0tD#http://chrishateswriting.com/post/84931829578/when-a-bad-day-gets-worse-getting-hacked-twice-in-one",
+      "domain": "archive.is"
+    },
+    {
+      "id": "c057",
+      "url": "https://archive.is/ycBaC",
+      "domain": "archive.is"
+    },
+    {
+      "id": "c058",
+      "url": "https://archive.is/BZzhB",
+      "domain": "archive.is"
+    },
+    {
+      "id": "c059",
+      "url": "https://desuarchive.org/qa/thread/1/",
+      "domain": "desuarchive.org"
+    },
+    {
+      "id": "c060",
+      "url": "https://www.youtube.com/watch?v=XYUKJBZuUig",
+      "domain": "youtube.com"
+    },
+    {
+      "id": "c061",
+      "url": "https://plus.google.com/events/cdniiul8iq8ps7bk217j3hnkdbs",
+      "domain": "plus.google.com"
+    },
+    {
+      "id": "c062",
+      "url": "https://youtu.be/XYUKJBZuUig?t=41s",
+      "domain": "youtu.be"
+    },
+    {
+      "id": "c063",
+      "url": "https://github.com/bibanon/bibanon/wiki/Moot%27s-Final-4chan-Q&A-Transcript",
+      "domain": "github.com"
+    },
+    {
+      "id": "c064",
+      "url": "https://preservetube.com/watch?v=WKnVaDwUg5s",
+      "domain": "preservetube.com"
+    },
+    {
+      "id": "c065",
+      "url": "https://desuarchive.org/aco/thread/86/#86",
+      "domain": "desuarchive.org"
+    },
+    {
+      "id": "c066",
+      "url": "https://github.com/floens/ChanTracking/commit/79ecb19a9bb67a9ebe1b81c872b18db7f1b8c614",
+      "domain": "github.com"
+    },
+    {
+      "id": "c067",
+      "url": "https://archive.ph/LJvLQ",
+      "domain": "archive.ph"
+    },
+    {
+      "id": "c068",
+      "url": "https://github.com/floens/ChanTracking/commit/2849f87fc828499b8e748f74a117726c9bb906c8",
+      "domain": "github.com"
+    },
+    {
+      "id": "c069",
+      "url": "https://github.com/floens/ChanTracking/commit/45ed7a9eabd59f7184c3c2083568bdcbc63e3f15",
+      "domain": "github.com"
+    },
+    {
+      "id": "c070",
+      "url": "https://megalodon.jp/2026-0513-0708-17/https://desu-usergeneratedcontent.xyz:443/trash/image/1446/94/1446943430594.png",
+      "domain": "megalodon.jp"
+    },
+    {
+      "id": "c071",
+      "url": "https://desuarchive.org/trash/thread/6803/",
+      "domain": "desuarchive.org"
+    },
+    {
+      "id": "c072",
+      "url": "https://github.com/floens/ChanTracking/commit/bef1da3cb153b507f59b44f163a9531471315f34",
+      "domain": "github.com"
+    },
+    {
+      "id": "c073",
+      "url": "https://github.com/floens/ChanTracking/commit/43722c43593be3d92f5f424a4ed03ce2426fe699",
+      "domain": "github.com"
+    },
+    {
+      "id": "c074",
+      "url": "https://github.com/floens/ChanTracking/commit/16561605096b4290d0e01a2bc42baeb9d7b3a23f",
+      "domain": "github.com"
+    },
+    {
+      "id": "c075",
+      "url": "https://archive.ph/e0ers#selection-143.0-149.25",
+      "domain": "archive.ph"
+    },
+    {
+      "id": "c076",
+      "url": "https://github.com/floens/ChanTracking/commit/9dc9bdcb9dec2275f431fc8a32bdd63759e78881",
+      "domain": "github.com"
+    },
+    {
+      "id": "c077",
+      "url": "https://github.com/floens/ChanTracking/commit/7a8fa41722ee4d8844ed526f78d9910c5a2e64c5",
+      "domain": "github.com"
+    },
+    {
+      "id": "c078",
+      "url": "https://github.com/floens/ChanTracking/commit/7d23d8b953e48237b5acffa57d9fe501b0c79b40",
+      "domain": "github.com"
+    },
+    {
+      "id": "c079",
+      "url": "https://github.com/floens/ChanTracking/commit/e73f2df0cd3a6e34843aed93f9742e8f104bbaa9",
+      "domain": "github.com"
+    },
+    {
+      "id": "c080",
+      "url": "https://archive.ph/5CgoJ",
+      "domain": "archive.ph"
+    },
+    {
+      "id": "c081",
+      "url": "https://github.com/floens/ChanTracking/commit/43ea6282d56db5297a8d614ee7622d090f943205",
+      "domain": "github.com"
+    },
+    {
+      "id": "c082",
+      "url": "https://desuarchive.org/qa/thread/505919/#505919",
+      "domain": "desuarchive.org"
+    },
+    {
+      "id": "c083",
+      "url": "https://github.com/floens/ChanTracking/commit/8b285ad87a31734629a49bdee5b782ea7854812c",
+      "domain": "github.com"
+    },
+    {
+      "id": "c084",
+      "url": "https://desuarchive.org/qa/thread/506155/#506155",
+      "domain": "desuarchive.org"
+    },
+    {
+      "id": "c085",
+      "url": "https://archive.today/pviHX",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c086",
+      "url": "https://web.archive.org/web/20221207043749/http://darksquid.org/titmouse/",
+      "domain": "web.archive.org"
+    },
+    {
+      "id": "c087",
+      "url": "https://github.com/floens/ChanTracking/commit/b5fa4eaaa17bc2aacc62be3b0db119e4e16520b0",
+      "domain": "github.com"
+    },
+    {
+      "id": "c088",
+      "url": "https://github.com/floens/ChanTracking/commit/f13b590253b82505c19315ce3d67d8edd3033ac7",
+      "domain": "github.com"
+    },
+    {
+      "id": "c089",
+      "url": "https://archive.ph/e0ers",
+      "domain": "archive.ph"
+    },
+    {
+      "id": "c090",
+      "url": "https://github.com/floens/ChanTracking/commit/b81e5e8f7904980661183aca0f90fa54d13cac07",
+      "domain": "github.com"
+    },
+    {
+      "id": "c091",
+      "url": "https://github.com/floens/ChanTracking/commit/c860c097287de9f59d2f5f7af6d5934874cb8eec",
+      "domain": "github.com"
+    },
+    {
+      "id": "c092",
+      "url": "https://github.com/floens/ChanTracking/commit/056b31518efadeb75d58fd869e6d8255c71da746",
+      "domain": "github.com"
+    },
+    {
+      "id": "wiki-2017",
+      "description": "Bibliotheca Anonoma 4chan/History wiki, 2017 section (event stated in timeline; no external link captured for this specific entry)",
+      "url": "https://wiki.bibanon.org/4chan/History"
+    },
+    {
+      "id": "c093",
+      "url": "https://archived.moe/s4s/thread/5268144/official-s4s-foreth-birthday-discussion",
+      "domain": "archived.moe"
+    },
+    {
+      "id": "c094",
+      "url": "https://archived.moe/s4s/thread/5273416#p5273416",
+      "domain": "archived.moe"
+    },
+    {
+      "id": "c095",
+      "url": "https://desuarchive.org/qa/thread/1194185/#1195824",
+      "domain": "desuarchive.org"
+    },
+    {
+      "id": "c096",
+      "url": "https://archived.moe/cock/thread/22398",
+      "domain": "archived.moe"
+    },
+    {
+      "id": "c097",
+      "url": "https://my.mixtape.moe/vqziez.png",
+      "domain": "my.mixtape.moe"
+    },
+    {
+      "id": "c098",
+      "url": "https://archived.moe/spa/thread/55359/",
+      "domain": "archived.moe"
+    },
+    {
+      "id": "c099",
+      "url": "https://archive.ph/U5wnQ",
+      "domain": "archive.ph"
+    },
+    {
+      "id": "c100",
+      "url": "https://github.com/floens/ChanTracking/commit/bf104d16689e458d52b8a81d0654aead76a31a1b",
+      "domain": "github.com"
+    },
+    {
+      "id": "c101",
+      "url": "https://github.com/floens/ChanTracking/commit/b2f9d623a3504f37879341127984c1a947cf2072",
+      "domain": "github.com"
+    },
+    {
+      "id": "c102",
+      "url": "https://archive.ph/6pgBJ",
+      "domain": "archive.ph"
+    },
+    {
+      "id": "c103",
+      "url": "https://archive.today/dfEa2",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c104",
+      "url": "https://archive.today/mg99O#selection-4113.0-4117.6",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c105",
+      "url": "https://archive.ph/GXBol",
+      "domain": "archive.ph"
+    },
+    {
+      "id": "c106",
+      "url": "https://archive.ph/dfEa2",
+      "domain": "archive.ph"
+    },
+    {
+      "id": "c107",
+      "url": "https://archive.today/4ap89",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c108",
+      "url": "https://archive.ph/HJLlN",
+      "domain": "archive.ph"
+    },
+    {
+      "id": "c109",
+      "url": "https://mahjongsoul.fandom.com/wiki/Ichihime",
+      "domain": "mahjongsoul.fandom.com"
+    },
+    {
+      "id": "c110",
+      "url": "https://arch.b4k.dev/vmg/thread/4684/",
+      "domain": "arch.b4k.dev"
+    },
+    {
+      "id": "c111",
+      "url": "https://archive.is/x5ASE",
+      "domain": "archive.is"
+    },
+    {
+      "id": "c112",
+      "url": "https://archive.ph/x5ASE",
+      "domain": "archive.ph"
+    },
+    {
+      "id": "c113",
+      "url": "https://arch.b4k.dev/vmg/thread/1",
+      "domain": "arch.b4k.dev"
+    },
+    {
+      "id": "c114",
+      "url": "https://arch.b4k.dev/vst/thread/1",
+      "domain": "arch.b4k.dev"
+    },
+    {
+      "id": "c115",
+      "url": "https://archive.ph/iv3SX",
+      "domain": "archive.ph"
+    },
+    {
+      "id": "c116",
+      "url": "https://archive.ph/U4J5H",
+      "domain": "archive.ph"
+    },
+    {
+      "id": "c117",
+      "url": "https://arch.b4k.dev/vst/thread/8170/#8651",
+      "domain": "arch.b4k.dev"
+    },
+    {
+      "id": "c118",
+      "url": "https://arch.b4k.dev/vst/search/text/starsector/type/op/order/asc/",
+      "domain": "arch.b4k.dev"
+    },
+    {
+      "id": "c119",
+      "url": "https://archive.today/U4J5H",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c120",
+      "url": "https://archive.today/LBfHt",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c121",
+      "url": "https://archive.today/Ass7i",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c122",
+      "url": "https://archive.ph/ks7Ja",
+      "domain": "archive.ph"
+    },
+    {
+      "id": "c123",
+      "url": "https://archive.ph/fWxtS",
+      "domain": "archive.ph"
+    },
+    {
+      "id": "c124",
+      "url": "https://archive.ph/LBfHt",
+      "domain": "archive.ph"
+    },
+    {
+      "id": "c125",
+      "url": "https://desuarchive.org/qa/thread/3394551",
+      "domain": "desuarchive.org"
+    },
+    {
+      "id": "c126",
+      "url": "https://github.com/floens/ChanTracking/commit/c7fec0e53c707df0993e98ff27524a16080a32e9",
+      "domain": "github.com"
+    },
+    {
+      "id": "c127",
+      "url": "https://github.com/floens/ChanTracking/commit/a092a46f812802b1d8381773fb67f45ea706b431",
+      "domain": "github.com"
+    },
+    {
+      "id": "c128",
+      "url": "https://archived.moe/asp/thread/12946854/#q12971596",
+      "domain": "archived.moe"
+    },
+    {
+      "id": "c129",
+      "url": "https://github.com/floens/ChanTracking/commit/da88b1dd287fb9271985af0a9367f32e0f196def",
+      "domain": "github.com"
+    },
+    {
+      "id": "c130",
+      "url": "https://github.com/floens/ChanTracking/commit/7ddb0f6ae706eb8f376194c6624b9b263b43604d",
+      "domain": "github.com"
+    },
+    {
+      "id": "c131",
+      "url": "https://github.com/floens/ChanTracking/commit/970d7fb2ba3f061917ef2e61ebebc9b9051d39ab",
+      "domain": "github.com"
+    },
+    {
+      "id": "c132",
+      "url": "https://github.com/floens/ChanTracking/commit/62d64c171a51224549390d21f92be5588d29552b",
+      "domain": "github.com"
+    },
+    {
+      "id": "c133",
+      "url": "https://github.com/floens/ChanTracking/commit/ec553c0ff43adb8fc00e1404eb2d964bfe8aad4b",
+      "domain": "github.com"
+    },
+    {
+      "id": "c134",
+      "url": "https://archive.today/N67VU",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c135",
+      "url": "https://archived.moe/lgbt/search/deleted/deleted/type/op/start/2021-11-2/end/2021-11-4/",
+      "domain": "archived.moe"
+    },
+    {
+      "id": "c136",
+      "url": "https://desuarchive.org/qa/thread/5366311/#5366336",
+      "domain": "desuarchive.org"
+    },
+    {
+      "id": "c137",
+      "url": "https://archive.today/HAuqr",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c138",
+      "url": "https://desuarchive.org/qa/search/deleted/deleted/start/2021-11-3/end/2021-11-4/",
+      "domain": "desuarchive.org"
+    },
+    {
+      "id": "c139",
+      "url": "https://archive.today/OIKHY",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c140",
+      "url": "https://desuarchive.org/trash/thread/42889476",
+      "domain": "desuarchive.org"
+    },
+    {
+      "id": "c141",
+      "url": "https://x.com/GrapeApe9k/status/1915797981040902218",
+      "domain": "x.com"
+    },
+    {
+      "id": "c142",
+      "url": "https://archive.today/MKfjv",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c143",
+      "url": "https://archive.today/gnYuU",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c144",
+      "url": "https://archive.today/CloFF",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c145",
+      "url": "https://archive.today/HWnEV",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c146",
+      "url": "https://archive.today/xeNWJ",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c147",
+      "url": "https://github.com/floens/ChanTracking/commit/75bf51b050460ad00becff1ae1b27df17f0adbaa",
+      "domain": "github.com"
+    },
+    {
+      "id": "c148",
+      "url": "https://github.com/floens/ChanTracking/commit/89811d4e4563684e5284637de9260159553a2dbf",
+      "domain": "github.com"
+    },
+    {
+      "id": "c149",
+      "url": "https://archive.nyafuu.org/vt/",
+      "domain": "archive.nyafuu.org"
+    },
+    {
+      "id": "c150",
+      "url": "https://warosu.org/vt/",
+      "domain": "warosu.org"
+    }
+  ]
+}

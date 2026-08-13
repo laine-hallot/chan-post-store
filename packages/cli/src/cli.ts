@@ -241,6 +241,8 @@ const cmdPrepare = async (o: PrepareArgs): Promise<void> => {
         DIR: dir,
         TARGET: targetFlags,
       },
+      localDir: join(PROJECT_ROOT, info.dir),
+      projectRoot: PROJECT_ROOT,
     });
     if (res.isErr) {
       console.error(res.error.message);
