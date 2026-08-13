@@ -395,9 +395,34 @@ So a bulk load is `indexes drop` → `ingest-all` → `indexes build`.
 256MB because `autovacuum_work_mem` inherits it and three autovacuum workers
 each claiming several GB during an ingest is not the trade being made.
 
-These indexes land in the default tablespace (the SSD); the `posts` heap is in
-the `slow` tablespace on the array. Index access is random and wants the SSD.
-Heap writes during ingest are sequential appends and do not.
+There are three disks, and all three matter to a build:
+
+| tablespace   | mount                  | holds                          |
+| ------------ | ---------------------- | ------------------------------ |
+| `pg_default` | `/var/lib/postgresql`  | data dir, WAL, `post_stats`, and the `posts` PK + UNIQUE indexes |
+| `fast`       | `/nvme`                | the query indexes (`chan.config.json` sets `indexes.tablespace`) |
+| `slow`       | `/slow-storage`        | the `posts` heap                |
+
+Index access is random and wants the NVMe; heap writes during ingest are
+sequential appends and do not. `pg_default` is the *smallest* of the three,
+which is the trap below.
+
+**Temp files are a third disk question, separate from where the index lands.**
+Postgres spills sorts into the database's default tablespace unless
+`temp_tablespaces` says otherwise — so by default a build writes its sort to
+the same disk as WAL, and filling that disk takes the cluster down, not just
+the build. It became urgent at PG18, which builds **GIN indexes in parallel**:
+every index entry now passes through a tuplesort on the way in, and the spill
+scales with *lexemes*, not rows. On this corpus that is 1.36B posts × ~15.6
+distinct lexemes ≈ 21 billion entries against 108GB free on the data-dir disk.
+`indexes build --temp-tablespace` (config: `indexes.tempTablespace`) points it
+at the NVMe instead. Note it is set as a *literal*, not an identifier —
+`temp_tablespaces` is a comma-separated list GUC, and `quoteIdent`'s double
+quotes would become part of the name.
+
+Watch a long build with `pg_stat_progress_create_index` (phase, `blocks_done`
+/ `blocks_total`) rather than guessing from elapsed time; the heap scan is a
+distinct phase from the sort and reads all 559GB off the array.
 
 ## Conventions
 

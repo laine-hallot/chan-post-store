@@ -1,16 +1,26 @@
 # chan-post-store
 
 Ingests heterogeneous 4chan (and eventually 8chan) archive dumps into a single
-local SQLite database with FTS5 full-text search, and answers questions like
-"how many posts on /g/ mentioned _X_ per month between 2017 and 2018".
+Postgres database with full-text search, and answers questions like "how many
+posts on /g/ mentioned _X_ per month between 2017 and 2018".
 
-Runs on Node 24+ with no runtime dependencies — SQLite comes from the built-in
-`node:sqlite` module and `.ts` files are executed directly via type stripping.
+Full-text search is a `search_vector` tsvector column on `posts`, `GENERATED
+ALWAYS ... STORED` from `subject || body_text` with the `simple` config (no
+stemming, no stopwords — the closest match to FTS5's old `unicode61`
+tokenizer). There is no separate index table to populate: the column is
+maintained by Postgres on every insert, and the only thing search needs on top
+of it is the GIN index `idx_posts_search`, which lives in `QUERY_INDEXES` and
+is built by `indexes build` rather than on connect. That replaced a
+`posts_fts` FTS5 table when the store moved off SQLite.
+
+Runs on Node 24+ with `.ts` files executed directly via type stripping.
 
 ## Layout
 
 - `packages/cli/src/cli.ts` — CLI entry point (`ingest`, `count`, `search`, `list`)
-- `packages/cli/src/db.ts` — schema + connection (`sources`, `posts`, `posts_fts`)
+- `packages/cli/src/db.ts` — schema + connection (`sources`, `posts`,
+  `post_stats`), plus `QUERY_INDEXES`, the query-time indexes deliberately
+  kept out of the connect-time schema
 - `packages/cli/src/adapters/` — one ingester per source format:
   - `json-api` — 4chan read-API `{ posts: [...] }` thread dumps
   - `fuuka-sql` — mysqldumps of Fuuka/Asagi (FoolFuuka-schema) archive
@@ -203,9 +213,10 @@ The `list sources` post count is each archive's raw contribution, so when
 archives overlap its TOTAL can exceed the deduped `list sites` total.
 
 Ingest is idempotent per source (the manifest's `source.name`): re-running
-skips posts that are already stored. `count` reports the number of posts containing the phrase
-(FTS5 phrase match — whole-token, case-insensitive), deduplicated across
-overlapping archive sources by `(board, post_no)`.
+skips posts that are already stored. `count` reports the number of posts
+containing the phrase (a `phraseto_tsquery` match against `search_vector` —
+whole-token, case-insensitive). No dedup step is needed: `posts` holds one row
+per post.
 
 ### fuuka-sql notes
 
