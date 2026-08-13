@@ -196,10 +196,14 @@ export const queryIndexStatus = async (
  *   could not resize shared memory segment "/PostgreSQL.3689807650"
  *   to 50438144 bytes: No space left on device
  *
- * The fix is `--shm-size=1g` on the container (Unraid: Extra Parameters),
- * or dynamic_shared_memory_type = sysv, which moves DSM to SysV shared
- * memory -- unconstrained on this host (shmmax/shmall are effectively
- * unlimited, shmmni 4096).
+ * The fix, applied and verified, is `--shm-size=1g` on the container
+ * (Unraid: Extra Parameters). Before: phrases matching enough posts died in
+ * 0.2s with the error above. After: the same phrases build their bitmap and
+ * go on to scan the heap. The alternative is dynamic_shared_memory_type =
+ * sysv, which moves DSM to SysV shared memory -- unconstrained on this host
+ * (shmmax/shmall effectively unlimited, shmmni 4096) -- but it needs no
+ * container edit only by trading it for a riskier failure mode: if the IPC
+ * namespace disagrees, Postgres does not start.
  *
  * min_dynamic_shared_memory = '1GB' looks like it should work and does NOT.
  * Measured: set, restarted, confirmed running at 1024MB, and the identical
