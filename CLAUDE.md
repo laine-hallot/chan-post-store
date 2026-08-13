@@ -412,17 +412,49 @@ Postgres spills sorts into the database's default tablespace unless
 `temp_tablespaces` says otherwise — so by default a build writes its sort to
 the same disk as WAL, and filling that disk takes the cluster down, not just
 the build. It became urgent at PG18, which builds **GIN indexes in parallel**:
-every index entry now passes through a tuplesort on the way in, and the spill
-scales with *lexemes*, not rows. On this corpus that is 1.36B posts × ~15.6
-distinct lexemes ≈ 21 billion entries against 108GB free on the data-dir disk.
-`indexes build --temp-tablespace` (config: `indexes.tempTablespace`) points it
-at the NVMe instead. Note it is set as a *literal*, not an identifier —
-`temp_tablespaces` is a comma-separated list GUC, and `quoteIdent`'s double
-quotes would become part of the name.
+every index entry now passes through a tuplesort on the way in, so the spill
+became a thing that exists at all. `indexes build --temp-tablespace` (config:
+`indexes.tempTablespace`) points it at the NVMe instead. Note it is set as a
+*literal*, not an identifier — `temp_tablespaces` is a comma-separated list
+GUC, and `quoteIdent`'s double quotes would become part of the name.
+
+**Do not size that spill from the lexeme count.** The obvious estimate —
+1.36B posts × ~15.6 distinct lexemes ≈ 21 billion entries — overshot the
+measured peak by more than 6x, because each parallel worker pre-merges TID
+lists per key in its `BuildAccumulator` before anything reaches the sort.
+What actually gets sorted is 547M key-batched tuples, ~39 TIDs each. Measured
+on the first full build (Aug 2026):
+
+| heap scan | 4h16m, 73.3M blocks (559GB) off the array |
+| merge | 547,411,921 tuples at ~965k/s |
+| peak spill | ~90GB |
+| total | **4.95h**, index **77GB** |
+
+The flag still earns its place: 90GB against 108GB free on the WAL disk is
+not a margin worth having, and the disk that fills takes the cluster with it,
+not just the build.
 
 Watch a long build with `pg_stat_progress_create_index` (phase, `blocks_done`
-/ `blocks_total`) rather than guessing from elapsed time; the heap scan is a
-distinct phase from the sort and reads all 559GB off the array.
+/ `blocks_total`, and `tuples_done`/`tuples_total` during the merge — the
+merge reports a denominator, the scan reports blocks) rather than guessing
+from elapsed time.
+
+### What the search index does and does not buy
+
+`idx_posts_search` makes finding matches instant and fetching them slow. On a
+term with 10,113 hits: **13ms** in the Bitmap Index Scan, **118s** in the heap
+recheck. GIN supports no index-only scan, so even `count(*)` must visit every
+candidate row, and those rows are scattered at random across a 559GB heap on
+the array. The cost of a search is therefore set by how many posts match, not
+by how rare the word is to look up.
+
+`effective_io_concurrency` is the one cheap lever — it controls how deeply a
+bitmap heap scan prefetches. Measured across four terms, alternating the
+setting so a warming trend could not pass for an improvement: 1.77 and 2.16
+ms/block at the default 16, against 1.58 and 1.28 at 256, i.e. ~27% off. Worth
+setting; not a fix. `io_method` is `worker` here, so prefetch depth is also
+capped by `io_workers` (default 3) — raising that needs a cluster restart and
+has not been tried.
 
 ## Conventions
 
