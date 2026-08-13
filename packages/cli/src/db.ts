@@ -187,6 +187,30 @@ export const queryIndexStatus = async (
  *   SELECT pg_reload_conf();                            -- no restart needed
  *
  *   ALTER SYSTEM SET shared_buffers = '16GB';           -- needs a RESTART
+ *   ALTER SYSTEM SET min_dynamic_shared_memory = '1GB'; -- needs a RESTART
+ *
+ * min_dynamic_shared_memory is what keeps parallel query off /dev/shm. A
+ * parallel bitmap heap scan builds its TID bitmap in dynamic shared memory,
+ * sized by how many rows match, and with dynamic_shared_memory_type = posix
+ * that comes out of /dev/shm -- which in this container is Docker's default
+ * 64MB. A phrase matching enough posts asks for more and the query dies:
+ *
+ *   could not resize shared memory segment "/PostgreSQL.2075858038"
+ *   to 50438144 bytes: No space left on device
+ *
+ * This GUC reserves that memory inside the main shared memory segment (an
+ * anonymous mapping, not /dev/shm) at startup instead, so parallel queries
+ * stop competing for the container's 64MB. It is reserved whether used or
+ * not -- 1GB of 46GB here, against a 48MB failure, so the headroom is worth
+ * the commitment.
+ *
+ * A cursor also makes the error go away, and is the wrong fix: Postgres
+ * cannot suspend parallel execution, so DECLARE CURSOR silently plans
+ * serially (verified: 2 parallel workers on the plain query, 0 through a
+ * cursor). That buys correctness by dropping both workers, invisibly.
+ *
+ * Note --shm-size=1g on the container is the equivalent fix at the Docker
+ * layer; this one is preferred only because it needs no container recreate.
  *
  * maintenance_work_mem stays modest globally (256MB) because autovacuum_work_mem
  * inherits it, and three autovacuum workers each claiming several GB is not
