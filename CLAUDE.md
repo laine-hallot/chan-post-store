@@ -448,13 +448,31 @@ candidate row, and those rows are scattered at random across a 559GB heap on
 the array. The cost of a search is therefore set by how many posts match, not
 by how rare the word is to look up.
 
-`effective_io_concurrency` is the one cheap lever — it controls how deeply a
-bitmap heap scan prefetches. Measured across four terms, alternating the
-setting so a warming trend could not pass for an improvement: 1.77 and 2.16
-ms/block at the default 16, against 1.58 and 1.28 at 256, i.e. ~27% off. Worth
-setting; not a fix. `io_method` is `worker` here, so prefetch depth is also
-capped by `io_workers` (default 3) — raising that needs a cluster restart and
-has not been tried.
+**A warm number is not a search timing.** The same `count(*)` on a 10k-hit
+term: **169.2s** cold (39,870 blocks off the array) and **0.1s** immediately
+after (0 read, 40,135 buffer hits). Identical SQL, identical plan, 1,700x.
+Any figure quoted for a term that was just searched is measuring
+`shared_buffers`, not the store — and since the heap is 559GB against 16GB of
+`shared_buffers` plus ~30GB of host page cache, under 8% can be resident, so
+a term nobody has searched recently *is* a cold read. Restarting the cluster
+resets this, which is why a search can look 1000x slower after a restart with
+nothing wrong.
+
+`effective_io_concurrency = 256` (applied via ALTER SYSTEM) is the one cheap
+lever — it controls how deeply a bitmap heap scan prefetches. Measured across
+four terms, alternating the setting so a warming trend could not pass for an
+improvement: 1.77 and 2.16 ms/block at the default 16, against 1.58 and 1.28
+at 256, i.e. ~27% off. Worth setting; not a fix.
+
+**`io_workers` was tried and does nothing measurable here** — don't re-run
+this experiment. `io_method` is `worker`, so prefetch depth is in principle
+capped by the I/O worker pool, but four fresh cold terms alternating 3 and 8
+gave 1.21 / 2.82 ms/block at 3 against 1.28 / 1.93 at 8: the spread *within*
+each setting is larger than the gap between them. Note the per-block rate
+also improves with scan size (21,584 blocks came in at 2.82 ms/block, 91,613
+at 1.21), so compare only similarly-sized scans. It is `sighup`, not
+`postmaster` — changing it needs a reload, not a restart, contrary to what
+this file said before.
 
 ## Conventions
 

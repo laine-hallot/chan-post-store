@@ -184,6 +184,7 @@ export const queryIndexStatus = async (
  *
  *   ALTER SYSTEM SET max_wal_size = 16384;              -- MB
  *   ALTER SYSTEM SET checkpoint_completion_target = 0.9;
+ *   ALTER SYSTEM SET effective_io_concurrency = 256;    -- ~27% off a search
  *   SELECT pg_reload_conf();                            -- no restart needed
  *
  *   ALTER SYSTEM SET shared_buffers = '16GB';           -- needs a RESTART
