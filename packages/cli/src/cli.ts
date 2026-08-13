@@ -5,6 +5,7 @@ import type { Adapter, Manifest } from './manifest.ts';
 
 import { log } from '@clack/prompts';
 import { runAsync } from '@optique/run';
+import { once } from 'node:events';
 import { mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -1164,12 +1165,43 @@ const cmdCount = async (o: CountArgs): Promise<void> => {
   }
 };
 
+/**
+ * Write to stdout, waiting when the pipe is full.
+ *
+ * `console.log` returns before the bytes are gone and queues the rest in
+ * memory, which is invisible at twenty rows and is the whole problem at two
+ * million: the process grows to hold output the terminal has not read yet.
+ * Honouring `drain` bounds it.
+ *
+ * EPIPE is not an error here. `search | head` closes the pipe on purpose, and
+ * the useful behaviour is to stop, not to print a stack trace over the output
+ * the user asked for.
+ */
+const write = async (s: string): Promise<void> => {
+  if (!s) {
+    return;
+  }
+  try {
+    if (!process.stdout.write(s)) {
+      await once(process.stdout, 'drain');
+    }
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code === 'EPIPE') {
+      process.exit(0);
+    }
+    throw e;
+  }
+};
+
 const cmdSearch = async (o: SearchArgs): Promise<void> => {
   if (!connectionString(o) || !o.phrase) {
     fail('search requires --db and --phrase');
   }
-  const limit = Number(o.limit);
-  if (!Number.isInteger(limit) || limit < 1) {
+  // Unset means every match. `optional` gives undefined, and Number(undefined)
+  // is NaN rather than 0, so the guard below must test for the absence first
+  // or "no limit" reads as "invalid limit".
+  const limit = o.limit == null ? null : Number(o.limit);
+  if (limit !== null && (!Number.isInteger(limit) || limit < 1)) {
     fail(`invalid --limit: ${o.limit}`);
   }
 
@@ -1184,7 +1216,7 @@ const cmdSearch = async (o: SearchArgs): Promise<void> => {
     FROM posts p
     WHERE ${where}
     ORDER BY p.ts_utc, p.post_no
-    LIMIT $${params.length + 1}
+    ${limit === null ? '' : `LIMIT $${params.length + 1}`}
   `;
   const totalSql = `
     SELECT COUNT(*) AS n
@@ -1204,42 +1236,79 @@ const cmdSearch = async (o: SearchArgs): Promise<void> => {
     body_text: string | null;
   }
 
+  const renderHit = (r: Hit): string => {
+    const when = r.ts_utc
+      ? new Date(r.ts_utc * 1000).toISOString().replace('T', ' ').slice(0, 16)
+      : '(no date)';
+    const who = `${r.name ?? 'Anonymous'}${r.tripcode ?? ''}`;
+    let header = `[${when}] /${r.board}/${r.post_no}`;
+    if (r.is_op) {
+      header += ' (OP)';
+    } else {
+      header += ` in ${r.thread_no}`;
+    }
+    header += ` — ${who}`;
+    if (r.subject) {
+      header += ` — “${r.subject}”`;
+    }
+    const body = r.body_text ? `${r.body_text.replace(/^/gm, '  ')}\n` : '';
+    return `${header}\n${body}\n`;
+  };
+
   const db = await openDb(connectionString(o));
+  // A server-side cursor rather than one buffered result set. With no default
+  // limit a broad phrase can match millions of posts, and node-postgres
+  // materializes an entire result before handing it back -- the row count is
+  // the user's business, but running the process out of memory is not.
+  const client = await db.connect();
+  let seen = 0;
   try {
-    const { rows } = await db.query<Hit>(sql, [...params, limit]);
-    if (rows.length === 0) {
+    await client.query('BEGIN');
+    await client.query(
+      `DECLARE search_hits NO SCROLL CURSOR FOR ${sql}`,
+      limit === null ? params : [...params, limit]
+    );
+    for (;;) {
+      const { rows } = await client.query<Hit>('FETCH FORWARD 500 search_hits');
+      if (rows.length === 0) {
+        break;
+      }
+      for (const r of rows) {
+        if (o.json) {
+          await write(seen === 0 ? '[\n' : ',\n');
+          await write(JSON.stringify(r));
+        } else {
+          await write(renderHit(r));
+        }
+        seen++;
+      }
+    }
+    if (o.json) {
+      await write(seen === 0 ? '[]\n' : '\n]\n');
+    }
+    if (seen === 0 && !o.json) {
       console.log('no matches');
       return;
     }
-    for (const r of rows) {
-      const when = r.ts_utc
-        ? new Date(r.ts_utc * 1000).toISOString().replace('T', ' ').slice(0, 16)
-        : '(no date)';
-      const who = `${r.name ?? 'Anonymous'}${r.tripcode ?? ''}`;
-      let header = `[${when}] /${r.board}/${r.post_no}`;
-      if (r.is_op) {
-        header += ' (OP)';
-      } else {
-        header += ` in ${r.thread_no}`;
+    // Only when the limit is what stopped us. Previously this COUNT(*) ran on
+    // every search, including ones that had already returned every match --
+    // a second full pass over the matching rows, which on this store is the
+    // expensive half of the query (the GIN lookup is milliseconds; the heap
+    // recheck is minutes).
+    if (!o.json && limit !== null && seen === limit) {
+      const { rows } = await client.query<{ n: number }>(totalSql, params);
+      const total = rows[0]!.n;
+      if (total > seen) {
+        console.log(
+          `(showing ${seen} of ${total} matching posts; raise or drop --limit for more)`
+        );
       }
-      header += ` — ${who}`;
-      if (r.subject) {
-        header += ` — “${r.subject}”`;
-      }
-      console.log(header);
-      if (r.body_text) {
-        console.log(r.body_text.replace(/^/gm, '  '));
-      }
-      console.log();
-    }
-    const { rows: totalRows } = await db.query<{ n: number }>(totalSql, params);
-    const total = totalRows[0]!.n;
-    if (total > rows.length) {
-      console.log(
-        `(showing ${rows.length} of ${total} matching posts; raise --limit for more)`
-      );
     }
   } finally {
+    // The cursor dies with the transaction; ending it explicitly keeps the
+    // pooled connection clean for release.
+    await client.query('ROLLBACK').catch(() => undefined);
+    client.release();
     await db.end();
   }
 };

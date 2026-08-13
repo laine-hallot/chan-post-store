@@ -36,9 +36,14 @@
             rstudio-server
           ];
 
+          # >&2 deliberately: this banner runs for `nix develop --command`
+          # too, so on stdout it prepends two lines to whatever the command
+          # printed. That is invisible for a table and fatal for
+          # `search --json | jq`, which is exactly the case the redirect
+          # protects.
           shellHook = ''
-            echo "Node.js $(node --version)"
-            echo "npm $(npm --version)"
+            echo "Node.js $(node --version)" >&2
+            echo "npm $(npm --version)" >&2
           '';
         };
       }

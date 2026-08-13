@@ -318,17 +318,24 @@ const searchCmd = command(
   merge(
     object({
       action: constant('search' as const),
-      limit: withDefault(
+      limit: optional(
         option('--limit', integer(), {
-          description: message`Maximum rows to return.`,
+          description: message`Maximum rows to return. Unset means every match, streamed through a server-side cursor rather than buffered.`,
+        })
+      ),
+      json: withDefault(
+        flag('--json', {
+          description: message`Emit a JSON array of post objects instead of the readable form. Streams, so it stays usable unlimited. ts_utc stays epoch seconds -- lossless, and the text form is the one that formats dates.`,
         }),
-        20
+        false
       ),
     }),
     filterOptions,
     dbOptions
   ),
-  { description: message`Show posts matching a phrase.` }
+  {
+    description: message`Show posts matching a phrase. Returns every match by default: the cost of a search is set by how many posts match, not by how many are printed, so a truncating default hid that rather than avoiding it.`,
+  }
 );
 
 /**

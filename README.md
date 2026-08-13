@@ -179,9 +179,15 @@ node packages/cli/src/cli.ts count --db data/posts.db \
   --phrase "install gentoo" --board g \
   --from 2017-05 --to 2018-09 --by month
 
-# same filters as count, but prints the matching posts (oldest first)
+# same filters as count, but prints the matching posts (oldest first).
+# every match by default -- --limit truncates, it does not make the query
+# cheaper, since the cost is in fetching the matching rows either way
 node packages/cli/src/cli.ts search --db data/posts.db \
   --phrase "install gentoo" --board g --from 2017-05 --limit 20
+
+# --json emits a JSON array instead, streamed, so it stays usable unlimited
+node packages/cli/src/cli.ts search --db data/posts.db \
+  --phrase "install gentoo" --board g --json | jq -r '.[].body_text'
 
 # which boards exist and when their data is from, from the summary table
 # (immediate); `list boards` below is the deduped-but-slow equivalent
