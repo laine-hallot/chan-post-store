@@ -256,6 +256,18 @@ const indexesCmd = command(
           default: undefined,
         }
       ),
+      tempTablespace: bindConfig(
+        optional(
+          option('--temp-tablespace', string(), {
+            description: message`Tablespace for the build's sort spill. Postgres writes temp files to the database's default tablespace, which here is the data-dir disk -- the smallest of the three, and the one WAL shares. A parallel build sorts every index entry through it.`,
+          })
+        ),
+        {
+          context: configContext,
+          key: (c) => c.indexes?.tempTablespace,
+          default: undefined,
+        }
+      ),
       only: multiple(
         option('--only', string(), {
           description: message`Build just this index. Repeatable. The GIN full-text index is the bulk of the total and scales with text volume rather than row count, so building the cheap btrees first tells you what space is left before the expensive one commits to it.`,

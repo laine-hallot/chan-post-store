@@ -511,6 +511,14 @@ const cmdIngest = async (o: IngestArgs): Promise<void> => {
  */
 const quoteIdent = (s: string): string => `"${s.replace(/"/g, '""')}"`;
 
+/**
+ * A SQL string literal, single-quoted with embedded quotes doubled.
+ *
+ * `temp_tablespaces` is a list GUC rather than an identifier one, so it takes
+ * a literal -- the documented spelling is `SET temp_tablespaces = 'a, b'`.
+ */
+const quoteLiteral = (s: string): string => `'${s.replace(/'/g, "''")}'`;
+
 /** Elapsed since `t0`, as a human duration. Index builds run into hours. */
 const fmtSecs = (t0: number): string => {
   const s = (Date.now() - t0) / 1000;
@@ -585,6 +593,14 @@ const cmdIndexes = async (o: IndexesArgs): Promise<void> => {
     // else. It also keeps drop/status working unchanged -- they match on
     // index name, which does not depend on location.
     const { tablespace } = o;
+    // Where the build's *sort* spills, which is not the same disk question as
+    // where the finished index lands. Postgres writes temp files to the
+    // database's default tablespace, and here that is the data-dir disk --
+    // the smallest of the three, and the one WAL is also on. Since PG18
+    // builds GIN indexes in parallel, every index entry now goes through a
+    // tuplesort on the way in, so the spill scales with lexemes rather than
+    // rows: filling that disk would take WAL down with it.
+    const { tempTablespace } = o;
     // Build a subset. The GIN full-text index is the bulk of the total and
     // scales with text volume rather than row count, so its size is the least
     // predictable; building the cheap btrees first tells you what is left
@@ -610,6 +626,7 @@ const cmdIndexes = async (o: IndexesArgs): Promise<void> => {
     console.log(
       `building ${missing.length} index(es) with maintenance_work_mem=${memory}` +
         (tablespace ? ` in tablespace ${tablespace}` : '') +
+        (tempTablespace ? `, sorting in ${tempTablespace}` : '') +
         `\n  each takes an ACCESS EXCLUSIVE lock on posts; queries against it will block`
     );
     for (const i of missing) {
@@ -629,6 +646,14 @@ const cmdIndexes = async (o: IndexesArgs): Promise<void> => {
           // Identifier, so it cannot be parameterized; quote it instead.
           await client.query(
             `SET default_tablespace = ${quoteIdent(tablespace)}`
+          );
+        }
+        if (tempTablespace) {
+          // A comma-separated *list* GUC, not an identifier one, so it takes
+          // a string literal -- quoteIdent's double quotes would be read as
+          // part of the name.
+          await client.query(
+            `SET temp_tablespaces = ${quoteLiteral(tempTablespace)}`
           );
         }
         await client.query(spec.sql);

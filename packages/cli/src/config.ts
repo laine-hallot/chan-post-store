@@ -35,6 +35,14 @@ export const configSchema = z.object({
        * the NVMe (`fast`); the posts heap lives on the array (`slow`).
        */
       tablespace: z.string().optional(),
+      /**
+       * Tablespace the build's *sort* spills into, which is a different
+       * disk question from where the finished index lands. Postgres puts
+       * temp files in the database's default tablespace unless told
+       * otherwise, and on this store that is the data-dir disk -- the
+       * smallest of the three, and the one WAL is also on.
+       */
+      tempTablespace: z.string().optional(),
     })
     .optional(),
   runner: z
