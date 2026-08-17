@@ -1,10 +1,21 @@
 /**
  * Hand-built SVG for the corpus-coverage chart.
  *
- * Horizontal grouped bars: one row per year, one bar per source. Not the
- * mirrored population-pyramid layout, because that form carries exactly two
- * categories (the left and right halves) and the corpus has one series per
- * archive — six and counting. Grouped bars extend to any number of them.
+ * Horizontal stacked bars: one bar per year, segmented by the archive that
+ * supplied each post. Not the mirrored population-pyramid layout, because that
+ * form carries exactly two categories (the left and right halves) and the
+ * corpus has one series per archive — six and counting.
+ *
+ * Stacked rather than grouped, because the question the chart answers is "how
+ * much of this year do we hold, and who supplied it" — a part-to-whole reading
+ * per year. That makes the bar length the year's total, which is the number
+ * worth comparing across rows, and each segment a share of it. The cost is the
+ * usual one for stacked bars: only the first segment sits on a common
+ * baseline, so comparing a middle archive *between* years is genuinely hard.
+ * If that becomes the question, this wants to be small multiples instead.
+ *
+ * Segments are separated by a 2px surface gap and the bar's far end is
+ * rounded, so a stack reads as one bar rather than a run of abutting blocks.
  */
 
 export interface Series {
@@ -70,37 +81,26 @@ const esc = (s: string): string =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 export const renderChart = (d: ChartData): string => {
-  // Bars are sized first and the row derived from them, so a bar is always a
-  // bar rather than a hairline however many series there are.
-  const barH = 13;
-  const barGap = 2; // 2px surface gap between adjacent fills
-  const groupGap = 14; // space between one year and the next
+  // One bar per year now, so every row is the same height and the bar can be
+  // thicker than it was when a row had to hold up to six of them.
+  const barH = 18;
+  const segGap = 2; // 2px surface gap between adjacent fills
+  const groupGap = 10; // space between one year and the next
   const padL = 300;
   const padR = 110;
   const padB = 64;
   const plotW = 860;
 
-  // Only the sources actually present in a year get a bar slot, packed from the
-  // top of the row. Reserving a slot per series in every year left most rows
-  // mostly empty -- 18 years x 6 sources of reserved height for a corpus where
-  // most years carry one or two archives -- and pushed each bar down to its
-  // series index, so the year label no longer lined up with the bar it named.
+  // Which sources appear in a year, in series order — the series list is
+  // sorted largest-total-first, so the heaviest archive sits against the
+  // baseline where it is easiest to read and the stack order is stable from
+  // row to row.
   const rowsPresent = d.years.map((y) =>
     d.series.filter((s) => (d.values.get(y)?.get(s.name) ?? 0) > 0)
   );
-  const rowHeights = rowsPresent.map(
-    (present) =>
-      Math.max(present.length, 1) * (barH + barGap) - barGap + groupGap
-  );
-  const rowTops: number[] = [];
-  {
-    let acc = 0;
-    for (const rh of rowHeights) {
-      rowTops.push(acc);
-      acc += rh;
-    }
-  }
-  const plotH = rowHeights.reduce((a, b) => a + b, 0);
+  const rowH = barH + groupGap;
+  const rowTops = d.years.map((_, i) => i * rowH);
+  const plotH = rowH * d.years.length;
 
   // Header height depends on how many lines the subtitle wraps to, so it is
   // measured before the canvas is sized.
@@ -152,12 +152,12 @@ export const renderChart = (d: ChartData): string => {
   const w = padL + plotW + padR;
   const h = padT + plotH + padB;
 
-  let max = 0;
-  for (const y of d.years) {
-    for (const s of d.series) {
-      max = Math.max(max, d.values.get(y)?.get(s.name) ?? 0);
-    }
-  }
+  // The scale is set by the largest year TOTAL, not the largest single source:
+  // the bar now runs to the sum, and scaling to a single source would push
+  // every stacked bar off the end of the axis.
+  const rowTotal = (y: string): number =>
+    d.series.reduce((n, s) => n + (d.values.get(y)?.get(s.name) ?? 0), 0);
+  const max = Math.max(0, ...d.years.map(rowTotal));
   const tv = ticks(max);
   const scale = (v: number): number => (v / tv[tv.length - 1]) * plotW;
 
@@ -212,30 +212,46 @@ export const renderChart = (d: ChartData): string => {
   d.years.forEach((year, i) => {
     const top = padT + rowTops[i];
     const present = rowsPresent[i];
-    // Centre the year label against the bars actually drawn. An empty year
-    // still gets one slot's worth of height, so its label sits where a bar
-    // would have been.
-    const barsH = Math.max(present.length, 1) * (barH + barGap) - barGap;
     o.push(
-      `<text x="${padL - 12}" y="${top + barsH / 2 + 4}" font-size="12" fill="${PAL.textPrimary}" text-anchor="end">${esc(year)}</text>`
+      `<text x="${padL - 12}" y="${top + barH / 2 + 4}" font-size="12" fill="${PAL.textPrimary}" text-anchor="end">${esc(year)}</text>`
     );
 
+    // Segments run from the baseline in series order. `cursor` advances by the
+    // segment's TRUE width while the drawn rect is shortened by the gap, so
+    // the separators never lengthen the bar or shift what follows.
+    let cursor = padL;
     present.forEach((s, j) => {
       const v = d.values.get(year)!.get(s.name)!;
-      const bw = Math.max(scale(v), 2);
-      const by = top + j * (barH + barGap);
-      // 4px rounded data-end, square against the zero baseline.
-      const r = Math.min(4, bw);
-      o.push(
-        `<path d="M${padL} ${by} H${padL + bw - r} a${r} ${r} 0 0 1 ${r} ${r} V${by + barH - r} a${r} ${r} 0 0 1 -${r} ${r} H${padL} Z" fill="${s.color}"/>`
-      );
-      // Label each bar with its own value rather than the row sum: a total
-      // sitting beside per-source bars reads as if it were the longest bar,
-      // and the axis is scaled to the largest single source, not the sum.
-      o.push(
-        `<text x="${padL + bw + 8}" y="${by + barH - 2}" font-size="10" fill="${PAL.textMuted}">${compact(v)}</text>`
-      );
+      const full = scale(v);
+      const last = j === present.length - 1;
+      // A sliver stays visible rather than disappearing under the gap: a
+      // source that contributed to a year should be findable in that year's
+      // bar, even when its share rounds to under a pixel.
+      const drawn = Math.max(last ? full : full - segGap, 0.8);
+      if (last) {
+        // 4px rounded data-end on the far end only; the stack is square
+        // against the zero baseline.
+        const r = Math.min(4, drawn);
+        o.push(
+          `<path d="M${cursor} ${top} H${cursor + drawn - r} a${r} ${r} 0 0 1 ${r} ${r} V${top + barH - r} a${r} ${r} 0 0 1 -${r} ${r} H${cursor} Z" fill="${s.color}"/>`
+        );
+      } else {
+        o.push(
+          `<rect x="${cursor}" y="${top}" width="${drawn}" height="${barH}" fill="${s.color}"/>`
+        );
+      }
+      cursor += full;
     });
+
+    // One number per bar, and it is the year's total -- which is what the bar
+    // length now means. Per-segment values would need six labels on a 4px
+    // sliver; the legend plus segment length carries the split.
+    const total = rowTotal(year);
+    if (total > 0) {
+      o.push(
+        `<text x="${padL + scale(total) + 8}" y="${top + barH - 4}" font-size="10" fill="${PAL.textMuted}">${compact(total)}</text>`
+      );
+    }
   });
 
   o.push('</svg>');

@@ -1,4 +1,7 @@
 {
   "extends": "../../tsconfig.common.json",
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true
+  },
   "include": ["src"]
 }

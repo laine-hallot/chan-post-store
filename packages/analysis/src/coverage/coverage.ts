@@ -16,19 +16,19 @@ import {
 } from '@chan-post-store/cli/env';
 import { PROJECT_ROOT } from '@chan-post-store/cli/paths';
 
+import { openReadOnly } from '../db.ts';
 import {
   bucketsFromStats,
   hasPostStats,
   totalsFromStats,
   hasQueryIndexes,
-  openReadOnly,
   postsByYearAndSource,
   postsByYearForBoard,
   totals,
   type Totals,
   type YearSourceBucket,
   type PostBuckets,
-} from './query.ts';
+} from '../stats-table-query.ts';
 import { renderChart, type ChartData, type Series } from './svg.ts';
 
 /**
