@@ -44,6 +44,7 @@
           shellHook = ''
             echo "Node.js $(node --version)" >&2
             echo "npm $(npm --version)" >&2
+            source .env
           '';
         };
       }
