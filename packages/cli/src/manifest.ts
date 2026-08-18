@@ -1,3 +1,8 @@
+import type {
+  SqlNormalizeStep,
+  SqlRename,
+} from './prepare-steps/sql-normalize.ts';
+
 import { Result } from '@badrap/result';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
@@ -74,8 +79,18 @@ export type PrepareStep = {
       /** Shell command, run through the runner with cwd = the dataset dir. */
       run: string;
       reconcileBoards?: undefined;
+      sqlNormalize?: undefined;
     }
-  | { run?: undefined; reconcileBoards: ReconcileBoardsStep }
+  | {
+      run?: undefined;
+      reconcileBoards: ReconcileBoardsStep;
+      sqlNormalize?: undefined;
+    }
+  | {
+      run?: undefined;
+      reconcileBoards?: undefined;
+      sqlNormalize: SqlNormalizeStep;
+    }
 );
 
 /** The subset `download`/`prepare` need; readable without an ingest block. */
@@ -300,9 +315,47 @@ export const readSourceInfo = (
         name?: unknown;
         run?: unknown;
         'reconcile-boards'?: unknown;
+        'sql-normalize'?: unknown;
       };
       const name =
         typeof s?.name === 'string' && s.name ? s.name : `step ${i + 1}`;
+
+      const sn = s?.['sql-normalize'];
+      if (sn != null) {
+        if (typeof s.run === 'string' || s['reconcile-boards'] != null) {
+          return bad(
+            file,
+            `prepare[${i}] has "sql-normalize" alongside another kind; a step is one or the other`
+          );
+        }
+        const c = sn as { from?: unknown; to?: unknown; rename?: unknown };
+        if (typeof c.from !== 'string' || c.from === '') {
+          return bad(file, `prepare[${i}]."sql-normalize".from is required`);
+        }
+        if (typeof c.to !== 'string' || c.to === '') {
+          return bad(file, `prepare[${i}]."sql-normalize".to is required`);
+        }
+        // Required, and deliberately not defaulted. Applying the Fuuka rename
+        // to an Asagi dump collides media_filename with the media_orig it
+        // already has; skipping it on a Fuuka dump leaves `parent` unread.
+        // Either way the result is wrong and silent, so the manifest must say.
+        if (c.rename !== 'fuuka' && c.rename !== 'none') {
+          return bad(
+            file,
+            `prepare[${i}]."sql-normalize".rename must be "fuuka" (original-Fuuka column names) or "none" (already Asagi)`
+          );
+        }
+        steps.push({
+          name,
+          sqlNormalize: {
+            from: c.from,
+            to: c.to,
+            rename: c.rename as SqlRename,
+          },
+        });
+        continue;
+      }
+
       const rb = s?.['reconcile-boards'];
       if (rb != null) {
         if (typeof s.run === 'string') {

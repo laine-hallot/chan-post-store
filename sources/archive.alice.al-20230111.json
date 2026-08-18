@@ -16,8 +16,8 @@
       "run": "mkdir -p extracted && find . -name '*.sql.bz2' -not -path './out/*' -not -path './extracted/*' | while read -r f; do b=$(basename \"${f%.bz2}\"); [ -e \"extracted/$b\" ] || [ -e \"out/$b\" ] || bunzip2 -c \"$f\" > \"extracted/$b\"; done"
     },
     {
-      "name": "stage the .sql dumps for ingest",
-      "run": "mkdir -p out && find extracted -name '*.sql' -exec sh -c 'cp -al \"$1\" out/ 2>/dev/null || cp -a \"$1\" out/' _ {} ';'"
+      "name": "stage as out/<board>.sql",
+      "run": "rm -rf out && mkdir -p out && for f in extracted/*.sql; do [ -e \"$f\" ] || continue; b=$(basename \"$f\" .sql); b=${b#archive.alice.al-}; b=${b%-[0-9]*}; (cp -al \"$f\" \"out/$b.sql\" 2>/dev/null || cp -a \"$f\" \"out/$b.sql\"); done"
     }
   ],
   "ingest": {

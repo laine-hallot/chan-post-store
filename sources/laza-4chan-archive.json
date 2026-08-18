@@ -15,8 +15,16 @@
       "run": "mkdir -p extracted && for f in source/*.xz source/*.7z source/*.zip; do [ -e \"$f\" ] || continue; case \"$f\" in *.tar.xz) tar xJf \"$f\" -C extracted;; *.xz) cp -a \"$f\" extracted/ && (cd extracted && unxz -f \"$(basename \"$f\")\");; *) 7z x -aos -o./extracted \"$f\";; esac; done; true"
     },
     {
-      "name": "stage the Fuuka mysqldump for ingest",
-      "run": "mkdir -p out && f=$(find source extracted -maxdepth 3 -name 'tables.sql' 2>/dev/null | head -1) && [ -n \"$f\" ] && (cp -al \"$f\" out/ 2>/dev/null || cp -a \"$f\" out/)"
+      "name": "put tables.sql where the split can find it",
+      "run": "mkdir -p extracted && [ -e extracted/tables.sql ] || { f=$(find source extracted -maxdepth 3 -name 'tables.sql' 2>/dev/null | head -1); [ -n \"$f\" ] && (cp -al \"$f\" extracted/ 2>/dev/null || cp -a \"$f\" extracted/); }"
+    },
+    {
+      "name": "split into the standard out/<board>.sql layout",
+      "sql-normalize": {
+        "from": "extracted",
+        "to": "out",
+        "rename": "none"
+      }
     }
   ],
   "ingest": {

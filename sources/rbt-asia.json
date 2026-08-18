@@ -20,8 +20,12 @@
       "run": "mkdir -p extracted && for f in source/*.sql.tar.xz; do [ -e \"$f\" ] || continue; tar xf \"$f\" -C ./extracted; done"
     },
     {
-      "name": "stage the .sql dumps for ingest",
-      "run": "mkdir -p out && find extracted -name '*.sql' -exec sh -c 'cp -al \"$1\" out/ 2>/dev/null || cp -a \"$1\" out/' _ {} ';'"
+      "name": "split into the standard out/<board>.sql layout",
+      "sql-normalize": {
+        "from": "extracted",
+        "to": "out",
+        "rename": "fuuka"
+      }
     }
   ],
   "ingest": {

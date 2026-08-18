@@ -7,6 +7,7 @@ import { join } from 'node:path';
 
 import { readBoardSlugs } from './board-timeline.ts';
 import { reconcileYotsubasocietyBoards } from './prepare-steps/archives-yotsubasociety-org.ts';
+import { runSqlNormalize } from './prepare-steps/sql-normalize.ts';
 import { LocalRunner, shQuote, type Runner } from './runner.ts';
 
 /**
@@ -202,6 +203,31 @@ export const runPrepare = async (
   let n = 0;
   for (const [i, step] of info.prepare.entries()) {
     const label0 = `[${i + 1}/${info.prepare.length}] ${step.name}`;
+
+    // Splits a dump into the standard one-file-per-board layout. A builtin so
+    // the awk program lives in one place instead of being pasted into every
+    // SQL manifest, but the work itself runs THROUGH THE RUNNER: the inputs
+    // reach 21GB in a single file, and rewriting them in this process would
+    // drag every byte across the mount and back.
+    if (step.sqlNormalize !== undefined) {
+      const c = step.sqlNormalize;
+      console.log(`${label0} (builtin)`);
+      if (opts.dryRun) {
+        console.log(
+          `    would split ${c.from}/*.sql into ${c.to}/<board>.sql` +
+            ` (rename: ${c.rename})`
+        );
+        n++;
+        continue;
+      }
+      const r = await runSqlNormalize(runner, dir, c, step.name);
+      if (r.isErr) {
+        return Result.err(r.error);
+      }
+      console.log(`    wrote ${r.value} board file(s) to ${c.to}`);
+      n++;
+      continue;
+    }
 
     // Builtins run in this process rather than through a shell: the work is
     // per-file decisions over tens of thousands of pages, which is not a
