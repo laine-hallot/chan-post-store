@@ -1,7 +1,6 @@
 import type { Pool } from 'pg';
 
 import { createReadStream } from 'node:fs';
-import { createInterface } from 'node:readline';
 
 import { type BoardFilter, makeBoardFilter } from '../boards.ts';
 import { stripHtml } from '../html.ts';
@@ -11,6 +10,7 @@ import {
   insertColumns,
   nyWallToUtc,
   parseTuples,
+  readLines,
   takeCompleteTuples,
 } from '../mysqldump.ts';
 import { makeBar } from '../progress.ts';
@@ -276,10 +276,13 @@ const scan = async (
   onBytes?: (n: number) => void
 ): Promise<void> => {
   const input = createReadStream(file, { highWaterMark: 4 * 1024 * 1024 });
-  if (onBytes) {
-    input.on('data', (c: string | Buffer) => onBytes(c.length));
-  }
-  const lines = createInterface({ input, crlfDelay: Infinity });
+  // Split on "\n" only. `readline` also breaks on U+2028, U+2029 and a lone
+  // \r, all of which occur inside post bodies, and a break inside a quoted
+  // string truncates the statement -- measured at 3,613 posts lost from one
+  // INSERT on another source. See mysqldump.ts readLines. Byte counting moves
+  // inside it too: an input.on('data') listener would put the stream in
+  // flowing mode and race the async iteration.
+  const lines = readLines(input, onBytes);
 
   let creating: string | null = null;
   let idx: Record<string, number> | null = null;
