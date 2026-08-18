@@ -21,13 +21,21 @@ Runs on Node 24+ with `.ts` files executed directly via type stripping.
 - `packages/cli/src/db.ts` — schema + connection (`sources`, `posts`,
   `post_stats`), plus `QUERY_INDEXES`, the query-time indexes deliberately
   kept out of the connect-time schema
-- `packages/cli/src/adapters/` — one ingester per source format:
-  - `json-api` — 4chan read-API `{ posts: [...] }` thread dumps
-  - `fuuka-sql` — mysqldumps of Fuuka/Asagi (FoolFuuka-schema) archive
-    databases, streamed directly with no MySQL server
-  - `warosu-sql` — the warosu.org per-board mysqldumps (original
-    Perl-Fuuka 25-column schema: `parent` instead of `thread_num`/`op`,
-    original filename in `media`)
+- `packages/cli/src/adapters/` — three readers, one per staged shape. Each
+  reads exactly one layout; everything source-specific happens in `prepare`:
+  - `sql` — `out/<board>.sql`, an Asagi post table named for its board,
+    streamed directly with no MySQL server (both mysqldump and mysqlchump
+    serialisations)
+  - `json` — `out/<board>/posts.ndjson`, one record per line in Asagi field
+    names
+  - `html` — `out/<board>/<name>.html`, 4chan's own served markup
+- `packages/cli/src/lines.ts` — line splitting on `\n` and nothing else.
+  Node's `readline` also breaks on U+2028/U+2029/lone `\r`, which occur in
+  post bodies and silently truncate records
+- `packages/cli/src/prepare-steps/` — staging builtins (`sql-normalize`,
+  `stage-html`, `reconcile-boards`) and the payload runner
+- `sources/_payloads/` — prepare code uploaded to the archive host and run
+  there, for staging that needs a real parser
 - `packages/cli/src/mysqldump.ts` — shared mysqldump tuple parsing + Fuuka-family
   New-York→UTC timestamp normalization
 - `packages/cli/src/manifest.ts` — reads `sources/*.json` and resolves ingest inputs
@@ -64,7 +72,7 @@ registry of what's in the corpus travels with the repo:
     "short-desc": "RebeccaBlackTech's Archive of /soc/, database."
   },
   "ingest": {
-    "adapter": "fuuka-sql",
+    "adapter": "sql",
     "path": "Memetic Sociology/Datasets/4chan/rbt-asia/out",
     "site": "4chan"
   },
@@ -78,13 +86,16 @@ of what format is inside, so it can't be inferred. `ingest.path` is relative to
 the project root, so moving the archive storage only means repointing the
 `Memetic Sociology` symlink.
 
-`ingest.path` points at the source's `out/` directory: the end of the
-`source` → `extracted` → `out` staging pipeline, where data is ready to
-ingest. A manifest with `adapter: null`, or whose `out/` doesn't exist yet,
-is reported as `pending` and exits 2 rather than failing obscurely.
+`ingest.path` points at the staged tree the reader consumes — usually `out/`,
+but a source that needs conversion writes elsewhere (`out-ndjson/`,
+`out-native/`) and names it here. A manifest with `adapter: null`, or whose
+staged tree doesn't exist yet, is reported as `pending` and exits 2 rather
+than failing obscurely.
 
-For the SQL adapters the path may hold several dumps — warosu ships one per
-board — and each is ingested in turn under the same source.
+The staged layout is one file per board, so the `sql` path holds several
+dumps and each is ingested in turn under the same source. That is also what a
+future board filter needs: emitting a subset means simply not writing the
+other files.
 
 ## Staging pipeline
 
@@ -211,9 +222,11 @@ Its counts are raw per-archive contributions — `boards` can therefore
 double-count a post held by two archives, where `list boards` dedupes by
 scanning.
 
-Ingesting straight off the SFTP mount works but pays a round-trip per thread
-file; for the json-api sources it's much faster to stage the extracted data on
-local disk and point `ingest.path` there.
+The NFS mount is for seeing which sources exist, not for working with them:
+every real file operation should go through the runner over SSH so it runs on
+the archive host. Reading a directory with a lot of files in it is on its own
+enough to bring the NAS down — which is why the thread trees are converted to
+one NDJSON file per board during `prepare` rather than walked at ingest.
 
 The `list sources` post count is each archive's raw contribution, so when
 archives overlap its TOTAL can exceed the deduped `list sites` total.
@@ -224,17 +237,23 @@ containing the phrase (a `phraseto_tsquery` match against `search_vector` —
 whole-token, case-insensitive). No dedup step is needed: `posts` holds one row
 per post.
 
-### fuuka-sql notes
+### sql notes
 
 - Asagi/Fuuka store `timestamp` shifted to America/New_York wall time
-  ("4chan time"); the adapter converts back to true UTC on ingest
+  ("4chan time"); the reader converts back to true UTC on ingest
   (verified against the UTC milliseconds embedded in `preview_orig`
-  media filenames).
+  media filenames). **NDJSON is the opposite** — `timestamp` there is already
+  true UTC, normalised during `prepare`.
 - Ghost posts (`subnum != 0` — archive-site replies, not real 4chan
   posts) are skipped.
-- Asagi side tables (`x_threads`, `x_images`, `x_daily`, `x_users`) are
-  recognized by their columns and skipped; `x_deleted` posts ingest under
-  board `x`.
+- Which tables hold posts is decided by the columns they declare, so Asagi
+  side tables (`x_threads`, `x_images`, `x_daily`, `x_users`) and an archive's
+  own administrative tables are dropped during `prepare`; `x_deleted` posts
+  stage under board `x`.
+- Original-Fuuka dumps (warosu, installgentoo, rbt-asia) are renamed to Asagi
+  column names in the CREATE TABLE header during `prepare`. Those dumps carry
+  no INSERT column list, so tuple order follows the table definition and the
+  data rows are copied through untouched.
 
 ## Format families still to wire up
 

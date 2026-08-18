@@ -576,7 +576,11 @@ export const listManifestIds = (projectRoot: string): string[] => {
       }
       continue;
     }
-    if (e.name.endsWith('.json')) {
+    // sources/ also holds tooling that is not a source: tsconfig.json for
+    // the payloads, and _payloads/ itself (skipped above, having no
+    // manifest.json). Without this the registry lists a manifest called
+    // "tsconfig" and reports it as an error on every run.
+    if (e.name.endsWith('.json') && e.name !== 'tsconfig.json') {
       ids.push(basename(e.name, '.json'));
     }
   }

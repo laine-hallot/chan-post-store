@@ -88,10 +88,62 @@ evidence in `source.capture`, including how far the survey actually went
 
 ### The staging pipeline
 
-`source/` → `extracted/` → `out/`, all under the manifest's `dir`.
-`download` fills the first, `prepare` produces the rest, `ingest` reads `out/`.
-Sources stop at different stages, which is why `ingest.path` is explicit
-rather than derived.
+`source/` → `extracted/` → `out*/`, all under the manifest's `dir`.
+`download` fills the first, `prepare` produces the rest, `ingest` reads
+whatever `ingest.path` names. Sources stop at different stages, and a source
+can produce more than one staged tree, which is why `ingest.path` is explicit
+rather than derived — `fybertech` writes `out/` (its raw pages), `out-ndjson/`
+(what `json` reads) and `out-native/` (what `html` reads, via its companion
+manifest).
+
+**`prepare` is where every format quirk is dealt with.** The three readers
+each know one shape; anything else about a source is normalised here. A step
+is one of four kinds:
+
+| kind | runs | for |
+| --- | --- | --- |
+| `run` | on the target, through the runner | unpacking, decompressing, hardlinking |
+| `local:` prefix | on THIS machine | work needing this CLI (`warc-extract`) |
+| builtin (`sql-normalize`, `stage-html`, `reconcile-boards`) | generated script, through the runner | staging that needs logic but not a parser |
+| `payload` | this repo's code, uploaded and run ON the target | staging that needs a real parser |
+
+`prepareOutput` (default `out`) is the path whose existence means prepare has
+already run, so a source writing `out-ndjson/` must say so or `--force` is
+needed every time.
+
+### Payload prepare steps
+
+Some staging cannot be a shell one-liner — turning 26,000 saved pages in three
+markup generations into NDJSON needs a parser. The NAS has **no node, no
+python, and docker only for root**, and doing the work from this machine would
+mean walking the tree over the NFS mount. So the code goes to the data:
+
+```
+sources/_payloads/<name>/          shared by several sources
+sources/<id>/manifest.json         the directory form, for bespoke code
+sources/<id>/payload/
+```
+
+The directory named by a step's `payload.dir` (or the source's own `payload/`)
+is uploaded and executed on the target.
+
+- **A payload may not import anything from this repo.** It is self-contained
+  by construction: `node:` builtins and its own siblings only. Shared helpers
+  are therefore COPIES, and `node-html-parser` is vendored as its
+  self-contained UMD bundle. That duplication is the cost of the design and
+  the reason payloads are the exception.
+- **No bundler and no build step.** Node 24 strips TypeScript types natively,
+  so a payload ships as the `.ts` a person reads. The same "no syntax that
+  emits code" rule applies — no enums, no namespaces, no constructor parameter
+  properties. `sources/tsconfig.json` typechecks them anyway, since a payload
+  runs unattended.
+- **The vendored bundle must be `.cjs`.** This repo is `"type": "module"`, so
+  a `.js` UMD file is read as ESM and hands back an empty namespace — silently.
+- **The runtime is fetched BY THE TARGET.** Node is ~110MB and the NAS has
+  working HTTPS, so it curls the official tarball once into a shared
+  `.chan-runtime/`. Nothing large crosses SSH. `prepare-runtime` does it
+  deliberately; the first payload step does it automatically. The version is
+  pinned so a re-run cannot silently change runtimes.
 
 ### The runner abstraction
 
@@ -171,150 +223,120 @@ reconciles with `COUNT(*) FROM posts`. Since `posts` holds one row per post,
 these counts do not double-count across archives; `source_id` attributes each
 post to whichever archive supplied it first.
 
-### Adapters
+### Three ingest cases
 
-One per archive format in `packages/cli/src/adapters/`, sharing only low-level helpers
-(`packages/cli/src/ingest.ts` `PostInserter`, `packages/cli/src/mysqldump.ts` tuple parsing). Keep them
-separate even when formats look similar.
+`packages/cli/src/adapters/` holds exactly three readers, and each reads ONE
+shape. Anything a source does differently is dealt with in `prepare`.
 
-`packages/cli/src/mysqldump.ts` also holds the Fuuka-family timestamp fix: Asagi/Fuuka
-store `timestamp` as America/New_York wall time, not UTC, so it is converted
-back on ingest.
+| case | staged layout | what it reads |
+| --- | --- | --- |
+| `sql` | `out/<board>.sql` | an Asagi post table named for its board, plus its `<board>_deleted` companion |
+| `json` | `out/<board>/posts.ndjson` | one JSON record per line, Asagi field names |
+| `html` | `out/<board>/<name>.html` | 4chan's own served markup |
+
+There were seven adapters. The collapse was possible because their
+differences were mostly not differences of *reading*: `fuuka-sql` vs
+`warosu-sql` was a column signature and four field expressions,
+`desuarchive-sql`'s reader was already a strict superset of `fuuka-sql`'s,
+and the two HTML readers ran over the same trees skipping each other's files.
+
+**The formats are a contract, not a description.** Two parts of it cannot be
+inferred from the data and must be preserved by whatever writes the staged
+files:
+
+- **`sql` timestamps are America/New_York wall time; NDJSON timestamps are
+  true UTC.** This is measured, not assumed, and the same producer ships both:
+  Desuarchive's 2019 mysqldump exports are NY wall time while its NDJSON
+  export is UTC. `prepare` normalises on the way out so no reader converts.
+- **A `json` record's numbers are numbers**, its `board` is a slug, and
+  `media_filename`/`media_hash` are top level. Desuarchive's export is
+  Asagi-shaped and still fails all three (`"num":"1"`, `board` is
+  `{name, shortname}`, media is nested), which is why it gets a converter
+  rather than the reader getting a second shape.
+
+**Never judge an ingest by exit code.** Pointed at a dialect it cannot read, a
+reader reports zero tables and zero posts and exits 0 — indistinguishable from
+a source whose posts were all already present. Check the post count, the OP
+count and the timestamp nulls. Assert on ZERO, not on a percentage: "timestamps
+parsed for nearly all" once passed at 5.4% missing.
+
+#### Splitting lines is not `readline`
+
+**Node's `readline` breaks on U+2028 LINE SEPARATOR, U+2029 PARAGRAPH
+SEPARATOR and a lone `\r` as well as on `\n`, and 4chan post bodies contain
+all three.** Every line-oriented reader here uses `lines.ts` `readLines`,
+which splits on `\n` and nothing else.
+
+This was measured, not anticipated. One `/a/` comment in laza-4chan-archive
+carries a literal U+2028; `readline` returned that 1,042,290-character INSERT
+as a 69,840-character fragment, and the old reader parsed 260 of its 3,873
+tuples, threw "unterminated string", counted ONE bad line and dropped the
+other 3,613 posts. 0.33% of a 300MB slice, gone with exit code 0.
+
+It applies to NDJSON too, for a reason that is easy to miss: `JSON.stringify`
+escapes `\n` and `\r` but leaves **U+2028 raw** in its output. Framing is
+safe only because the reader splits on `\n` alone.
+
+`awk` is safe here — its record separator really is `\n` — which is why the
+staging steps that route SQL by line can be shell.
+
+#### What `prepare` has to know
+
+Everything format-specific that is not one of the three shapes above:
+
+- **Original-Fuuka SQL is renamed to Asagi in the CREATE TABLE header.** Those
+  dumps carry no INSERT column list, so tuple order follows the table
+  definition and rewriting the header remaps every field without touching a
+  data row. The substitutions are a 2-cycle and their order matters: both
+  schemas have a `media_filename` and disagree about what it means, so the
+  incumbent moves to `media_orig` before `media` takes the name. `parent`
+  becomes `thread_num` but its VALUES are not rewritten — Fuuka stores 0 for
+  an OP where Asagi stores the OP's own number, and the reader normalises
+  `0 -> num`, which is what makes a header-only edit sufficient.
+- **Which tables are boards is decided by the columns they declare**, the same
+  test the reader applies — not by a list of known side-table names.
+  installgentoo ships `banlist`, `modlog`, `reports`, `staff` and
+  `loginattempts` next to its three boards, and a name-based rule duly wrote
+  five bogus board files.
+- **A crawl can mix markup families in one directory.** fybertech's 638 thread
+  pages are 420 classic Futaba, 197 in its own later template and 20 in
+  4chan's own; the yotsubasociety mirror is ~85%/~10%. `stage-html` pulls the
+  native ones out; `html-to-ndjson` parses the rest.
+- **Board and thread come from the staged path, not from guesswork.** The
+  `html` reader takes the board from the directory, and treats a filename that
+  is digits IN FULL as asserting the thread number. Any other name defers to
+  the markup, where each OP carries its own. The previous rule — leading
+  digits of the filename — read the YEAR out of
+  4chan-vp-2015-threads' `<date>_<threadno>.html` and filed 859,937 posts
+  under a nonexistent thread 2015.
+- **The two pre-Fuuka archives need a join.** 4archive and chanarchive store
+  one flat `posts` table pointing into `threads`, so a post row cannot say
+  what board it is from. `posts-threads-to-ndjson` resolves it. `threads` is
+  one contiguous block at the END of both dumps, so it scans BACKWARDS to find
+  it and builds the index without touching the rest — `posts` is then streamed
+  once rather than the file being read twice.
 
 **Not every board in an archive is a board of the site it claims.** Three
-kinds turn up: the archive's *own* discussion board (Desuarchive's `meta`),
-*other imageboards* a broad crawl swept in (`may.not4chan.org`,
-`orly.yi.org`), and *parse artifacts* that were never boards — collection
-titles read into the board column (`bay of pigs`, `law and order hack`) or
-bare numbers (`7898`).
-
-`ingest.exclude-boards` in a manifest drops them, and `packages/cli/src/boards.ts`
-(`makeBoardFilter`) is the shared matcher. **The enforcement is in the
-adapters, deliberately, not in one central whitelist.** A canonical
-board-list-per-site catches only the third kind: it asks "is this board valid
-for site X", but the defect in the first kind is the *site attribution
-itself*, and an archive's own board named `meta` or `qa` is a perfectly valid
-4chan board name that any name-keyed check waves through. Only the adapter
-knows how it derived the board — table name, thread URL, or markup — and
-therefore whether the site label can be trusted.
-
-Where the check goes matters for cost and for honesty:
-
-- SQL adapters reject at `CREATE TABLE`/INSERT-header time, so an excluded
-  board is never tuple-parsed.
-- `posts-threads-sql` resolves it inside `ThreadIndex` at *label intern* time
-  — once per distinct `(site, board)` rather than once per post — and the
-  excluded thread **stays in the index**. Dropping it instead would make its
-  posts indistinguishable from genuine orphans, and `noThread` is a real
-  diagnostic (3.0% on the ten-billion archive) that must not absorb rows we
-  chose to discard. Verified: `noThread` is 290,171 on 4archive whether `/b/`
-  is excluded or not.
-- Every adapter folds the exclusion tally into its final line. A filter that
-  discards silently is the same failure mode as a parser that returns zero —
-  an ingest that exits 0 having stored less than it should looks exactly like
-  one with nothing left to store.
-
-The reject-lists are per-source because the boards are: work out what an
-archive actually hosted before adding names, and prefer re-attributing a
-site-local board (`ingest.site`) over deleting real posts.
-
-**A mysqldump is not a format — the producing tool matters more than the
-schema.** `desuarchive-sql` exists because the 2019 Desuarchive/RBT dumps have
-the *same Asagi schema* `fuuka-sql` already reads, and are still unreadable by
-it. They were written by `mysqlchump`, not mysqldump, which differs in four
-ways, each independently fatal:
-
-- `CREATE TABLE IF NOT EXISTS` — a pattern anchored on the plain form never
-  registers the table.
-- an explicit INSERT column list that **omits** columns the CREATE TABLE
-  declares, so table order is not tuple order.
-- values separated by `, ` rather than `,`. This one is the nastiest: a parser
-  testing `line[i] === "'"` never sees the opening quote, treats the string as
-  a bare value, and every comma *inside a comment* becomes a field separator.
-  Silent corruption, not an error.
-- **statements spanning many lines**, because comments carry literal
-  unescaped newlines. Tuple extent is only knowable with quote state carried
-  across lines (`takeCompleteTuples`), and a continuation line can itself
-  start with `(`, so line-wise reading parses fragments of prose as rows —
-  4.2% of "rows" in a sample slice.
-
-Every one of those failed *silently*. Pointed at these dumps `fuuka-sql`
-reported `0 posts from tables []`, and after a partial fix `0 posts from
-tables [g]` — a table accepted, yielding nothing, indistinguishable from a
-source whose posts were all already present. **Never judge an SQL ingest by
-exit code; check the post count, the OP count and the timestamp nulls.** OPs
-were 0 and multi-line bodies were 0 for a while after the rows started
-landing, both from the same `, ` bug.
-
-`chan-html` reads pages in 4chan's *own* markup — what whole-page archivers
-(perma.cc, Wayback) capture. Three things about that format:
-
-- Every post carries `data-utc`, a true epoch, so no timezone conversion.
-  Rendered third-party archives generally do not: fybertech prints
-  `04/08/08(Tue)03:16`, New-York wall time with no seconds, and needs
-  `nyWallToUtc` like the SQL adapters.
-- **The markup is emitted twice per post**, `postInfo desktop` and
-  `postInfoM mobile`. A document-wide scan for `dateTime` or `nameBlock`
-  double-counts everything; fields must be read within one `postContainer`.
-- OPs put `.file` *before* `postInfo`, replies *after*, so nothing may depend
-  on field order.
-
-A rendered third-party archive is a different family and needs its own
-adapter, even when it is also "HTML of a 4chan thread". `fybertech-html` is
-that case: no `data-utc`, so its displayed `04/08/08(Tue)03:16` goes through
-`nyWallToUtc`, and pre-2013 pages show no seconds (recorded as `:00`, never
-guessed).
-
-**One crawl can hold several markup generations.** fybertech's 638 pages are
-420 classic (`td.reply`, OP loose at body level), 197 later (`div.post`), and
-20 in 4chan's *own* markup. Two habits follow:
-
-- Survey the whole tree before writing the parser, not one file. A single
-  sampled page missed two of those three variants, and within the classic one
-  some pages wrap the date in `span.posttime` while others leave it a bare text
-  node — that difference alone silently nulled 7834 timestamps (5.4%).
-  Not every page even has a `<body>` element.
-- **Each adapter skips what belongs to the other**, so one staged directory can
-  feed both (`fybertech` + `fybertech-native` point at the same `out/`).
-  `chan-html` skips pages with no `.postContainer`; `fybertech-html` skips
-  pages that have one.
-
-Assert on zero, not on a percentage: "timestamps parsed for nearly all" passed
-at 5.4% missing. Every fybertech post displays a date, so any null is a parse
-gap, and the test now demands none.
+kinds turn up: the archive's *own* discussion board (Desuarchive's and
+archive.alice.al's `meta`), *other imageboards* a broad crawl swept in
+(`may.not4chan.org`, `orly.yi.org`), and *parse artifacts* that were never
+boards. `ingest.exclude-boards` drops them at ingest and
+`packages/cli/src/boards.ts` is the shared matcher; a converter that knows
+the distinction (chanarchive's per-thread host) drops them at prepare instead
+and reports the count separately, since `noThread` is a real diagnostic that
+must not absorb rows we chose to discard.
 
 `posts` is keyed `UNIQUE (site, board, post_no)` — one row per post, not one
-per (post, archive). Ingest is therefore idempotent both ways: re-running a
-source skips what it already contributed, and a source holding a post another
-archive already supplied adds nothing. `source_id` records which archive got
-there first.
+per (post, archive). Ingest is therefore idempotent both ways, and **queries
+need no dedup logic**. Two consequences worth remembering: archive overlap is
+not answerable from the database (infer it by diffing the source datasets),
+and when two sources hold the same post the FIRST writer wins and the loser's
+row is discarded rather than merged — so prefer the fuller source first where
+a capture abbreviates bodies (4chan's board index truncates long comments).
 
-This means **queries need no dedup logic** — a plain `COUNT(*)` is correct.
-The store previously kept a copy per archive, and on the current corpus 34.8%
-of rows (197M of 566M) were such copies, silently multiplying every
-aggregate. `dedupe` migrates a store built under the old constraint.
-
-The cost is that archive overlap is no longer answerable from the database.
-That is deliberate: infer it by diffing the source datasets, which reflects
-what each archive actually contains rather than ingest order.
-
-**Order does not affect coverage — every source is always worth ingesting.**
-Each adapter scans every post in every page it is fed, and the constraint
-rejects only post numbers already stored, so a partial capture never blocks a
-fuller one: ingesting a truncated board index and then the full thread stores
-all of the thread's posts, and so does the reverse. Missing replies get filled
-in whenever the source that has them arrives.
-
-What order *does* decide is which **copy** of a post is kept, for posts that
-appear in more than one source — first writer wins, and the loser's row is
-discarded rather than merged. That only matters where two sources disagree
-about the same post: if a format truncates the post *body* (4chan's board
-index abbreviates long comments with a "Comment too long" marker), the copy
-stored first is the copy you keep. So prefer the fuller source first when a
-capture abbreviates bodies, and otherwise ignore order.
-
-`source.capture` is where "what did this capture actually contain" is
-recorded; `perma_cc_x9pp-ycvx` is the worked example.
+**Order does not otherwise affect coverage.** Each reader scans every post it
+is fed and the constraint rejects only post numbers already stored, so a
+partial capture never blocks a fuller one.
 
 ## Working with archive.org sources
 
@@ -481,10 +503,19 @@ this file said before.
   copy) for staging rather than symlinks: `ingestInputs` globs real files, and
   symlinks break when the tree is read over a different mount.
 - A step prefixed `local:` runs on this machine rather than the target, for
-  work needing Node (the NAS has none). It gets `$PROJECT` (repo root), `$CLI`
-  (absolute path to cli.ts), `$DIR` (dataset dir as the target sees it) and
-  `$TARGET` (flags reproducing the current runner). Use `$CLI` rather than
-  spelling out the package path, so manifests survive the code moving.
+  work needing this CLI. It gets `$PROJECT` (repo root), `$CLI` (absolute path
+  to cli.ts), `$DIR` (dataset dir as the target sees it) and `$TARGET` (flags
+  reproducing the current runner). Use `$CLI` rather than spelling out the
+  package path, so manifests survive the code moving.
+  **A `local:` step's shell runs HERE, so `$DIR` is a path it cannot see.**
+  fybertech guarded its WARC fallback with `ls "$DIR/out"/*.html`, which could
+  never succeed against a NAS path, so every `--force` run fell through to
+  WARC extraction and then died trying to `toString()` a >512MB buffer. Test
+  the target's filesystem in a `run` step, never a `local:` one.
+- **Killing a local `prepare` does not stop the remote work.** The command is
+  reparented to init and carries on; a `--force` re-run started while an
+  orphan is still writing will `rm -rf out` underneath it. Check with `pgrep`
+  on the target before re-running a long step.
 - `list manifests` `s/e/o` column shows which stage dirs are non-empty — the
   quickest way to see where a source actually is.
 - Record non-obvious facts about a source in `source.capture` (free text, not
