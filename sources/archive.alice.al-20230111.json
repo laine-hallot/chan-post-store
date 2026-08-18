@@ -23,7 +23,8 @@
   "ingest": {
     "adapter": "sql",
     "path": "Memetic Sociology/Datasets/4chan/archive.alice.al-20230111/out",
-    "site": "4chan"
+    "site": "4chan",
+    "exclude-boards": ["meta"]
   },
   "files": {
     "source": "./source",
