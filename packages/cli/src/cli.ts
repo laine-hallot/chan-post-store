@@ -13,7 +13,7 @@ import { gunzipSync } from 'node:zlib';
 
 import { ingestFybertechHtml } from './adapters/fybertech-html.ts';
 import { ingestHtml } from './adapters/html.ts';
-import { ingestJsonApi } from './adapters/json-api.ts';
+import { ingestJson } from './adapters/json.ts';
 import { ingestPostsThreadsSql } from './adapters/posts-threads-sql.ts';
 import { ingestSql } from './adapters/sql.ts';
 import {
@@ -409,8 +409,8 @@ const ingestOne = async (
 ): Promise<{ posts: number; summary: string }> => {
   const t0 = Date.now();
 
-  if (manifest.adapter === 'json-api') {
-    const stats = await ingestJsonApi(db, {
+  if (manifest.adapter === 'json') {
+    const stats = await ingestJson(db, {
       root: inputs[0],
       sourceId,
       site: manifest.site,
@@ -421,8 +421,9 @@ const ingestOne = async (
     return {
       posts: stats.posts,
       summary:
-        `ingested ${stats.posts} posts from ${stats.threads} threads in ${secs}s` +
-        ` (${stats.skippedPosts} posts already present/skipped, ${stats.badFiles} unreadable files)`,
+        `ingested ${stats.posts} posts from ${stats.boards} board(s) in ${secs}s` +
+        ` (${stats.skippedDup} already present, ${stats.skippedGhost} ghost,` +
+        ` ${stats.badLines} unparsable line(s))`,
     };
   } else if (manifest.adapter === 'html') {
     const stats = await ingestHtml(db, {

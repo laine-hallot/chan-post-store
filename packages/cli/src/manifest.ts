@@ -12,7 +12,7 @@ import { basename, dirname, join, resolve } from 'node:path';
 import { SOURCES_DIR } from './paths.ts';
 
 export const ADAPTERS = [
-  'json-api',
+  'json',
   'sql',
   'posts-threads-sql',
   'html',
@@ -600,7 +600,7 @@ export const ingestInputs = (m: Manifest): Result<string[], ManifestError> => {
   // Directory-walking adapters take the root itself; they find their own files
   // (thread JSON, saved pages) rather than being handed a glob.
   if (
-    m.adapter === 'json-api' ||
+    m.adapter === 'json' ||
     m.adapter === 'html' ||
     m.adapter === 'fybertech-html'
   ) {

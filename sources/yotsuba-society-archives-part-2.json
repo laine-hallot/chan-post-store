@@ -18,7 +18,7 @@
     }
   ],
   "ingest": {
-    "adapter": "json-api",
+    "adapter": "json",
     "path": "Memetic Sociology/Datasets/4chan/yotsuba-society-archives-part-2/out",
     "site": "4chan"
   },

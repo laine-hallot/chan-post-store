@@ -4,12 +4,12 @@ import { createReadStream } from 'node:fs';
 
 import { makeBoardFilter } from '../boards.ts';
 import { collectPending, PostInserter } from '../ingest.ts';
+import { readLines } from '../lines.ts';
 import {
   CREATE_TABLE_RE,
   insertColumns,
   nyWallToUtc,
   parseTuples,
-  readLines,
   takeCompleteTuples,
 } from '../mysqldump.ts';
 import { makeBar } from '../progress.ts';

@@ -18,7 +18,7 @@
     }
   ],
   "ingest": {
-    "adapter": "json-api",
+    "adapter": "json",
     "path": "Memetic Sociology/Datasets/4chan/4chan-wsr-archive-jan62016/out",
     "site": "4chan"
   },

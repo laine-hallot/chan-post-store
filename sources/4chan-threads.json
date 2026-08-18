@@ -21,7 +21,7 @@
     }
   ],
   "ingest": {
-    "adapter": "json-api",
+    "adapter": "json",
     "path": "Memetic Sociology/Datasets/4chan/4chan threads/4chan threads",
     "site": "4chan"
   },

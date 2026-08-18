@@ -32,8 +32,8 @@
     }
   ],
   "ingest": {
-    "adapter": "fybertech-html",
-    "path": "Memetic Sociology/Datasets/4chan/fybertech/out",
+    "adapter": "json",
+    "path": "Memetic Sociology/Datasets/4chan/fybertech/out-ndjson",
     "site": "4chan"
   },
   "files": {

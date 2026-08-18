@@ -5,12 +5,12 @@ import { createReadStream } from 'node:fs';
 import { type BoardFilter, makeBoardFilter } from '../boards.ts';
 import { stripHtml } from '../html.ts';
 import { collectPending, PostInserter } from '../ingest.ts';
+import { readLines } from '../lines.ts';
 import {
   CREATE_TABLE_RE,
   insertColumns,
   nyWallToUtc,
   parseTuples,
-  readLines,
   takeCompleteTuples,
 } from '../mysqldump.ts';
 import { makeBar } from '../progress.ts';
