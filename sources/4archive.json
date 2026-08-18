@@ -18,11 +18,19 @@
     {
       "name": "stage for ingest",
       "run": "mkdir -p out && (cp -al extracted/4archive_dump.sql out/ 2>/dev/null || cp -a extracted/4archive_dump.sql out/)"
+    },
+    {
+      "name": "join posts to threads into out-ndjson/<board>/posts.ndjson",
+      "payload": {
+        "dir": "_payloads/posts-threads-to-ndjson",
+        "entry": "posts-threads-to-ndjson.ts",
+        "args": ["--from", "out/4archive_dump.sql", "--to", "out-ndjson"]
+      }
     }
   ],
   "ingest": {
-    "adapter": "posts-threads-sql",
-    "path": "Memetic Sociology/Datasets/4chan/4archive/out",
+    "adapter": "json",
+    "path": "Memetic Sociology/Datasets/4chan/4archive/out-ndjson",
     "site": "4chan"
   },
   "files": {
@@ -35,5 +43,6 @@
       "path": "./out",
       "script": ""
     }
-  }
+  },
+  "prepareOutput": "out-ndjson"
 }

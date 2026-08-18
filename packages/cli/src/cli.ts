@@ -11,10 +11,8 @@ import { join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gunzipSync } from 'node:zlib';
 
-import { ingestFybertechHtml } from './adapters/fybertech-html.ts';
 import { ingestHtml } from './adapters/html.ts';
 import { ingestJson } from './adapters/json.ts';
-import { ingestPostsThreadsSql } from './adapters/posts-threads-sql.ts';
 import { ingestSql } from './adapters/sql.ts';
 import {
   downloadItem,
@@ -344,26 +342,6 @@ const cmdWarcExtract = async (o: WarcExtractArgs): Promise<void> => {
 };
 
 /**
- * The two file-per-input adapters. Both stream one `.sql` file per call and
- * take the same options, so `ingestOne` loops inputs identically for either.
- *
- * There is deliberately no fallback entry: an adapter name that reaches here
- * without a mapping is a programming error, and the previous
- * `?? ingestWarosuSql` default meant any such name silently ran the warosu
- * reader -- which, on a dialect it cannot parse, reports zero posts and exits
- * 0. Exhaustiveness is checked at the call site instead.
- */
-// The value type is a union rather than one signature: each adapter declares
-// its own `IngestStats` with its own diagnostic counters, and the call site
-// reads only the fields they share.
-const SQL_INGESTERS: Partial<
-  Record<Adapter, typeof ingestSql | typeof ingestPostsThreadsSql>
-> = {
-  sql: ingestSql,
-  'posts-threads-sql': ingestPostsThreadsSql,
-};
-
-/**
  * Installs the runtime that payload prepare steps execute under.
  *
  * Exposed as its own command so it can be done deliberately -- it fetches
@@ -443,31 +421,7 @@ const ingestOne = async (
         ` (${stats.skippedDup} already present, ${stats.badFiles} unreadable` +
         ` or not in 4chan's own markup)`,
     };
-  } else if (manifest.adapter === 'fybertech-html') {
-    const stats = await ingestFybertechHtml(db, {
-      root: inputs[0],
-      sourceId,
-      site: manifest.site,
-      boards,
-      excludeBoards: manifest.excludeBoards,
-    });
-    const secs = ((Date.now() - t0) / 1000).toFixed(1);
-    return {
-      posts: stats.posts,
-      summary:
-        `ingested ${stats.posts} posts from ${stats.files} thread page(s) in ${secs}s` +
-        ` (${stats.skippedDup} already present, ${stats.badFiles} with no posts,` +
-        ` ${stats.skippedNative} in 4chan's own markup — ingest those with chan-html)`,
-    };
   } else {
-    const ingest = SQL_INGESTERS[manifest.adapter];
-    if (!ingest) {
-      // Unreachable via the manifest parser, which validates against ADAPTERS.
-      // Loud rather than defaulted: the old fallback ran the warosu reader for
-      // any unmapped name, and that reader exits 0 having stored nothing when
-      // it cannot parse the dialect.
-      throw new Error(`no ingester mapped for adapter '${manifest.adapter}'`);
-    }
     let posts = 0;
     const tables: string[] = [];
     for (const file of inputs) {
@@ -477,7 +431,7 @@ const ingestOne = async (
       if (inputs.length > 1) {
         console.log(`  ${file}`);
       }
-      const stats = await ingest(db, {
+      const stats = await ingestSql(db, {
         file,
         sourceId,
         site: manifest.site,

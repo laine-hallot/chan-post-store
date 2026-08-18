@@ -11,13 +11,7 @@ import { basename, dirname, join, resolve } from 'node:path';
 
 import { SOURCES_DIR } from './paths.ts';
 
-export const ADAPTERS = [
-  'json',
-  'sql',
-  'posts-threads-sql',
-  'html',
-  'fybertech-html',
-] as const;
+export const ADAPTERS = ['sql', 'json', 'html'] as const;
 export type Adapter = (typeof ADAPTERS)[number];
 
 export interface Manifest {
@@ -605,11 +599,7 @@ export const ingestInputs = (m: Manifest): Result<string[], ManifestError> => {
 
   // Directory-walking adapters take the root itself; they find their own files
   // (thread JSON, saved pages) rather than being handed a glob.
-  if (
-    m.adapter === 'json' ||
-    m.adapter === 'html' ||
-    m.adapter === 'fybertech-html'
-  ) {
+  if (m.adapter === 'json' || m.adapter === 'html') {
     if (!statSync(m.path).isDirectory()) {
       return bad(m.file, `ingest.path must be a directory for ${m.adapter}`);
     }
