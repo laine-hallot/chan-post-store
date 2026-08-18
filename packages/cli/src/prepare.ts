@@ -45,6 +45,8 @@ export interface PrepareOptions {
   payloadDir?: string;
   /** Datasets root as the runner sees it, where the shared runtime lives. */
   datasetsRoot?: string;
+  /** `sources/` on THIS machine, for resolving a shared payload directory. */
+  sourcesDir?: string;
 }
 
 /**
@@ -219,11 +221,17 @@ export const runPrepare = async (
         n++;
         continue;
       }
-      if (!opts.payloadDir || !opts.datasetsRoot) {
+      // A shared payload under sources/, or this source's own payload/.
+      const local =
+        c.dir && opts.sourcesDir
+          ? join(opts.sourcesDir, c.dir)
+          : opts.payloadDir;
+      if (!local || !opts.datasetsRoot) {
         return Result.err(
           new Error(
-            `prepare step "${step.name}" is a payload step, but this source has no payload/\n` +
-              `  move it to sources/${info.id}/manifest.json with a payload/ beside it`
+            `prepare step "${step.name}" is a payload step with nowhere to load from\n` +
+              `  set "dir" to a shared payload under sources/, or move this source to\n` +
+              `  sources/${info.id}/manifest.json with a payload/ beside it`
           )
         );
       }
@@ -231,7 +239,7 @@ export const runPrepare = async (
         runner,
         dir,
         opts.datasetsRoot,
-        opts.payloadDir,
+        local,
         c,
         step.name
       );

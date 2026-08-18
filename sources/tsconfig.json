@@ -7,5 +7,5 @@
   "compilerOptions": {
     "tsBuildInfoFile": "./tsconfig.tsbuildinfo"
   },
-  "include": ["*/payload/**/*.ts"]
+  "include": ["_payloads/*/**/*.ts", "*/payload/**/*.ts"]
 }

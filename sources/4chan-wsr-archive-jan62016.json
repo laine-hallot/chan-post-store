@@ -15,11 +15,19 @@
     {
       "name": "stage the thread tree for ingest",
       "run": "rm -rf out && src=extracted && [ -d extracted/archive/4chan ] && src=extracted/archive/4chan; (cp -al \"$src\" out 2>/dev/null || cp -a \"$src\" out)"
+    },
+    {
+      "name": "convert the thread dumps to out-ndjson/<board>/posts.ndjson",
+      "payload": {
+        "dir": "_payloads/threads-json-to-ndjson",
+        "entry": "threads-json-to-ndjson.ts",
+        "args": ["--from", "out", "--to", "out-ndjson"]
+      }
     }
   ],
   "ingest": {
     "adapter": "json",
-    "path": "Memetic Sociology/Datasets/4chan/4chan-wsr-archive-jan62016/out",
+    "path": "Memetic Sociology/Datasets/4chan/4chan-wsr-archive-jan62016/out-ndjson",
     "site": "4chan"
   },
   "files": {
@@ -32,5 +40,6 @@
       "path": "./out",
       "script": ""
     }
-  }
+  },
+  "prepareOutput": "out-ndjson"
 }

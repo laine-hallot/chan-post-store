@@ -22,11 +22,19 @@
         "root": "out/4chan",
         "boards-from": "4chan-board-lifespans.json"
       }
+    },
+    {
+      "name": "parse the classic pages into out-ndjson/<board>/posts.ndjson",
+      "payload": {
+        "dir": "_payloads/html-to-ndjson",
+        "entry": "html-to-ndjson.ts",
+        "args": ["--from", "out/4chan", "--to", "out-ndjson"]
+      }
     }
   ],
   "ingest": {
-    "adapter": "fybertech-html",
-    "path": "Memetic Sociology/Datasets/4chan/archives-yotsubasociety-org/out/4chan",
+    "adapter": "json",
+    "path": "Memetic Sociology/Datasets/4chan/archives-yotsubasociety-org/out-ndjson",
     "site": "4chan"
   },
   "files": {
@@ -39,5 +47,6 @@
       "path": "./out",
       "script": ""
     }
-  }
+  },
+  "prepareOutput": "out-ndjson"
 }

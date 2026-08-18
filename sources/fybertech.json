@@ -27,7 +27,8 @@
       "name": "parse the rendered pages into out-ndjson/<board>/posts.ndjson",
       "payload": {
         "entry": "html-to-ndjson.ts",
-        "args": ["--from", "out", "--to", "out-ndjson"]
+        "args": ["--from", "out", "--to", "out-ndjson"],
+        "dir": "_payloads/html-to-ndjson"
       }
     }
   ],

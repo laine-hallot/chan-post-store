@@ -246,6 +246,7 @@ const cmdPrepare = async (o: PrepareArgs): Promise<void> => {
       localDir: join(PROJECT_ROOT, info.dir),
       projectRoot: PROJECT_ROOT,
       payloadDir: payloadDir(manifestPath(id, PROJECT_ROOT)),
+      sourcesDir: join(PROJECT_ROOT, SOURCES_DIR),
       // The runtime is shared across sources, so it sits beside the datasets
       // rather than inside any one of them.
       datasetsRoot: runner.rootIsDatasets

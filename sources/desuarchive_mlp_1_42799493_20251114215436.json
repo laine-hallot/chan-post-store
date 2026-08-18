@@ -15,11 +15,19 @@
     {
       "name": "stage the ndjson for ingest",
       "run": "mkdir -p out && find extracted -name '*.ndjson' -exec sh -c 'cp -al \"$1\" out/ 2>/dev/null || cp -a \"$1\" out/' _ {} ';'"
+    },
+    {
+      "name": "normalise the export into out-ndjson/<board>/posts.ndjson",
+      "payload": {
+        "dir": "_payloads/asagi-export-to-ndjson",
+        "entry": "asagi-export-to-ndjson.ts",
+        "args": ["--from", "out/base_1_42799493.ndjson", "--to", "out-ndjson"]
+      }
     }
   ],
   "ingest": {
-    "adapter": null,
-    "path": "Memetic Sociology/Datasets/4chan/desuarchive_mlp_1_42799493_20251114215436/out",
+    "adapter": "json",
+    "path": "Memetic Sociology/Datasets/4chan/desuarchive_mlp_1_42799493_20251114215436/out-ndjson",
     "site": "4chan"
   },
   "files": {
@@ -32,5 +40,6 @@
       "path": "./out",
       "script": ""
     }
-  }
+  },
+  "prepareOutput": "out-ndjson"
 }

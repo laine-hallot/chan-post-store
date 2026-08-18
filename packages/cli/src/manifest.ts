@@ -352,7 +352,7 @@ export const readSourceInfo = (
             `prepare[${i}] has "payload" alongside another kind; a step is one or the other`
           );
         }
-        const c = pl as { entry?: unknown; args?: unknown };
+        const c = pl as { entry?: unknown; args?: unknown; dir?: unknown };
         if (typeof c.entry !== 'string' || c.entry === '') {
           return bad(
             file,
@@ -371,7 +371,13 @@ export const readSourceInfo = (
             args.push(a);
           }
         }
-        steps.push({ name, payload: { entry: c.entry, args } });
+        if (c.dir != null && (typeof c.dir !== 'string' || c.dir === '')) {
+          return bad(file, `prepare[${i}]."payload".dir must be a string`);
+        }
+        steps.push({
+          name,
+          payload: { entry: c.entry, args, dir: c.dir as string | undefined },
+        });
         continue;
       }
 

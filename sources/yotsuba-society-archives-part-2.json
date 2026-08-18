@@ -15,11 +15,19 @@
     {
       "name": "stage the thread tree for ingest (dropping the 4chan/ prefix)",
       "run": "rm -rf out && src=extracted && [ -d extracted/4chan ] && src=extracted/4chan; (cp -al \"$src\" out 2>/dev/null || cp -a \"$src\" out)"
+    },
+    {
+      "name": "convert the thread dumps to out-ndjson/<board>/posts.ndjson",
+      "payload": {
+        "dir": "_payloads/threads-json-to-ndjson",
+        "entry": "threads-json-to-ndjson.ts",
+        "args": ["--from", "out", "--to", "out-ndjson"]
+      }
     }
   ],
   "ingest": {
     "adapter": "json",
-    "path": "Memetic Sociology/Datasets/4chan/yotsuba-society-archives-part-2/out",
+    "path": "Memetic Sociology/Datasets/4chan/yotsuba-society-archives-part-2/out-ndjson",
     "site": "4chan"
   },
   "files": {
@@ -32,5 +40,6 @@
       "path": "./out",
       "script": ""
     }
-  }
+  },
+  "prepareOutput": "out-ndjson"
 }

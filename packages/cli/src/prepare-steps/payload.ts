@@ -43,10 +43,23 @@ export const NODE_VERSION = 'v24.19.0';
 const RUNTIME_DIR = '.chan-runtime';
 
 export interface PayloadStep {
-  /** Entry file inside `payload/`, e.g. `html-to-ndjson.ts`. */
+  /** Entry file inside the payload directory, e.g. `html-to-ndjson.ts`. */
   entry: string;
   /** Arguments passed after the entry, expanded by the remote shell. */
   args: string[];
+  /**
+   * A shared payload under `sources/`, e.g. `_payloads/html-to-ndjson`.
+   * Omitted means this source's own `payload/`, which needs the directory
+   * form of the manifest.
+   *
+   * Sharing exists because the same converter serves several sources -- one
+   * HTML parser covers both rendered mirrors, one envelope reader covers the
+   * four 4chan-API thread trees -- and a copy per source would be six copies
+   * of the same code, including a 212KB vendored parser, free to drift apart.
+   * What gets uploaded is still one self-contained tree; only where it is
+   * kept changes.
+   */
+  dir?: string;
 }
 
 /** Absolute path to the node binary on the target, installing it if absent. */
