@@ -21,7 +21,7 @@
     }
   ],
   "ingest": {
-    "adapter": "warosu-sql",
+    "adapter": "sql",
     "path": "Memetic Sociology/Datasets/4chan/installgentoo-net/out",
     "site": "4chan"
   },

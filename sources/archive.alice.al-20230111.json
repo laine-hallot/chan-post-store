@@ -21,7 +21,7 @@
     }
   ],
   "ingest": {
-    "adapter": "desuarchive-sql",
+    "adapter": "sql",
     "path": "Memetic Sociology/Datasets/4chan/archive.alice.al-20230111/out",
     "site": "4chan"
   },

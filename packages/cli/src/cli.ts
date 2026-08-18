@@ -12,12 +12,10 @@ import { fileURLToPath } from 'node:url';
 import { gunzipSync } from 'node:zlib';
 
 import { ingestChanHtml } from './adapters/chan-html.ts';
-import { ingestDesuarchiveSql } from './adapters/desuarchive-sql.ts';
-import { ingestFuukaSql } from './adapters/fuuka-sql.ts';
 import { ingestFybertechHtml } from './adapters/fybertech-html.ts';
 import { ingestJsonApi } from './adapters/json-api.ts';
 import { ingestPostsThreadsSql } from './adapters/posts-threads-sql.ts';
-import { ingestWarosuSql } from './adapters/warosu-sql.ts';
+import { ingestSql } from './adapters/sql.ts';
 import {
   downloadItem,
   fetchItem,
@@ -336,23 +334,22 @@ const cmdWarcExtract = async (o: WarcExtractArgs): Promise<void> => {
 };
 
 /**
- * The mysqldump-family adapters, which all take the same options and differ
- * only in the dialect they parse. `warosu-sql` is the fallback rather than an
- * entry, since it is what the remaining SQL adapters fall through to.
+ * The two file-per-input adapters. Both stream one `.sql` file per call and
+ * take the same options, so `ingestOne` loops inputs identically for either.
+ *
+ * There is deliberately no fallback entry: an adapter name that reaches here
+ * without a mapping is a programming error, and the previous
+ * `?? ingestWarosuSql` default meant any such name silently ran the warosu
+ * reader -- which, on a dialect it cannot parse, reports zero posts and exits
+ * 0. Exhaustiveness is checked at the call site instead.
  */
 // The value type is a union rather than one signature: each adapter declares
 // its own `IngestStats` with its own diagnostic counters, and the call site
 // reads only the fields they share.
 const SQL_INGESTERS: Partial<
-  Record<
-    Adapter,
-    | typeof ingestDesuarchiveSql
-    | typeof ingestFuukaSql
-    | typeof ingestPostsThreadsSql
-  >
+  Record<Adapter, typeof ingestSql | typeof ingestPostsThreadsSql>
 > = {
-  'desuarchive-sql': ingestDesuarchiveSql,
-  'fuuka-sql': ingestFuukaSql,
+  sql: ingestSql,
   'posts-threads-sql': ingestPostsThreadsSql,
 };
 
@@ -422,12 +419,20 @@ const ingestOne = async (
         ` ${stats.skippedNative} in 4chan's own markup — ingest those with chan-html)`,
     };
   } else {
-    const ingest = SQL_INGESTERS[manifest.adapter] ?? ingestWarosuSql;
+    const ingest = SQL_INGESTERS[manifest.adapter];
+    if (!ingest) {
+      // Unreachable via the manifest parser, which validates against ADAPTERS.
+      // Loud rather than defaulted: the old fallback ran the warosu reader for
+      // any unmapped name, and that reader exits 0 having stored nothing when
+      // it cannot parse the dialect.
+      throw new Error(`no ingester mapped for adapter '${manifest.adapter}'`);
+    }
     let posts = 0;
     const tables: string[] = [];
     for (const file of inputs) {
-      // warosu backups ship one dump per board, so a source can be several
-      // files; each is streamed in turn into the same source id.
+      // The standard SQL layout is one file per board, so a source is
+      // normally several files; each is streamed in turn into the same
+      // source id.
       if (inputs.length > 1) {
         console.log(`  ${file}`);
       }

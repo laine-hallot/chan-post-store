@@ -18,7 +18,7 @@
     }
   ],
   "ingest": {
-    "adapter": "desuarchive-sql",
+    "adapter": "sql",
     "path": "Memetic Sociology/Datasets/4chan/desuarchive_db_201909/out",
     "site": "4chan"
   },

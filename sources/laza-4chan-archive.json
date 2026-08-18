@@ -20,7 +20,7 @@
     }
   ],
   "ingest": {
-    "adapter": "fuuka-sql",
+    "adapter": "sql",
     "path": "Memetic Sociology/Datasets/4chan/laza-4chan-archive/out",
     "site": "4chan"
   },

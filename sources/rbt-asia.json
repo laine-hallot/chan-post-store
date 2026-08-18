@@ -25,7 +25,7 @@
     }
   ],
   "ingest": {
-    "adapter": "warosu-sql",
+    "adapter": "sql",
     "path": "Memetic Sociology/Datasets/4chan/rbt-asia/out",
     "site": "4chan"
   },

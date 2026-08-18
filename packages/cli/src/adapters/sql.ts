@@ -1,7 +1,6 @@
 import type { Pool } from 'pg';
 
 import { createReadStream } from 'node:fs';
-import { createInterface } from 'node:readline';
 
 import { makeBoardFilter } from '../boards.ts';
 import { collectPending, PostInserter } from '../ingest.ts';
@@ -10,54 +9,70 @@ import {
   insertColumns,
   nyWallToUtc,
   parseTuples,
+  readLines,
   takeCompleteTuples,
 } from '../mysqldump.ts';
 import { makeBar } from '../progress.ts';
 
 /**
- * Ingests the 2019 Desuarchive/RBT database dumps.
+ * The one SQL reader. Ingests `out/<board>.sql` in the staged standard format:
+ * an Asagi post table named for its board, optionally accompanied by that
+ * board's `<board>_deleted` table.
  *
- * The SCHEMA is ordinary Asagi — same columns `fuuka-sql` reads, and the two
- * adapters agree field for field. What differs is the SERIALIZATION, because
- * these dumps were not made by mysqldump but by `mysqlchump`, which the
- * uploader describes as "an experimental tool to make .sql dumps without
- * needing to include all columns from the DB". Three differences, each of
- * which defeats a line-oriented reader:
+ * There used to be four adapters here — `fuuka-sql`, `warosu-sql`,
+ * `desuarchive-sql` and `posts-threads-sql`. Three of them are gone because
+ * their differences were never differences of *reading*:
  *
- *   1. `CREATE TABLE IF NOT EXISTS \`g\` (` rather than `CREATE TABLE \`g\` (`.
- *      Handled by CREATE_TABLE_RE, shared with the other SQL adapters.
- *   2. An explicit column list on every INSERT, which OMITS columns that the
- *      CREATE TABLE declares (doc_id, media_id, poster_ip). The list, not the
- *      table definition, gives tuple order — reading positions from the
- *      CREATE TABLE shifts every field by three.
- *   3. **The statement spans many lines.** The INSERT line ends at `VALUES`
- *      and each tuple sits on its own following line, terminated by `,` or by
- *      `;` on the last. `fuuka-sql` and `warosu-sql` both assume one complete
- *      statement per line and simply find no tuples here.
+ *   - `fuuka-sql` vs `warosu-sql` was ~25 lines: a required-column signature
+ *     and four field expressions. Original Fuuka names the thread pointer
+ *     `parent` and the poster's filename `media`; Asagi calls them
+ *     `thread_num` and `media_filename`. `prepare` now renames those inside
+ *     the CREATE TABLE block, which remaps every field without touching a
+ *     data row — those dumps carry no INSERT column list, so tuple order
+ *     follows the table definition.
+ *   - `desuarchive-sql` existed because mysqlchump spreads one statement over
+ *     many lines. That reader is this one: it carries quote state across
+ *     lines, which is a strict superset of the one-statement-per-line shape,
+ *     so a classic mysqldump reads correctly through the same path.
+ *   - `posts-threads-sql` read a flat `posts` table joined to `threads`.
+ *     Board is only reachable through that join, so it cannot be expressed as
+ *     a table-per-board file at all; `prepare` resolves the join and emits
+ *     NDJSON instead, which the `json` reader takes.
  *
- * (3) is why this is a separate adapter rather than a patch to `fuuka-sql`:
- * that reader's whole shape is one-statement-per-line, and teaching it to
- * span lines would complicate the path every other SQL source takes for the
- * benefit of one dialect.
+ * Both serializations are accepted, because both still exist in the corpus
+ * and neither needs rewriting:
  *
- * Failure here is silent rather than loud, which is worth remembering when
- * judging a run: pointed at these dumps, `fuuka-sql` reports zero tables and
- * zero posts and exits 0 — indistinguishable from a source whose posts were
- * all already present.
+ *   - **mysqldump** — one complete statement per line, newlines inside string
+ *     literals escaped, usually no INSERT column list.
+ *   - **mysqlchump** — `CREATE TABLE IF NOT EXISTS`, an explicit column list
+ *     that OMITS declared columns (doc_id, media_id, poster_ip), values
+ *     separated by `, ` rather than `,`, a UTF-8 BOM before each table's
+ *     first INSERT, and statements spanning many lines because comments carry
+ *     literal unescaped newlines. Tuple extent is only knowable with quote
+ *     state, and a continuation line can itself begin with `(`.
  *
- * `timestamp` is America/New_York wall time and is converted to true UTC,
- * like every Fuuka descendant. That is measured, not assumed: 2,500 posts
- * shared with the installgentoo archive show the dump running exactly 5h
- * behind stored UTC in Nov 2011/Jan 2012 and exactly 4h behind in Jun 2017,
- * i.e. tracking EST/EDT.
+ * Two things about this that are worth not relearning. The INSERT's own
+ * column list is authoritative when present, since it need not match table
+ * order. And failure in this family is silent rather than loud: pointed at a
+ * dialect it cannot read, a reader reports zero tables and zero posts and
+ * exits 0 — indistinguishable from a source whose posts were all already
+ * present. Never judge an SQL ingest by exit code; check the post count, the
+ * OP count and the timestamp nulls.
  *
- * Ghost posts (subnum != 0, replies made on the archive site rather than
- * 4chan) are skipped, as elsewhere.
+ * `timestamp` is America/New_York wall time in every source that reaches this
+ * reader, and is converted to true UTC. That is measured, not assumed: 2,500
+ * posts shared between the Desuarchive dumps and the installgentoo archive
+ * run exactly 5h behind stored UTC in Nov 2011/Jan 2012 and exactly 4h behind
+ * in Jun 2017, i.e. tracking EST/EDT. (The NDJSON side of the standard format
+ * is the opposite — true UTC — so the two cases must not share a helper.)
+ *
+ * Ghost posts (subnum != 0, replies made on an archive site rather than on
+ * 4chan) are skipped.
  */
 
 const REQUIRED_COLS = ['num', 'subnum', 'thread_num', 'timestamp', 'comment'];
 
-/** A UTF-8 BOM appears before the first INSERT of each table in these dumps. */
+/** A UTF-8 BOM appears before the first INSERT of each table in mysqlchump dumps. */
 const BOM = '﻿';
 
 interface IngestStats {
@@ -68,7 +83,7 @@ interface IngestStats {
   tables: string[];
 }
 
-export const ingestDesuarchiveSql = async (
+export const ingestSql = async (
   db: Pool,
   opts: {
     file: string;
@@ -96,19 +111,21 @@ export const ingestDesuarchiveSql = async (
   let bytesRead = 0;
   const bar = makeBar({ max: opts.fileSize });
   bar.start(`reading ${opts.file}`);
-  input.on('data', (chunk: string | Buffer) => {
-    bytesRead += chunk.length;
+  // Counted from inside readLines rather than via an input.on('data')
+  // listener: that listener would put the stream in flowing mode and race the
+  // async iteration for chunks.
+  const lines = readLines(input, (n) => {
+    bytesRead += n;
     bar.advance(
-      chunk.length,
+      n,
       `${(bytesRead / 1e6).toFixed(0)}MB read, ${stats.posts} posts,` +
         ` tables: ${stats.tables.join(',') || '-'}`
     );
   });
-  const lines = createInterface({ input, crlfDelay: Infinity });
 
   const tableCols = new Map<string, string[]>();
   let creating: string | null = null;
-  /** Set while inside a multi-line INSERT; null between statements. */
+  /** Set while inside an INSERT statement; null between statements. */
   let active: { board: string; idx: Record<string, number> } | null = null;
 
   const COMMIT_EVERY = 50_000;
@@ -137,7 +154,13 @@ export const ingestDesuarchiveSql = async (
           continue;
         }
         const num = Number(vals[idx.num]);
-        const threadNo = Number(vals[idx.thread_num]);
+        // Normalise BEFORE the isOp test, not after. Asagi stores an OP's own
+        // number in thread_num; original Fuuka stores 0 and is renamed into
+        // this column by prepare. Testing `num === threadNo` against the raw
+        // value would therefore mark every converted Fuuka OP as a reply --
+        // silently, since is_op has no constraint backing it.
+        const rawThread = Number(vals[idx.thread_num]);
+        const threadNo = rawThread === 0 ? num : rawThread;
         const ts = Number(vals[idx.timestamp]);
         collectPending(
           pending,
@@ -145,7 +168,7 @@ export const ingestDesuarchiveSql = async (
             .insert({
               site: opts.site,
               board,
-              threadNo: threadNo === 0 ? num : threadNo,
+              threadNo,
               postNo: num,
               isOp:
                 idx.op !== undefined ? vals[idx.op] === '1' : num === threadNo,
@@ -166,6 +189,9 @@ export const ingestDesuarchiveSql = async (
             })
         );
         if (++sinceCommit >= COMMIT_EVERY) {
+          // Flush the stats tallies alongside the posts they describe, so an
+          // interrupted run leaves post_stats consistent with what landed
+          // instead of losing every tally since the run began.
           await inserter.finish();
           await Promise.all(pending);
           pending.length = 0;
@@ -228,10 +254,11 @@ export const ingestDesuarchiveSql = async (
 
     active = null;
     const cols = tableCols.get(table);
+    // A board's deleted-post table holds that board's posts; both map to it.
     const board = table.replace(/_deleted$/, '');
     // Before the tuple parse, so an excluded board costs only the statement
-    // header. Tallied per INSERT statement rather than per post -- these dumps
-    // use extended inserts, so the count is statements, not rows.
+    // header. Tallied per INSERT statement rather than per post -- extended
+    // inserts mean the count is statements, not rows.
     if (boardFilter.reject(board)) {
       continue;
     }
@@ -259,7 +286,7 @@ export const ingestDesuarchiveSql = async (
     }
 
     // mysqlchump puts VALUES at end of line, but tolerate tuples trailing on
-    // the same line so a single-line statement still works.
+    // the same line so a single-line mysqldump statement still works.
     buf = line.slice(valuesAt + 7);
     await drainBuffer();
   }

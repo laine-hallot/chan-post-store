@@ -22,7 +22,7 @@
     }
   ],
   "ingest": {
-    "adapter": "warosu-sql",
+    "adapter": "sql",
     "path": "Memetic Sociology/Datasets/4chan/warosu-database-backup-2026-07-15/out",
     "site": "4chan"
   },

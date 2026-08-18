@@ -6,9 +6,7 @@ import { SOURCES_DIR } from './paths.ts';
 
 export const ADAPTERS = [
   'json-api',
-  'fuuka-sql',
-  'warosu-sql',
-  'desuarchive-sql',
+  'sql',
   'posts-threads-sql',
   'chan-html',
   'fybertech-html',
