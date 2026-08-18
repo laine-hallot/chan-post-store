@@ -9,13 +9,16 @@
   },
   "prepare": [
     {
-      "name": "staged by the archives-yotsubasociety-org source; nothing to do here",
-      "run": "true"
+      "name": "stage 4chan's own markup as <board>/<name>.html",
+      "stage-html": {
+        "from": "out/4chan",
+        "to": "out-native"
+      }
     }
   ],
   "ingest": {
-    "adapter": "chan-html",
-    "path": "Memetic Sociology/Datasets/4chan/archives-yotsubasociety-org/out/4chan",
+    "adapter": "html",
+    "path": "Memetic Sociology/Datasets/4chan/archives-yotsubasociety-org/out-native",
     "site": "4chan"
   },
   "files": {
@@ -28,5 +31,6 @@
       "path": "./out",
       "script": ""
     }
-  }
+  },
+  "prepareOutput": "out-native"
 }

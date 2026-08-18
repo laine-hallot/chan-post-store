@@ -2,6 +2,7 @@ import type {
   SqlNormalizeStep,
   SqlRename,
 } from './prepare-steps/sql-normalize.ts';
+import type { StageHtmlStep } from './prepare-steps/stage-html.ts';
 
 import { Result } from '@badrap/result';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
@@ -13,7 +14,7 @@ export const ADAPTERS = [
   'json-api',
   'sql',
   'posts-threads-sql',
-  'chan-html',
+  'html',
   'fybertech-html',
 ] as const;
 export type Adapter = (typeof ADAPTERS)[number];
@@ -80,16 +81,25 @@ export type PrepareStep = {
       run: string;
       reconcileBoards?: undefined;
       sqlNormalize?: undefined;
+      stageHtml?: undefined;
     }
   | {
       run?: undefined;
       reconcileBoards: ReconcileBoardsStep;
       sqlNormalize?: undefined;
+      stageHtml?: undefined;
     }
   | {
       run?: undefined;
       reconcileBoards?: undefined;
       sqlNormalize: SqlNormalizeStep;
+      stageHtml?: undefined;
+    }
+  | {
+      run?: undefined;
+      reconcileBoards?: undefined;
+      sqlNormalize?: undefined;
+      stageHtml: StageHtmlStep;
     }
 );
 
@@ -316,9 +326,29 @@ export const readSourceInfo = (
         run?: unknown;
         'reconcile-boards'?: unknown;
         'sql-normalize'?: unknown;
+        'stage-html'?: unknown;
       };
       const name =
         typeof s?.name === 'string' && s.name ? s.name : `step ${i + 1}`;
+
+      const sh = s?.['stage-html'];
+      if (sh != null) {
+        if (typeof s.run === 'string') {
+          return bad(
+            file,
+            `prepare[${i}] has "stage-html" alongside another kind; a step is one or the other`
+          );
+        }
+        const c = sh as { from?: unknown; to?: unknown };
+        if (typeof c.from !== 'string' || c.from === '') {
+          return bad(file, `prepare[${i}]."stage-html".from is required`);
+        }
+        if (typeof c.to !== 'string' || c.to === '') {
+          return bad(file, `prepare[${i}]."stage-html".to is required`);
+        }
+        steps.push({ name, stageHtml: { from: c.from, to: c.to } });
+        continue;
+      }
 
       const sn = s?.['sql-normalize'];
       if (sn != null) {
@@ -487,7 +517,7 @@ export const ingestInputs = (m: Manifest): Result<string[], ManifestError> => {
   // (thread JSON, saved pages) rather than being handed a glob.
   if (
     m.adapter === 'json-api' ||
-    m.adapter === 'chan-html' ||
+    m.adapter === 'html' ||
     m.adapter === 'fybertech-html'
   ) {
     if (!statSync(m.path).isDirectory()) {

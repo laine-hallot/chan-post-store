@@ -18,7 +18,7 @@
     }
   ],
   "ingest": {
-    "adapter": "chan-html",
+    "adapter": "html",
     "path": "Memetic Sociology/Datasets/4chan/4chan-vp-2015-threads/out",
     "site": "4chan"
   },

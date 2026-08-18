@@ -10,12 +10,32 @@ import { collectPending, PostInserter } from '../ingest.ts';
 import { makeBar } from '../progress.ts';
 
 /**
- * Ingests saved 4chan board/thread pages in the site's own HTML — the markup
- * `boards.4chan.org` serves, as captured by perma.cc, Wayback and similar
+ * Ingests saved pages in 4chan's own HTML -- the markup `boards.4chan.org`
+ * serves, as captured by perma.cc, Wayback, BASC-Archiver and similar
  * whole-page archivers.
  *
- * Not the same as a rendered third-party archive (fybertech, BASC-Archiver);
- * those ship their own templates and need their own adapters.
+ * Reads the standard staged layout and nothing else:
+ *
+ *     out/<board>/<threadno>.html    thread number asserted by the filename
+ *     out/<board>/<anything>.html    thread number taken from the markup
+ *
+ * The directory names the board, so this adapter does no identity guessing.
+ * It used to, and the guessing was wrong: the rule was "leading digits of the
+ * filename", which on 4chan-vp-2015-threads -- staged as
+ * `<date>_<threadno>.html`, so that captures of the same thread on
+ * consecutive days do not collide -- read the YEAR as the thread number and
+ * filed 859,937 posts under thread 2015.
+ *
+ * A filename must now be digits IN FULL to assert a thread number. Any other
+ * name defers to the page, whose every OP supplies its own number. That
+ * covers both cases that need it: a board index, which names no single
+ * thread, and a multi-capture name like vp's, which names one but not in a
+ * form worth trusting over the markup.
+ *
+ * Rendered third-party archives -- fybertech's own templates, the classic
+ * Futaba markup -- are NOT this format. `prepare` parses those into NDJSON,
+ * so by the time a tree reaches here it holds native markup only and a page
+ * without `.postContainer` is a staging bug rather than a routine skip.
  *
  * What makes this format pleasant: every post carries
  * `<span class="dateTime" data-utc="1639552011">`, a true UTC epoch. There is
@@ -31,20 +51,19 @@ import { makeBar } from '../progress.ts';
  *    before `postInfo`, a reply after. Selectors do not care.
  *
  * A board index also abbreviates long comments and appends its own notice
- * inside the blockquote (`<span class="abbr">Comment too long…`). That is
+ * inside the blockquote (`<span class="abbr">Comment too long...`). That is
  * archive chrome, not post text, so the element is removed before the body is
- * read — the kind of artifact that is a one-line subtree removal here and was
+ * read -- the kind of artifact that is a one-line subtree removal here and was
  * a bug when the body was matched as a string.
  */
 
 interface IngestStats {
   files: number;
+  /** Distinct threads seen, however each page's number was arrived at. */
   threads: number;
   posts: number;
   skippedDup: number;
   badFiles: number;
-  /** Pages that are not 4chan's own markup -- another adapter's business. */
-  skippedForeign: number;
 }
 
 /** Text of the first match, or null when absent or empty. */
@@ -131,56 +150,17 @@ const readPost = (
 };
 
 /**
- * Thread number from a bare `<threadno>.html` filename, as used inside a
- * board directory. Tolerates a trailing annotation -- the handmade archives
- * name files like `1000000 ban.html` -- and returns null when the leading
- * token is not a number.
+ * Thread number asserted by a staged filename, or null to defer to the page.
+ *
+ * Deliberately anchored at both ends. `/^(\d+)/` would accept
+ * `2015-06-01_23433058.html` and call it thread 2015 -- see the note above.
  */
 const threadNoFromName = (fileName: string): number | null => {
-  const m = /^(\d+)/.exec(fileName);
+  const m = /^(\d+)\.html?$/i.exec(fileName);
   return m ? Number(m[1]) : null;
 };
 
-/** Board and thread number from a saved page's filename or its own markup. */
-const threadIdentity = (
-  fileName: string,
-  doc: HTMLElement
-): { board: string; threadNo: number | null } | null => {
-  // warc-extract names files after the captured URL, e.g.
-  // boards.4channel.org_a_thread_231722770.html or boards.4chan.org_pol.html
-  const thread = /^boards\.4chan(?:nel)?\.org_([a-z0-9]+)_thread_(\d+)/i.exec(
-    fileName
-  );
-  if (thread) {
-    return { board: thread[1], threadNo: Number(thread[2]) };
-  }
-  const board = /^boards\.4chan(?:nel)?\.org_([a-z0-9]+)\b/i.exec(fileName);
-  if (board) {
-    return { board: board[1], threadNo: null };
-  }
-  // <board>_<threadno>.html -- how third-party mirrors name their saved pages.
-  // Some of those pages are the site's own markup rather than the mirror's own
-  // template (fybertech has 20 such), so this adapter reads them; the mirror's
-  // rendered pages are a different family and belong to their own adapter.
-  const mirrored = /^([a-z0-9]+)_(\d+)\.html?$/i.exec(fileName);
-  if (mirrored) {
-    return { board: mirrored[1], threadNo: Number(mirrored[2]) };
-  }
-  // Fall back to the page's own canonical link when the filename is opaque.
-  const href =
-    doc.querySelector('link[rel="canonical"]')?.getAttribute('href') ?? '';
-  const canon = /\/([a-z0-9]+)\/thread\/(\d+)/i.exec(href);
-  if (canon) {
-    return { board: canon[1], threadNo: Number(canon[2]) };
-  }
-  const bonly = /\/([a-z0-9]+)\/?$/i.exec(href);
-  if (bonly) {
-    return { board: bonly[1], threadNo: null };
-  }
-  return null;
-};
-
-export const ingestChanHtml = async (
+export const ingestHtml = async (
   db: Pool,
   opts: {
     root: string;
@@ -198,10 +178,13 @@ export const ingestChanHtml = async (
     posts: 0,
     skippedDup: 0,
     badFiles: 0,
-    skippedForeign: 0,
   };
 
   const pages = listHtmlPages(opts.root, opts.boards);
+  // Counted as distinct (board, thread) pairs rather than as pages naming a
+  // thread: most staged names do not assert one, and a page count reported as
+  // a thread count read as "0 thread page(s)" on a source with 17,252 of them.
+  const threadKeys = new Set<string>();
   const pending: Promise<void>[] = [];
   const bar = makeBar({ max: pages.length });
   bar.start(`ingesting ${pages.length} page(s)`);
@@ -224,19 +207,17 @@ export const ingestChanHtml = async (
       continue;
     }
     const doc = parse(raw);
-    // In a nested tree the directory names the board, which beats anything
-    // inferable from the filename; a flat tree has no directory to consult
-    // and falls back to the filename or the page's canonical link.
-    const id =
-      page.board !== null
-        ? { board: page.board, threadNo: threadNoFromName(page.name) }
-        : threadIdentity(page.name, doc);
-    if (!id) {
-      // Not a recognizable board/thread page: a stylesheet, an error page,
-      // or a capture of something else entirely.
+    // The staged layout puts every page under its board's directory, so the
+    // board is known before the markup is read. A page loose at the root did
+    // not come from a correct staging run.
+    if (page.board === null) {
       stats.badFiles++;
       continue;
     }
+    const id = {
+      board: page.board,
+      threadNo: threadNoFromName(page.name),
+    };
     if (opts.boards && !opts.boards.includes(id.board)) {
       continue;
     }
@@ -245,19 +226,15 @@ export const ingestChanHtml = async (
       continue;
     }
 
-    // No postContainer means this is not 4chan's own markup: a third-party
-    // mirror's rendered template, an error page, or something else. Counted
-    // separately rather than as an empty success, because a directory can
-    // legitimately hold both (fybertech's crawl mixes 20 native pages in
-    // with 617 of its own) and each adapter must skip the other's files.
+    // prepare stages native markup only, so this is a staging fault rather
+    // than another adapter's file. Counted, and surfaced in the final line:
+    // a non-zero value here means the tree holds pages this reader cannot
+    // account for, which must not look like a clean run.
     if (!doc.querySelector('.postContainer')) {
-      stats.skippedForeign++;
+      stats.badFiles++;
       continue;
     }
     stats.files++;
-    if (id.threadNo != null) {
-      stats.threads++;
-    }
 
     let currentThread = id.threadNo;
     for (const container of doc.querySelectorAll('.postContainer')) {
@@ -273,6 +250,8 @@ export const ingestChanHtml = async (
         stats.badFiles++;
         continue;
       }
+      const threadNo = currentThread ?? p.postNo;
+      threadKeys.add(`${id.board}\t${threadNo}`);
       collectPending(
         pending,
         inserter
@@ -281,7 +260,7 @@ export const ingestChanHtml = async (
             board: id.board,
             // A reply with no OP above it would be orphaned; fall back to its
             // own number so thread_no is never bogus.
-            threadNo: currentThread ?? p.postNo,
+            threadNo,
             postNo: p.postNo,
             isOp: p.isOp,
             tsUtc: p.tsUtc,
@@ -312,6 +291,7 @@ export const ingestChanHtml = async (
       pending.length = 0;
     }
   }
+  stats.threads = threadKeys.size;
   await inserter.finish();
   await Promise.all(pending);
   bar.stop(

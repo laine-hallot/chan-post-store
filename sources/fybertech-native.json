@@ -12,13 +12,16 @@
   },
   "prepare": [
     {
-      "name": "staged by the fybertech source; nothing to do here",
-      "run": "true"
+      "name": "stage 4chan's own markup as <board>/<name>.html",
+      "stage-html": {
+        "from": "out",
+        "to": "out-native"
+      }
     }
   ],
   "ingest": {
-    "adapter": "chan-html",
-    "path": "Memetic Sociology/Datasets/4chan/fybertech/out",
+    "adapter": "html",
+    "path": "Memetic Sociology/Datasets/4chan/fybertech/out-native",
     "site": "4chan"
   },
   "files": {
@@ -31,5 +34,6 @@
       "path": "./out",
       "script": ""
     }
-  }
+  },
+  "prepareOutput": "out-native"
 }

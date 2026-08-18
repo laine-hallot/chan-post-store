@@ -8,6 +8,7 @@ import { join } from 'node:path';
 import { readBoardSlugs } from './board-timeline.ts';
 import { reconcileYotsubasocietyBoards } from './prepare-steps/archives-yotsubasociety-org.ts';
 import { runSqlNormalize } from './prepare-steps/sql-normalize.ts';
+import { runStageHtml } from './prepare-steps/stage-html.ts';
 import { LocalRunner, shQuote, type Runner } from './runner.ts';
 
 /**
@@ -203,6 +204,27 @@ export const runPrepare = async (
   let n = 0;
   for (const [i, step] of info.prepare.entries()) {
     const label0 = `[${i + 1}/${info.prepare.length}] ${step.name}`;
+
+    // Selects 4chan's own markup out of a mixed crawl and lands it as
+    // <board>/<name>.html. Through the runner for the same reason: the
+    // yotsubasociety mirror is 23,295 pages and walking it from here would
+    // mean readdir over the mount.
+    if (step.stageHtml !== undefined) {
+      const c = step.stageHtml;
+      console.log(`${label0} (builtin)`);
+      if (opts.dryRun) {
+        console.log(`    would stage native pages from ${c.from} into ${c.to}`);
+        n++;
+        continue;
+      }
+      const r = await runStageHtml(runner, dir, c, step.name);
+      if (r.isErr) {
+        return Result.err(r.error);
+      }
+      console.log(`    ${c.to} now holds ${r.value} page(s)`);
+      n++;
+      continue;
+    }
 
     // Splits a dump into the standard one-file-per-board layout. A builtin so
     // the awk program lives in one place instead of being pasted into every

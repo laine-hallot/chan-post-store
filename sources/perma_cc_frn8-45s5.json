@@ -9,12 +9,19 @@
   },
   "prepare": [
     {
-      "name": "extract captured HTML from the WARC",
-      "run": "local: node \"$CLI\" warc-extract $TARGET --warc \"$DIR/source/FRN8-45S5.warc.gz\" --out \"$DIR/out\""
+      "name": "extract the captured pages from the WARC",
+      "run": "local: node \"$CLI\" warc-extract $TARGET --warc \"$DIR/source/FRN8-45S5.warc.gz\" --out \"$DIR/extracted\""
+    },
+    {
+      "name": "stage 4chan's own markup as <board>/<name>.html",
+      "stage-html": {
+        "from": "extracted",
+        "to": "out"
+      }
     }
   ],
   "ingest": {
-    "adapter": "chan-html",
+    "adapter": "html",
     "path": "Memetic Sociology/Datasets/4chan/perma_cc_FRN8-45S5/out",
     "site": "4chan"
   },

@@ -11,8 +11,8 @@ import { join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gunzipSync } from 'node:zlib';
 
-import { ingestChanHtml } from './adapters/chan-html.ts';
 import { ingestFybertechHtml } from './adapters/fybertech-html.ts';
+import { ingestHtml } from './adapters/html.ts';
 import { ingestJsonApi } from './adapters/json-api.ts';
 import { ingestPostsThreadsSql } from './adapters/posts-threads-sql.ts';
 import { ingestSql } from './adapters/sql.ts';
@@ -382,8 +382,8 @@ const ingestOne = async (
         `ingested ${stats.posts} posts from ${stats.threads} threads in ${secs}s` +
         ` (${stats.skippedPosts} posts already present/skipped, ${stats.badFiles} unreadable files)`,
     };
-  } else if (manifest.adapter === 'chan-html') {
-    const stats = await ingestChanHtml(db, {
+  } else if (manifest.adapter === 'html') {
+    const stats = await ingestHtml(db, {
       root: inputs[0],
       sourceId,
       site: manifest.site,
@@ -395,12 +395,9 @@ const ingestOne = async (
       posts: stats.posts,
       summary:
         `ingested ${stats.posts} posts from ${stats.files} page(s)` +
-        ` (${stats.threads} thread page(s)) in ${secs}s` +
-        ` (${stats.skippedDup} already present, ${stats.badFiles} unrecognized` +
-        (stats.skippedForeign > 0
-          ? `, ${stats.skippedForeign} not in 4chan's own markup`
-          : '') +
-        `)`,
+        ` (${stats.threads} thread(s)) in ${secs}s` +
+        ` (${stats.skippedDup} already present, ${stats.badFiles} unreadable` +
+        ` or not in 4chan's own markup)`,
     };
   } else if (manifest.adapter === 'fybertech-html') {
     const stats = await ingestFybertechHtml(db, {
