@@ -1,3 +1,4 @@
+import type { PayloadStep } from './prepare-steps/payload.ts';
 import type {
   SqlNormalizeStep,
   SqlRename,
@@ -6,7 +7,7 @@ import type { StageHtmlStep } from './prepare-steps/stage-html.ts';
 
 import { Result } from '@badrap/result';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
-import { basename, join, resolve } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 
 import { SOURCES_DIR } from './paths.ts';
 
@@ -82,24 +83,35 @@ export type PrepareStep = {
       reconcileBoards?: undefined;
       sqlNormalize?: undefined;
       stageHtml?: undefined;
+      payload?: undefined;
     }
   | {
       run?: undefined;
       reconcileBoards: ReconcileBoardsStep;
       sqlNormalize?: undefined;
       stageHtml?: undefined;
+      payload?: undefined;
     }
   | {
       run?: undefined;
       reconcileBoards?: undefined;
       sqlNormalize: SqlNormalizeStep;
       stageHtml?: undefined;
+      payload?: undefined;
     }
   | {
       run?: undefined;
       reconcileBoards?: undefined;
       sqlNormalize?: undefined;
       stageHtml: StageHtmlStep;
+      payload?: undefined;
+    }
+  | {
+      run?: undefined;
+      reconcileBoards?: undefined;
+      sqlNormalize?: undefined;
+      stageHtml?: undefined;
+      payload: PayloadStep;
     }
 );
 
@@ -261,7 +273,7 @@ export const readManifest = (
   }
 
   return Result.ok({
-    id: basename(file, '.json'),
+    id: manifestId(file),
     file,
     name,
     link: link ?? undefined,
@@ -303,7 +315,7 @@ export const readSourceInfo = (
   }
   const { link } = doc.source;
 
-  const id = basename(file, '.json');
+  const id = manifestId(file);
   const { dir } = doc as { dir?: unknown };
   if (typeof dir !== 'string' || dir === '') {
     return bad(
@@ -327,9 +339,41 @@ export const readSourceInfo = (
         'reconcile-boards'?: unknown;
         'sql-normalize'?: unknown;
         'stage-html'?: unknown;
+        payload?: unknown;
       };
       const name =
         typeof s?.name === 'string' && s.name ? s.name : `step ${i + 1}`;
+
+      const pl = s?.payload;
+      if (pl != null) {
+        if (typeof s.run === 'string') {
+          return bad(
+            file,
+            `prepare[${i}] has "payload" alongside another kind; a step is one or the other`
+          );
+        }
+        const c = pl as { entry?: unknown; args?: unknown };
+        if (typeof c.entry !== 'string' || c.entry === '') {
+          return bad(
+            file,
+            `prepare[${i}]."payload".entry is required (a file inside payload/)`
+          );
+        }
+        const args: string[] = [];
+        if (c.args != null) {
+          if (!Array.isArray(c.args)) {
+            return bad(file, `prepare[${i}]."payload".args must be an array`);
+          }
+          for (const a of c.args) {
+            if (typeof a !== 'string') {
+              return bad(file, `prepare[${i}]."payload".args must be strings`);
+            }
+            args.push(a);
+          }
+        }
+        steps.push({ name, payload: { entry: c.entry, args } });
+        continue;
+      }
 
       const sh = s?.['stage-html'];
       if (sh != null) {
@@ -481,11 +525,41 @@ export const readSourceInfo = (
 };
 
 /** Resolves a source id (or a direct path to a manifest file) to its file. */
+/**
+ * A source is either a flat `sources/<id>.json` or a directory
+ * `sources/<id>/manifest.json` carrying a `payload/` beside it.
+ *
+ * The directory form exists for sources whose prepare needs real code rather
+ * than a shell one-liner: the payload is uploaded to the NAS and run there,
+ * so it must be a self-contained tree rather than an import from this repo.
+ * Flat stays the default because most sources never need one.
+ */
 export const manifestPath = (idOrPath: string, projectRoot: string): string => {
   if (idOrPath.endsWith('.json')) {
     return resolve(projectRoot, idOrPath);
   }
+  const dir = join(projectRoot, SOURCES_DIR, idOrPath, 'manifest.json');
+  if (existsSync(dir)) {
+    return dir;
+  }
   return join(projectRoot, SOURCES_DIR, `${idOrPath}.json`);
+};
+
+/**
+ * The directory holding a manifest's `payload/`, or undefined for a flat one.
+ * Derived from the manifest path so the two forms cannot disagree.
+ */
+export const manifestId = (file: string): string =>
+  basename(file) === 'manifest.json'
+    ? basename(dirname(file))
+    : basename(file, '.json');
+
+export const payloadDir = (manifestFile: string): string | undefined => {
+  if (basename(manifestFile) !== 'manifest.json') {
+    return undefined;
+  }
+  const d = join(dirname(manifestFile), 'payload');
+  return existsSync(d) ? d : undefined;
 };
 
 export const listManifestIds = (projectRoot: string): string[] => {
@@ -493,10 +567,20 @@ export const listManifestIds = (projectRoot: string): string[] => {
   if (!existsSync(dir)) {
     return [];
   }
-  return readdirSync(dir)
-    .filter((f) => f.endsWith('.json'))
-    .map((f) => basename(f, '.json'))
-    .sort();
+  const ids: string[] = [];
+  for (const e of readdirSync(dir, { withFileTypes: true })) {
+    if (e.isDirectory()) {
+      // Directory form: sources/<id>/manifest.json
+      if (existsSync(join(dir, e.name, 'manifest.json'))) {
+        ids.push(e.name);
+      }
+      continue;
+    }
+    if (e.name.endsWith('.json')) {
+      ids.push(basename(e.name, '.json'));
+    }
+  }
+  return ids.sort();
 };
 
 /**

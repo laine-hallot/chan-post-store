@@ -49,6 +49,15 @@ export interface Runner {
   readFile(path: string): Promise<Result<Buffer, Error>>;
   /** Writes a file wherever the runner points, creating parent dirs. */
   writeFile(path: string, data: Buffer): Promise<Result<void, Error>>;
+
+  /**
+   * Copies a local directory tree to the target, replacing whatever is there.
+   *
+   * One tar stream rather than a file at a time: a payload is a handful of
+   * small files, and per-file round trips would be several connections to
+   * move a few hundred kilobytes.
+   */
+  uploadDir(localDir: string, remoteDir: string): Promise<Result<void, Error>>;
   /** Human-readable description of where commands run. */
   readonly where: string;
   /** Base directory that relative paths resolve against. */
@@ -134,6 +143,22 @@ export class LocalRunner implements Runner {
     } catch (e) {
       return Result.err(e as Error);
     }
+  }
+
+  async uploadDir(
+    localDir: string,
+    remoteDir: string
+  ): Promise<Result<void, Error>> {
+    // Same machine, so this is a copy rather than a transfer. Still goes
+    // through the same interface so a payload step reads identically
+    // whichever runner it lands on.
+    const r = await this.exec(
+      `rm -rf ${shQuote(remoteDir)} && mkdir -p ${shQuote(remoteDir)} && ` +
+        `cp -a ${shQuote(localDir)}/. ${shQuote(remoteDir)}/`
+    );
+    return r.code === 0
+      ? Result.ok(undefined)
+      : Result.err(new Error(`could not copy ${localDir}: ${r.stderr.trim()}`));
   }
 
   async close(): Promise<void> {}
@@ -266,6 +291,39 @@ export class RemoteRunner implements Runner {
       );
     }
     return Result.ok(r.raw);
+  }
+
+  /** Ships a directory over the existing connection as one tar stream. */
+  async uploadDir(
+    localDir: string,
+    remoteDir: string
+  ): Promise<Result<void, Error>> {
+    const tar = await run('tar', ['cf', '-', '-C', localDir, '.'], false);
+    if (tar.code !== 0) {
+      return Result.err(
+        new Error(`could not read ${localDir}: ${tar.stderr.trim()}`)
+      );
+    }
+    const r = await run(
+      'ssh',
+      [
+        '-S',
+        this.ctl,
+        ...this.sshOpts(),
+        this.host,
+        `rm -rf ${shQuote(remoteDir)} && mkdir -p ${shQuote(remoteDir)} && ` +
+          `tar xf - -C ${shQuote(remoteDir)}`,
+      ],
+      false,
+      tar.raw
+    );
+    return r.code === 0
+      ? Result.ok(undefined)
+      : Result.err(
+          new Error(
+            `could not upload ${localDir} to ${this.host}: ${r.stderr.trim()}`
+          )
+        );
   }
 
   /** Writes a remote file by piping the bytes in over stdin. */

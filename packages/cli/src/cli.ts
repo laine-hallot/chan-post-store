@@ -37,11 +37,13 @@ import {
   listManifestIds,
   manifestPath,
   ManifestError,
+  payloadDir,
   readManifest,
   readSourceInfo,
 } from './manifest.ts';
 import { cli } from './parsers.ts';
 import { PROJECT_ROOT, SOURCES_DIR } from './paths.ts';
+import { ensureNodeRuntime, NODE_VERSION } from './prepare-steps/payload.ts';
 import { runPrepare } from './prepare.ts';
 import { makeBar } from './progress.ts';
 import { makeRunner, shQuote } from './runner.ts';
@@ -60,6 +62,7 @@ type Args = InferValue<typeof cli>;
 type Pick_<A extends Args['action']> = Extract<Args, { action: A }>;
 type DownloadArgs = Pick_<'download'>;
 type PrepareArgs = Pick_<'prepare'>;
+type PrepareRuntimeArgs = Pick_<'prepare-runtime'>;
 type WarcExtractArgs = Pick_<'warc-extract'>;
 type IngestArgs = Pick_<'ingest'>;
 type IngestAllArgs = Pick_<'ingest-all'>;
@@ -242,6 +245,12 @@ const cmdPrepare = async (o: PrepareArgs): Promise<void> => {
       },
       localDir: join(PROJECT_ROOT, info.dir),
       projectRoot: PROJECT_ROOT,
+      payloadDir: payloadDir(manifestPath(id, PROJECT_ROOT)),
+      // The runtime is shared across sources, so it sits beside the datasets
+      // rather than inside any one of them.
+      datasetsRoot: runner.rootIsDatasets
+        ? runner.path('.')
+        : join(PROJECT_ROOT, info.dir, '..'),
     });
     if (res.isErr) {
       console.error(res.error.message);
@@ -351,6 +360,39 @@ const SQL_INGESTERS: Partial<
 > = {
   sql: ingestSql,
   'posts-threads-sql': ingestPostsThreadsSql,
+};
+
+/**
+ * Installs the runtime that payload prepare steps execute under.
+ *
+ * Exposed as its own command so it can be done deliberately -- it fetches
+ * ~50MB on the target -- rather than only as a side effect of the first
+ * source that needs it. Idempotent either way.
+ */
+const cmdPrepareRuntime = async (o: PrepareRuntimeArgs): Promise<void> => {
+  const runnerR = await makeRunner({
+    projectRoot: PROJECT_ROOT,
+    host: o.remote,
+    forceLocal: o.local,
+    key: o.key,
+  });
+  if (runnerR.isErr) {
+    fail(runnerR.error.message);
+  }
+  const runner = runnerR.value;
+  try {
+    const root = runner.rootIsDatasets
+      ? runner.path('.')
+      : join(PROJECT_ROOT, 'Memetic Sociology', 'Datasets', '4chan');
+    console.log(`runtime root: ${root} (${runner.where})`);
+    const r = await ensureNodeRuntime(runner, root);
+    if (r.isErr) {
+      fail(r.error.message);
+    }
+    console.log(`node ${NODE_VERSION} ready at ${r.value}`);
+  } finally {
+    await runner.close();
+  }
 };
 
 /**
@@ -1483,6 +1525,9 @@ switch (args.action) {
     break;
   case 'prepare':
     await cmdPrepare(args);
+    break;
+  case 'prepare-runtime':
+    await cmdPrepareRuntime(args);
     break;
   case 'warc-extract':
     await cmdWarcExtract(args);

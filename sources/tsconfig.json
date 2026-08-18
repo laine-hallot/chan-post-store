@@ -1,0 +1,11 @@
+{
+  // Prepare payloads. Typechecked with the same strictness as the packages --
+  // a payload runs unattended on the archive host, so a type error there is
+  // worth catching here -- but deliberately NOT part of any package: a payload
+  // ships as a self-contained tree and may not import from this repo.
+  "extends": "../tsconfig.common.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "./tsconfig.tsbuildinfo"
+  },
+  "include": ["*/payload/**/*.ts"]
+}

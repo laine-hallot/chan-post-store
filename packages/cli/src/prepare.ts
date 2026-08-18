@@ -7,6 +7,7 @@ import { join } from 'node:path';
 
 import { readBoardSlugs } from './board-timeline.ts';
 import { reconcileYotsubasocietyBoards } from './prepare-steps/archives-yotsubasociety-org.ts';
+import { runPayload } from './prepare-steps/payload.ts';
 import { runSqlNormalize } from './prepare-steps/sql-normalize.ts';
 import { runStageHtml } from './prepare-steps/stage-html.ts';
 import { LocalRunner, shQuote, type Runner } from './runner.ts';
@@ -40,6 +41,10 @@ export interface PrepareOptions {
   localDir?: string;
   /** Project root, for resolving a builtin's project-relative paths. */
   projectRoot?: string;
+  /** `sources/<id>/payload/` on THIS machine, when the source has one. */
+  payloadDir?: string;
+  /** Datasets root as the runner sees it, where the shared runtime lives. */
+  datasetsRoot?: string;
 }
 
 /**
@@ -204,6 +209,38 @@ export const runPrepare = async (
   let n = 0;
   for (const [i, step] of info.prepare.entries()) {
     const label0 = `[${i + 1}/${info.prepare.length}] ${step.name}`;
+
+    // A source's own prepare code, shipped to the target and run there.
+    if (step.payload !== undefined) {
+      const c = step.payload;
+      console.log(`${label0} (payload)`);
+      if (opts.dryRun) {
+        console.log(`    would run payload/${c.entry} ${c.args.join(' ')}`);
+        n++;
+        continue;
+      }
+      if (!opts.payloadDir || !opts.datasetsRoot) {
+        return Result.err(
+          new Error(
+            `prepare step "${step.name}" is a payload step, but this source has no payload/\n` +
+              `  move it to sources/${info.id}/manifest.json with a payload/ beside it`
+          )
+        );
+      }
+      const r = await runPayload(
+        runner,
+        dir,
+        opts.datasetsRoot,
+        opts.payloadDir,
+        c,
+        step.name
+      );
+      if (r.isErr) {
+        return Result.err(r.error);
+      }
+      n++;
+      continue;
+    }
 
     // Selects 4chan's own markup out of a mixed crawl and lands it as
     // <board>/<name>.html. Through the runner for the same reason: the

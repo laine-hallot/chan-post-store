@@ -1,0 +1,7 @@
+node-html-parser 9.0.1, MIT, from dist/index.umd.js (self-contained: its
+css-select and entities dependencies are bundled in).
+
+Vendored because a payload runs on the NAS and may not resolve anything from
+this repo. Refresh with:
+  cp node_modules/node-html-parser/dist/index.umd.js \
+     sources/fybertech/payload/vendor/node-html-parser.umd.cjs

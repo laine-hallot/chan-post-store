@@ -344,6 +344,17 @@ const searchCmd = command(
  * be a bug -- USAGE advertised --db for every `list` subcommand and this one
  * rejected it -- and is now simply what the grammar says.
  */
+const prepareRuntimeCmd = command(
+  'prepare-runtime',
+  merge(
+    object({ action: constant('prepare-runtime' as const) }),
+    runnerOptions
+  ),
+  {
+    description: message`Install the Node runtime that payload prepare steps run under, on whichever machine holds the archives. Idempotent, and done automatically by the first payload step that needs it.`,
+  }
+);
+
 const listManifestsCmd = command(
   'manifests',
   merge(object({ action: constant('list-manifests' as const) }), runnerOptions),
@@ -387,6 +398,7 @@ const listCmd = command(
 export const cli = or(
   downloadCmd,
   prepareCmd,
+  prepareRuntimeCmd,
   warcExtractCmd,
   ingestCmd,
   ingestAllCmd,
