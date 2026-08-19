@@ -7,11 +7,11 @@ import { defineConfig } from 'tsdown';
  */
 export default defineConfig({
   entry: ['prepare.ts'],
-  // The workspace packages must be INLINED. tsdown externalises anything in
-  // `dependencies` by default, which would leave the bundle importing
-  // `staging-html` from a node_modules that does not exist on the archive
-  // host. node: builtins stay external, as they should.
-  noExternal: [/^staging-/, /^site-config-/],
+  // EVERYTHING is inlined. tsdown externalises `dependencies` by default,
+  // which would leave the bundle importing `staging-html` -- or its own
+  // node-html-parser -- from a node_modules that does not exist on the
+  // archive host. Only node: builtins stay external, as they should.
+  noExternal: [/.*/],
   format: 'esm',
   platform: 'node',
   outDir: 'dist',

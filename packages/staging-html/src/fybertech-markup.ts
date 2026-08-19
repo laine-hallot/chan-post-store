@@ -1,35 +1,8 @@
+import { parse, type HTMLElement, type Node } from 'node-html-parser';
 import { cleanBodyText, nyWallToUtc } from 'staging-core';
 
-// The parser is vendored as a self-contained UMD bundle beside this file; see
-// vendor/README. Named .cjs so it is unambiguously CommonJS: this repo sets
-// "type": "module", which would otherwise make node read the UMD as ESM and
-// silently hand back an empty namespace.
-//
-// A STATIC import, not createRequire: a prepare script is bundled before it
-// is copied to the archive host, and a runtime require of a path relative to
-// this file cannot survive that -- import.meta.url becomes the bundle's own
-// location, and the vendor directory is not beside it.
-import htmlParser from './vendor/node-html-parser.umd.cjs';
-
-const { parse } = htmlParser as unknown as {
-  parse: (html: string) => HTMLElement;
-};
-
-// Structural stand-ins for node-html-parser's types, which cannot be imported
-// from a vendored bundle. Only the members these parsers actually use.
-export interface Node {
-  nodeType: number;
-  childNodes: Node[];
-}
-export interface HTMLElement extends Node {
-  textContent: string;
-  innerHTML: string;
-  getAttribute(name: string): string | null;
-  querySelector(sel: string): HTMLElement | null;
-  querySelectorAll(sel: string): HTMLElement[];
-}
-
 export { parse };
+export type { HTMLElement, Node };
 
 export interface ParsedPost {
   postNo: number;

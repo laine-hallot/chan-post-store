@@ -9,6 +9,7 @@
   },
   "license": "ISC",
   "dependencies": {
-    "staging-core": "^1.0.0"
+    "staging-core": "^1.0.0",
+    "node-html-parser": "^9.0.1"
   }
 }
