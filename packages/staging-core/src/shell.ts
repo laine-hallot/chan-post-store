@@ -1,0 +1,66 @@
+import { execFileSync } from 'node:child_process';
+import { existsSync, mkdirSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
+
+/**
+ * Run a shell command in the dataset directory.
+ *
+ * Prepare scripts are node, not shell, but the work they orchestrate often is
+ * not: `tar`, `7z`, `bunzip2` and `unzstd` are the right tools for unpacking
+ * and reimplementing them in JavaScript would be worse in every way. So the
+ * shell stays for the jobs it is good at, and node owns the control flow --
+ * which is what makes a prepare script a bundle that can be copied to the
+ * archive host and run there.
+ *
+ * Output is inherited so a multi-hour unpack shows progress rather than
+ * buffering it. A non-zero exit throws.
+ */
+export const sh = (cmd: string): void => {
+  execFileSync('sh', ['-c', cmd], { stdio: 'inherit' });
+};
+
+/**
+ * Hardlink every file matching `pattern` from `from` into `to`, rebuilding
+ * `to` first.
+ *
+ * `cp -al` with a copy fallback, rather than symlinks: ingest globs real
+ * files, and a symlink breaks when the tree is read over a different mount.
+ * Hardlinks also mean staging costs no disk until something rewrites a file.
+ */
+export const linkInto = (
+  from: string,
+  to: string,
+  pattern = /\.sql$/i
+): number => {
+  sh(`rm -rf ${JSON.stringify(to)}`);
+  mkdirSync(to, { recursive: true });
+  let n = 0;
+  for (const name of readdirSync(from)) {
+    if (!pattern.test(name)) {
+      continue;
+    }
+    const src = join(from, name);
+    sh(
+      `cp -al ${JSON.stringify(src)} ${JSON.stringify(to)}/ 2>/dev/null || ` +
+        `cp -a ${JSON.stringify(src)} ${JSON.stringify(to)}/`
+    );
+    n++;
+  }
+  return n;
+};
+
+/**
+ * Fail loudly when a staging step produced nothing.
+ *
+ * A step that stages zero files and exits 0 looks exactly like a source whose
+ * data was already in place -- the failure mode this codebase keeps being
+ * bitten by. Every prepare script ends in one of these.
+ */
+export const expectFiles = (dir: string, what: string): number => {
+  const n = existsSync(dir) ? readdirSync(dir).length : 0;
+  if (n === 0) {
+    console.error(`staged no ${what} into ${dir}`);
+    process.exit(1);
+  }
+  return n;
+};

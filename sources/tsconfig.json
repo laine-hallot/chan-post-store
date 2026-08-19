@@ -1,11 +1,14 @@
 {
-  // Prepare payloads. Typechecked with the same strictness as the packages --
-  // a payload runs unattended on the archive host, so a type error there is
-  // worth catching here -- but deliberately NOT part of any package: a payload
-  // ships as a self-contained tree and may not import from this repo.
+  // Source packages' prepare scripts. Typechecked with the same strictness as
+  // the packages -- a prepare script runs unattended on the archive host, so
+  // a type error there is worth catching here -- and given resolveJsonModule
+  // so a script can import a board timeline from site-config-4chan.
+  //
+  // Not emitted: tsdown builds each package's bundle (npm run build:sources).
   "extends": "../tsconfig.common.json",
   "compilerOptions": {
-    "tsBuildInfoFile": "./tsconfig.tsbuildinfo"
+    "tsBuildInfoFile": "./tsconfig.tsbuildinfo",
+    "resolveJsonModule": true
   },
-  "include": ["_payloads/*/**/*.ts", "*/payload/**/*.ts"]
+  "include": ["*/prepare.ts", "*/tsdown.config.ts"]
 }

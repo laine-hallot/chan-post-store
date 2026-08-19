@@ -15,3 +15,6 @@ artifacts/*
 # run logs from long ingests/migrations
 *.log
 tsconfig.tsbuildinfo
+
+.cache/
+dist/

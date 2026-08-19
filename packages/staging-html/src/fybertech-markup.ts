@@ -1,12 +1,17 @@
-import { createRequire } from 'node:module';
 import { cleanBodyText, nyWallToUtc } from 'staging-core';
 
 // The parser is vendored as a self-contained UMD bundle beside this file; see
-// vendor/README. Named .cjs so it is unambiguously module: this repo sets
+// vendor/README. Named .cjs so it is unambiguously CommonJS: this repo sets
 // "type": "module", which would otherwise make node read the UMD as ESM and
 // silently hand back an empty namespace.
-const require_ = createRequire(import.meta.url);
-const { parse } = require_('./vendor/node-html-parser.umd.cjs') as {
+//
+// A STATIC import, not createRequire: a prepare script is bundled before it
+// is copied to the archive host, and a runtime require of a path relative to
+// this file cannot survive that -- import.meta.url becomes the bundle's own
+// location, and the vendor directory is not beside it.
+import htmlParser from './vendor/node-html-parser.umd.cjs';
+
+const { parse } = htmlParser as unknown as {
   parse: (html: string) => HTMLElement;
 };
 

@@ -21,6 +21,9 @@
     },
     {
       "path": "packages/staging-json"
+    },
+    {
+      "path": "sources"
     }
   ]
 }

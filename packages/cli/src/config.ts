@@ -61,6 +61,27 @@ export const configSchema = z.object({
       exclude: z.array(z.string()).optional(),
     })
     .optional(),
+  storage: z
+    .object({
+      /**
+       * Where the archives live, and therefore where a prepare script runs.
+       *
+       * `local` executes it here. `remote` executes it on the machine holding
+       * the archives, which is why a prepare script is a self-contained
+       * bundle: that machine has no checkout and no node_modules.
+       */
+      type: z.enum(['local', 'remote']).optional(),
+    })
+    .optional(),
+  /**
+   * Enabled sources, by package directory name under `sources/`.
+   *
+   * The registry is what exists on disk; this is what this checkout is
+   * working with. A source not listed here is inert -- not an error, not
+   * pending, just not in play -- which is how a 12TB corpus stays workable
+   * on a machine that only has some of it.
+   */
+  sources: z.array(z.string()).optional(),
 });
 
 export type ChanConfig = z.infer<typeof configSchema>;

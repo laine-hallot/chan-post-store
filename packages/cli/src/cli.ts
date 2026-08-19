@@ -41,10 +41,11 @@ import {
 } from './manifest.ts';
 import { cli } from './parsers.ts';
 import { PROJECT_ROOT, SOURCES_DIR } from './paths.ts';
-import { ensureNodeRuntime, NODE_VERSION } from './prepare-steps/payload.ts';
 import { runPrepare } from './prepare.ts';
 import { makeBar } from './progress.ts';
 import { makeRunner, shQuote } from './runner.ts';
+import { ensureNodeRuntime, NODE_VERSION } from './runtime.ts';
+import { readSourcePackage } from './source-package.ts';
 import { boardList, hasStats, refreshPostStats } from './stats.ts';
 import { htmlPages, uriToFilename } from './warc.ts';
 
@@ -197,7 +198,11 @@ const cmdDownload = async (o: DownloadArgs): Promise<void> => {
 const cmdPrepare = async (o: PrepareArgs): Promise<void> => {
   const id = o.source;
 
-  const infoR = readSourceInfo(manifestPath(id, PROJECT_ROOT));
+  const pkg = readSourcePackage(id, PROJECT_ROOT);
+  if (!pkg) {
+    fail(`no source package at ${SOURCES_DIR}/${id}/`);
+  }
+  const infoR = readSourceInfo(pkg.manifest);
   if (infoR.isErr) {
     fail(infoR.error.message);
   }
@@ -217,47 +222,26 @@ const cmdPrepare = async (o: PrepareArgs): Promise<void> => {
     const dir = runner.path(
       runner.rootIsDatasets ? info.dirFromDatasets : info.dir
     );
+    // The runtime is shared across sources, so it sits beside the datasets
+    // rather than inside any one of them.
+    const storageRoot = runner.rootIsDatasets
+      ? runner.path('.')
+      : join(PROJECT_ROOT, info.dir, '..');
     console.log(`preparing ${info.name}`);
     console.log(`${dir} (${runner.where})\n`);
-    // Local steps shell back into this CLI and must address the same target,
-    // so they are handed the project root, the dataset dir, and the flags
-    // that reproduce the current runner.
-    // Not shell-quoted: this is expanded from $TARGET by the shell itself,
-    // so added quotes would become part of the hostname.
-    const targetFlags = runner.rootIsDatasets
-      ? `--remote ${(runner as { host?: string }).host ?? ''}`
-      : '--local';
     const res = await runPrepare({
-      info,
+      pkg,
       dir,
+      storageRoot,
       runner,
-      dryRun: o['dry-run'],
-      force: o.force,
-      vars: {
-        PROJECT: PROJECT_ROOT,
-        // Absolute path to this entry point, so manifests don't hard-code
-        // where the CLI package sits in the workspace.
-        CLI: fileURLToPath(import.meta.url),
-        DIR: dir,
-        TARGET: targetFlags,
-      },
-      localDir: join(PROJECT_ROOT, info.dir),
       projectRoot: PROJECT_ROOT,
-      payloadDir: payloadDir(manifestPath(id, PROJECT_ROOT)),
-      sourcesDir: join(PROJECT_ROOT, SOURCES_DIR),
-      // The runtime is shared across sources, so it sits beside the datasets
-      // rather than inside any one of them.
-      datasetsRoot: runner.rootIsDatasets
-        ? runner.path('.')
-        : join(PROJECT_ROOT, info.dir, '..'),
+      dryRun: o['dry-run'],
     });
     if (res.isErr) {
       console.error(res.error.message);
       process.exitCode = 1;
-    } else if (!res.value.skipped && !o['dry-run']) {
-      console.log(
-        `\n${res.value.ran} step(s) completed -> ${info.prepareOutput}/`
-      );
+    } else if (res.value.ran) {
+      console.log(`\nprepared -> ${info.prepareOutput}/`);
     }
   } catch (e) {
     console.error(String((e as Error).message));
@@ -364,7 +348,7 @@ const cmdPrepareRuntime = async (o: PrepareRuntimeArgs): Promise<void> => {
       ? runner.path('.')
       : join(PROJECT_ROOT, 'Memetic Sociology', 'Datasets', '4chan');
     console.log(`runtime root: ${root} (${runner.where})`);
-    const r = await ensureNodeRuntime(runner, root);
+    const r = await ensureNodeRuntime(runner, root, PROJECT_ROOT);
     if (r.isErr) {
       fail(r.error.message);
     }

@@ -1,10 +1,3 @@
-import type { PayloadStep } from './prepare-steps/payload.ts';
-import type {
-  SqlNormalizeStep,
-  SqlRename,
-} from './prepare-steps/sql-normalize.ts';
-import type { StageHtmlStep } from './prepare-steps/stage-html.ts';
-
 import { Result } from '@badrap/result';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
@@ -35,80 +28,6 @@ export interface Manifest {
   stageDir?: string;
 }
 
-/**
- * Configuration for the `reconcile-boards` builtin.
- *
- * Paths are relative, as everywhere else in a manifest: `root` to the dataset
- * dir, `boardsFrom` to the project root.
- */
-export interface ReconcileBoardsStep {
-  /** Tree of `<board>/<threadno>.html` directories, e.g. `out/4chan`. */
-  root: string;
-  /** Board timeline supplying the site's real slugs; see board-timeline.ts. */
-  boardsFrom: string;
-}
-// NOTE: this step deliberately has no "foreign"/exclusion list. It moves and
-// renames files so that ingest can trust the tree; deciding that a directory
-// is not a legitimate board is a different question, answered by
-// `ingest.exclude-boards` and enforced per-adapter. An earlier version did
-// both, matching declared-foreign names against each page's <title>, and that
-// combination was actively harmful: it named `/tr/` and `/cwc/`, which turned
-// out to be 40 /vp/ threads and one /r9k/ thread wearing joke display names,
-// so 41 real pages would have been dropped from the ingest.
-
-/**
- * One step in a source's prepare pipeline: either a shell command, or a
- * builtin this CLI implements.
- *
- * Builtins exist because some staging work is not expressible as a shell
- * one-liner over a mount -- reconciling a mirror's board directories against
- * each page's own markup means reading 23,295 files and deciding per page.
- * Doing it as a `local:` step shelling back into a separate top-level command
- * split one concern across two entry points; prepare is where a source's data
- * gets filtered and transformed for ingest, so it belongs here.
- */
-export type PrepareStep = {
-  /** Short label shown while running. */
-  name: string;
-} & (
-  | {
-      /** Shell command, run through the runner with cwd = the dataset dir. */
-      run: string;
-      reconcileBoards?: undefined;
-      sqlNormalize?: undefined;
-      stageHtml?: undefined;
-      payload?: undefined;
-    }
-  | {
-      run?: undefined;
-      reconcileBoards: ReconcileBoardsStep;
-      sqlNormalize?: undefined;
-      stageHtml?: undefined;
-      payload?: undefined;
-    }
-  | {
-      run?: undefined;
-      reconcileBoards?: undefined;
-      sqlNormalize: SqlNormalizeStep;
-      stageHtml?: undefined;
-      payload?: undefined;
-    }
-  | {
-      run?: undefined;
-      reconcileBoards?: undefined;
-      sqlNormalize?: undefined;
-      stageHtml: StageHtmlStep;
-      payload?: undefined;
-    }
-  | {
-      run?: undefined;
-      reconcileBoards?: undefined;
-      sqlNormalize?: undefined;
-      stageHtml?: undefined;
-      payload: PayloadStep;
-    }
-);
-
 /** The subset `download`/`prepare` need; readable without an ingest block. */
 export interface SourceInfo {
   id: string;
@@ -122,8 +41,6 @@ export interface SourceInfo {
   /** Dataset dir itself, in both path models. */
   dir: string;
   dirFromDatasets: string;
-  /** Ordered prepare steps from the manifest, if any. */
-  prepare: PrepareStep[];
   /** Regexes matching item files to skip when downloading. */
   downloadExclude: RegExp[];
   /**
@@ -320,156 +237,6 @@ export const readSourceInfo = (
 
   const clean = dir.replace(/\/$/, '');
 
-  const prep = (doc as { prepare?: unknown }).prepare;
-  const steps: PrepareStep[] = [];
-  if (prep != null) {
-    if (!Array.isArray(prep)) {
-      return bad(file, '"prepare" must be an array of steps');
-    }
-    for (const [i, raw] of prep.entries()) {
-      const s = raw as {
-        name?: unknown;
-        run?: unknown;
-        'reconcile-boards'?: unknown;
-        'sql-normalize'?: unknown;
-        'stage-html'?: unknown;
-        payload?: unknown;
-      };
-      const name =
-        typeof s?.name === 'string' && s.name ? s.name : `step ${i + 1}`;
-
-      const pl = s?.payload;
-      if (pl != null) {
-        if (typeof s.run === 'string') {
-          return bad(
-            file,
-            `prepare[${i}] has "payload" alongside another kind; a step is one or the other`
-          );
-        }
-        const c = pl as { entry?: unknown; args?: unknown; dir?: unknown };
-        if (typeof c.entry !== 'string' || c.entry === '') {
-          return bad(
-            file,
-            `prepare[${i}]."payload".entry is required (a file inside payload/)`
-          );
-        }
-        const args: string[] = [];
-        if (c.args != null) {
-          if (!Array.isArray(c.args)) {
-            return bad(file, `prepare[${i}]."payload".args must be an array`);
-          }
-          for (const a of c.args) {
-            if (typeof a !== 'string') {
-              return bad(file, `prepare[${i}]."payload".args must be strings`);
-            }
-            args.push(a);
-          }
-        }
-        if (c.dir != null && (typeof c.dir !== 'string' || c.dir === '')) {
-          return bad(file, `prepare[${i}]."payload".dir must be a string`);
-        }
-        steps.push({
-          name,
-          payload: { entry: c.entry, args, dir: c.dir as string | undefined },
-        });
-        continue;
-      }
-
-      const sh = s?.['stage-html'];
-      if (sh != null) {
-        if (typeof s.run === 'string') {
-          return bad(
-            file,
-            `prepare[${i}] has "stage-html" alongside another kind; a step is one or the other`
-          );
-        }
-        const c = sh as { from?: unknown; to?: unknown };
-        if (typeof c.from !== 'string' || c.from === '') {
-          return bad(file, `prepare[${i}]."stage-html".from is required`);
-        }
-        if (typeof c.to !== 'string' || c.to === '') {
-          return bad(file, `prepare[${i}]."stage-html".to is required`);
-        }
-        steps.push({ name, stageHtml: { from: c.from, to: c.to } });
-        continue;
-      }
-
-      const sn = s?.['sql-normalize'];
-      if (sn != null) {
-        if (typeof s.run === 'string' || s['reconcile-boards'] != null) {
-          return bad(
-            file,
-            `prepare[${i}] has "sql-normalize" alongside another kind; a step is one or the other`
-          );
-        }
-        const c = sn as { from?: unknown; to?: unknown; rename?: unknown };
-        if (typeof c.from !== 'string' || c.from === '') {
-          return bad(file, `prepare[${i}]."sql-normalize".from is required`);
-        }
-        if (typeof c.to !== 'string' || c.to === '') {
-          return bad(file, `prepare[${i}]."sql-normalize".to is required`);
-        }
-        // Required, and deliberately not defaulted. Applying the Fuuka rename
-        // to an Asagi dump collides media_filename with the media_orig it
-        // already has; skipping it on a Fuuka dump leaves `parent` unread.
-        // Either way the result is wrong and silent, so the manifest must say.
-        if (c.rename !== 'fuuka' && c.rename !== 'none') {
-          return bad(
-            file,
-            `prepare[${i}]."sql-normalize".rename must be "fuuka" (original-Fuuka column names) or "none" (already Asagi)`
-          );
-        }
-        steps.push({
-          name,
-          sqlNormalize: {
-            from: c.from,
-            to: c.to,
-            rename: c.rename as SqlRename,
-          },
-        });
-        continue;
-      }
-
-      const rb = s?.['reconcile-boards'];
-      if (rb != null) {
-        if (typeof s.run === 'string') {
-          return bad(
-            file,
-            `prepare[${i}] has both "run" and "reconcile-boards"; a step is one or the other`
-          );
-        }
-        const c = rb as {
-          root?: unknown;
-          'boards-from'?: unknown;
-        };
-        if (typeof c.root !== 'string' || c.root === '') {
-          return bad(file, `prepare[${i}]."reconcile-boards".root is required`);
-        }
-        // Required, with no built-in board list to fall back on: it decides
-        // which mismatches are filing errors and which are pages from another
-        // imageboard, and an absent list silently makes every board unknown.
-        if (typeof c['boards-from'] !== 'string' || c['boards-from'] === '') {
-          return bad(
-            file,
-            `prepare[${i}]."reconcile-boards".boards-from is required (path to a board timeline, project-root relative)`
-          );
-        }
-        steps.push({
-          name,
-          reconcileBoards: {
-            root: c.root,
-            boardsFrom: c['boards-from'],
-          },
-        });
-        continue;
-      }
-      if (typeof s?.run !== 'string' || s.run === '') {
-        return bad(file, `prepare[${i}].run must be a non-empty shell command`);
-      }
-      steps.push({ name, run: s.run });
-    }
-  }
-
   const output = (doc as { prepareOutput?: unknown }).prepareOutput;
   if (output != null && typeof output !== 'string') {
     return bad(file, '"prepareOutput" must be a string');
@@ -517,7 +284,6 @@ export const readSourceInfo = (
     stageDirFromDatasets: `${basename(clean)}/source`,
     dir: clean,
     dirFromDatasets: basename(clean),
-    prepare: steps,
     prepareOutput: output ?? 'out',
     downloadExclude,
     deadEnd: dead === true,

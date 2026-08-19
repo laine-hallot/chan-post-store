@@ -8,7 +8,8 @@
   "scripts": {
     "typecheck": "tsc -b",
     "cli": "node packages/cli/src/cli.ts",
-    "prepare": "husky"
+    "prepare": "husky",
+    "build:sources": "npm run build --workspaces --if-present"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
