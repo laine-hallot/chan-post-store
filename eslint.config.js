@@ -5,7 +5,7 @@ import perfectionist from 'eslint-plugin-perfectionist';
 import js from '@eslint/js';
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(['dist', 'Memetic Sociology']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [tseslint.configs.base],

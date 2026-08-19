@@ -31,6 +31,10 @@ import { ensureNodeRuntime } from './runtime.ts';
 
 export interface PrepareOptions {
   pkg: SourcePackage;
+  /** Path whose existence means staging already ran; skipped unless forced. */
+  prepareOutput: string;
+  /** Re-run even when the staged output is already there. */
+  force?: boolean;
   /** Dataset dir as the runner sees it. */
   dir: string;
   /** Storage root as the runner sees it; where the shared runtime lives. */
@@ -42,6 +46,7 @@ export interface PrepareOptions {
 
 export interface PrepareResult {
   ran: boolean;
+  skipped: boolean;
 }
 
 export const runPrepare = async (
@@ -68,7 +73,21 @@ export const runPrepare = async (
 
   if (opts.dryRun) {
     console.log(`  would run ${basename(pkg.prepare)} in ${dir}`);
-    return Result.ok({ ran: false });
+    return Result.ok({ ran: false, skipped: false });
+  }
+
+  // Staging a source is measured in hours -- 71GB of unzstd and awk for one
+  // warosu backup -- so an accidental re-run is expensive. The check is one
+  // `test -e` through the runner, never a look at the mount.
+  if (!opts.force) {
+    const out = `${dir}/${opts.prepareOutput}`;
+    const have = await runner.exec(`test -e ${shQuote(out)}`);
+    if (have.code === 0) {
+      console.log(
+        `  ${opts.prepareOutput} already exists — nothing to do (use --force to re-run)`
+      );
+      return Result.ok({ ran: false, skipped: true });
+    }
   }
 
   const node = await ensureNodeRuntime(
@@ -101,5 +120,5 @@ export const runPrepare = async (
       )
     );
   }
-  return Result.ok({ ran: true });
+  return Result.ok({ ran: true, skipped: false });
 };

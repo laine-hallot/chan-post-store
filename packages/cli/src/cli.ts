@@ -235,6 +235,8 @@ const cmdPrepare = async (o: PrepareArgs): Promise<void> => {
       storageRoot,
       runner,
       projectRoot: PROJECT_ROOT,
+      prepareOutput: info.prepareOutput,
+      force: o.force,
       dryRun: o['dry-run'],
     });
     if (res.isErr) {
