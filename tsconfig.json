@@ -1,7 +1,4 @@
 {
-  // Solution-style root: it owns no sources itself, it just points at the
-  // workspace packages. Without an empty "files", tsc globs the whole tree
-  // and reports TS6305 against the referenced project's own sources.
   "files": [],
   "references": [
     {
@@ -11,7 +8,19 @@
       "path": "packages/analysis"
     },
     {
-      "path": "sources"
+      "path": "packages/site-config-4chan"
+    },
+    {
+      "path": "packages/staging-core"
+    },
+    {
+      "path": "packages/staging-sql"
+    },
+    {
+      "path": "packages/staging-html"
+    },
+    {
+      "path": "packages/staging-json"
     }
   ]
 }

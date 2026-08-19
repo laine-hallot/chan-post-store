@@ -1,0 +1,14 @@
+{
+  "name": "staging-html",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Staging helpers for prepare scripts: html.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "staging-core": "^1.0.0"
+  }
+}

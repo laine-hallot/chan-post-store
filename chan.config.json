@@ -1,7 +1,42 @@
 {
+  "storage": {
+    "type": "remote"
+  },
   "indexes": {
     "memory": "8GB",
     "tablespace": "fast",
     "tempTablespace": "fast"
-  }
+  },
+  "sources": [
+    "4archive",
+    "4chan-data-20181015",
+    "4chan-threads",
+    "4chan-threads-2015-10",
+    "4chan_threads_archive_10_billion",
+    "4chan-vp-2015-threads",
+    "4chan-wsr-archive-jan62016",
+    "4plebs",
+    "archive.alice.al-20230111",
+    "archiveofsins-20170205",
+    "archives-yotsubasociety-org",
+    "archives-yotsubasociety-org-native",
+    "archive_ten_billion_patched",
+    "desuarchive_201903_g_1",
+    "desuarchive_db_201909",
+    "desuarchive_mlp_1_42799493_20251114215436",
+    "fybertech",
+    "fybertech-native",
+    "installgentoo-net",
+    "laza-4chan-archive",
+    "perma_cc_frn8-45s5",
+    "perma_cc_x9pp-ycvx",
+    "rbt-asia",
+    "studionyami-com_penfifteen-2012-03-05",
+    "sunakos-fuuka",
+    "warosu-database-backup-2023-03-15",
+    "warosu-database-backup-2025-08-15",
+    "warosu-database-backup-2026-07-15",
+    "yotsuba-society-archives-part-2",
+    "yotsuba-society-archives-part-2-small"
+  ]
 }

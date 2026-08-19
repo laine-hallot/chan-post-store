@@ -1,0 +1,11 @@
+{
+  "name": "staging-core",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Staging helpers for prepare scripts: core.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "license": "ISC"
+}

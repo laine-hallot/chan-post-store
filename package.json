@@ -21,9 +21,29 @@
   },
   "workspaces": [
     "packages/cli",
-    "packages/analysis"
+    "packages/analysis",
+    "packages/site-config-4chan",
+    "packages/staging-json",
+    "packages/staging-html",
+    "packages/staging-sql",
+    "packages/staging-core",
+    "sources/*"
   ],
   "dependencies": {
     "prettier": "^3.9.6"
-  }
+  },
+  "version": "1.0.0",
+  "description": "Ingests heterogeneous 4chan (and eventually 8chan) archive dumps into a single Postgres database with full-text search, and answers questions like \"how many posts on /g/ mentioned _X_ per month between 2017 and 2018\".",
+  "main": "eslint.config.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/laine-hallot/4chan-archive-analysis.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/laine-hallot/4chan-archive-analysis/issues"
+  },
+  "homepage": "https://github.com/laine-hallot/4chan-archive-analysis#readme"
 }
