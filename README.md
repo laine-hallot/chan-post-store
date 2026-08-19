@@ -32,17 +32,19 @@ Runs on Node 24+ with `.ts` files executed directly via type stripping.
 - `packages/cli/src/lines.ts` — line splitting on `\n` and nothing else.
   Node's `readline` also breaks on U+2028/U+2029/lone `\r`, which occur in
   post bodies and silently truncate records
-- `packages/cli/src/prepare-steps/` — staging builtins (`sql-normalize`,
-  `stage-html`, `reconcile-boards`) and the payload runner
-- `sources/_payloads/` — prepare code uploaded to the archive host and run
-  there, for staging that needs a real parser
+- `packages/staging-{core,sql,html,json}` — staging helpers that source
+  prepare scripts import and bundle; split by concern so a SQL source never
+  pulls in an HTML parser
+- `packages/site-config-4chan` — the board timeline and `boardSlugs()`
 - `packages/cli/src/mysqldump.ts` — shared mysqldump tuple parsing + Fuuka-family
   New-York→UTC timestamp normalization
 - `packages/cli/src/manifest.ts` — reads `sources/*.json` and resolves ingest inputs
 - `packages/cli/src/runner.ts` — local vs. SSH command execution for staging steps
 - `packages/cli/src/archive-org.ts` — archive.org metadata API + item downloader
-- `sources/` — one committed manifest per archive: provenance plus the
-  adapter and path needed to ingest it (see below)
+- `sources/<id>/` — one npm package per archive, publishing a manifest
+  (provenance plus the adapter and path needed to ingest it) and a prepare
+  script that runs where the archives are. `chan.config.json` says which of
+  them this checkout is working with.
 - `Memetic Sociology/` — symlink to an sshfs mount of the raw archives
   (slow; don't recursively list it). Each dataset also keeps a local
   `manifest.json` so the directory is self-describing when read outside

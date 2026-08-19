@@ -8,9 +8,13 @@ Node comes from the flake devShell — there is no `node` on PATH otherwise, so
 every command needs `nix develop --command` (or an already-entered shell):
 
 ```sh
-nix develop --command npm run typecheck    # tsc, the only build/lint gate
+nix develop --command npm run typecheck     # tsc, the only build/lint gate
+nix develop --command npm run build:sources # bundle every source's prepare script
 nix develop --command node packages/cli/src/cli.ts <command> [...]
 ```
+
+`prepare` runs a BUILT script, so `build:sources` comes first after any change
+to a prepare script or a `staging-*` package. `dist/` is gitignored.
 
 There is no test suite. `typecheck` is the only automated check; verify
 behaviour by running CLI commands against real sources (`--dry-run` first).
@@ -55,95 +59,125 @@ constructor parameter properties (`constructor(readonly x: string)`). tsc has
 A CLI that ingests heterogeneous 4chan archive dumps into one SQLite database
 with FTS5 search. Everything is driven by committed per-source manifests.
 
-### The manifest registry
+### Source packages
 
-`sources/<id>.json` is the unit of configuration; `packages/cli/src/manifest.ts` parses it.
-Manifests are committed, the archives they describe are not, so the registry
-of what the corpus contains travels with the repo. Each manifest carries
-provenance (`source`), download filtering (`download.exclude`), staging steps
-(`prepare`), and ingest config (`ingest`).
+A source is an **npm package** under `sources/<id>/`, and every one of them is
+a workspace. It publishes two things, named in its own package.json:
 
-Two readers exist, and the distinction matters:
+```json
+"chan": {
+  "manifest": "./fybertech.json",
+  "prepare":  "./dist/prepare.mjs"
+}
+```
 
-- `readManifest()` requires a filled-in `ingest` block and throws
-  `PendingSourceError` otherwise.
-- `readSourceInfo()` reads only provenance + staging, so `download` and
-  `prepare` work on sources whose `ingest.adapter` is still `null`.
+Manifests are committed and the archives they describe are not, so the
+registry of what the corpus contains travels with the repo.
 
-A source that hasn't been staged yet necessarily has no adapter, so anything
-running before ingest must use `readSourceInfo`.
+`packages/cli/src/manifest.ts` parses the manifest, and two readers exist:
+`readManifest()` requires a filled-in `ingest` block and throws
+`PendingSourceError` otherwise, while `readSourceInfo()` reads only
+provenance, so a source whose `ingest.adapter` is still `null` can be prepared.
 
-`ingest.path` is project-root relative and points at `out/`. Paths are
-relative so moving the archive storage only means repointing the
-`Memetic Sociology` symlink.
+`ingest.path` is project-root relative and names the staged tree the reader
+consumes. Usually `out/`, but a source that converts writes elsewhere
+(`out-ndjson/`, `out-native/`) and says so. `prepareOutput` (default `out`) is
+the path whose existence means prepare has already run.
 
-A manifest may also set top-level `"dead-end": true`, which `list manifests`
-shows in place of `pending`. It means the item has been surveyed and holds
-nothing ingestible — `4plebs` is 127GB of images with no post text anywhere.
-That is not the same as a `null` adapter, which means "not written yet", and
-the difference is the point: a dead end is a *finished* investigation, and the
-manifest exists precisely so the next person doesn't repeat it. Put the
-evidence in `source.capture`, including how far the survey actually went
-(`4plebs` records two boards scanned in full and seven sampled at the head).
+A manifest may set `"dead-end": true`, which `list manifests` shows in place
+of `pending`. It means the item has been surveyed and holds nothing
+ingestible — `4plebs` is 127GB of images with no post text anywhere. That is
+not the same as a `null` adapter, which means "not written yet", and the
+difference is the point: a dead end is a *finished* investigation. Put the
+evidence in `source.capture`, including how far the survey went.
+
+**Which sources this checkout is working with** is `sources` in
+`chan.config.json`, not what exists on disk. A 12TB corpus is not all present
+on every machine, and an unlisted source is inert rather than broken.
 
 ### The staging pipeline
 
 `source/` → `extracted/` → `out*/`, all under the manifest's `dir`.
-`download` fills the first, `prepare` produces the rest, `ingest` reads
-whatever `ingest.path` names. Sources stop at different stages, and a source
-can produce more than one staged tree, which is why `ingest.path` is explicit
-rather than derived — `fybertech` writes `out/` (its raw pages), `out-ndjson/`
-(what `json` reads) and `out-native/` (what `html` reads, via its companion
-manifest).
+`download` fills the first, the prepare script produces the rest, `ingest`
+reads whatever `ingest.path` names. A source can produce more than one staged
+tree: `fybertech` writes `out/` (its raw pages), `out-ndjson/` (what `json`
+reads) and `out-native/` (what `html` reads, via its companion package).
 
-**`prepare` is where every format quirk is dealt with.** The three readers
-each know one shape; anything else about a source is normalised here. A step
-is one of four kinds:
+**The prepare script is the whole pipeline.** There is no step list in the
+manifest. Staging that needs real code could never be expressed as one, and
+keeping both meant two mechanisms doing one job and two places to look when
+staging misbehaved.
 
-| kind | runs | for |
-| --- | --- | --- |
-| `run` | on the target, through the runner | unpacking, decompressing, hardlinking |
-| `local:` prefix | on THIS machine | work needing this CLI (`warc-extract`) |
-| builtin (`sql-normalize`, `stage-html`, `reconcile-boards`) | generated script, through the runner | staging that needs logic but not a parser |
-| `payload` | this repo's code, uploaded and run ON the target | staging that needs a real parser |
+Every prepare script is **node**, never shell. The shell is still used for
+what it is good at — `tar`, `7z`, `bunzip2`, `unzstd` — through `staging-core`'s
+`sh` helper, but node owns the control flow, and that is what makes a prepare
+script a bundle that can be copied to the archive host and run there.
 
-`prepareOutput` (default `out`) is the path whose existence means prepare has
-already run, so a source writing `out-ndjson/` must say so or `--force` is
-needed every time.
+### Prepare scripts run where the archives are
 
-### Payload prepare steps
+This is the rule that everything else follows from. **The code goes to the
+data.** The NFS mount is for seeing which sources exist; it is not for working
+with them. Reading a directory with a lot of files in it is on its own enough
+to take the NAS down, and the failure is deceptive — `readdir` starts
+returning empty while `stat` on a known path still works, so the tree looks
+deleted rather than broken (`soft` is what turns the failed readdir into a
+silent empty result). SSH key auth goes with it.
 
-Some staging cannot be a shell one-liner — turning 26,000 saved pages in three
-markup generations into NDJSON needs a parser. The NAS has **no node, no
-python, and docker only for root**, and doing the work from this machine would
-mean walking the tree over the NFS mount. So the code goes to the data:
+Two staging steps predated this rule and both were bugs waiting to happen:
+`reconcile-boards` read 23,295 files over the mount, and WARC extraction read
+a 700MB file back through the runner and tried to hold it in one string, which
+fails above 512MB (`ERR_STRING_TOO_LONG`). Both now run on the archive host.
+See `artifacts/reconcile-boards-walks-the-nfs-mount.md`.
 
-```
-sources/_payloads/<name>/          shared by several sources
-sources/<id>/manifest.json         the directory form, for bespoke code
-sources/<id>/payload/
-```
+`storage.type` in `chan.config.json` says where that is. `local` runs the
+script here; `remote` runs it on the machine holding the archives, with the
+dataset directory as the working directory either way, so the same script
+works under both.
 
-The directory named by a step's `payload.dir` (or the source's own `payload/`)
-is uploaded and executed on the target.
+**Building is npm's job, not the CLI's.** Each source package has a `build`
+script and the root has `build:sources` (`npm run build --workspaces
+--if-present`; only source packages define `build`). `chan.prepare` names the
+BUILT artifact, so the CLI never compiles anything — it copies the bundle to
+wherever the archives are and runs it. `dist/` is gitignored, so a fresh
+clone must run `npm run build:sources` before any `prepare`; the CLI says
+exactly that if the bundle is missing.
 
-- **A payload may not import anything from this repo.** It is self-contained
-  by construction: `node:` builtins and its own siblings only. Shared helpers
-  are therefore COPIES, and `node-html-parser` is vendored as its
-  self-contained UMD bundle. That duplication is the cost of the design and
-  the reason payloads are the exception.
-- **No bundler and no build step.** Node 24 strips TypeScript types natively,
-  so a payload ships as the `.ts` a person reads. The same "no syntax that
-  emits code" rule applies — no enums, no namespaces, no constructor parameter
-  properties. `sources/tsconfig.json` typechecks them anyway, since a payload
-  runs unattended.
-- **The vendored bundle must be `.cjs`.** This repo is `"type": "module"`, so
-  a `.js` UMD file is read as ESM and hands back an empty namespace — silently.
-- **The runtime is fetched BY THE TARGET.** Node is ~110MB and the NAS has
-  working HTTPS, so it curls the official tarball once into a shared
-  `.chan-runtime/`. Nothing large crosses SSH. `prepare-runtime` does it
-  deliberately; the first payload step does it automatically. The version is
-  pinned so a re-run cannot silently change runtimes.
+Things that will bite you here:
+
+- **A bundle must be self-contained.** tsdown externalises `dependencies` by
+  default, which produces a bundle that still imports `staging-html` — and
+  fails on a machine with no `node_modules`. The configs set
+  `noExternal: [/.*/]`; only `node:` builtins stay external. It builds and
+  looks fine either way, which is what makes it worth knowing.
+- **Nothing may be loaded at runtime by a path relative to a source file.**
+  `createRequire(import.meta.url)('./vendor/x.cjs')` cannot survive bundling:
+  `import.meta.url` becomes the bundle's own location. Use a static import so
+  the bundler inlines it.
+- **The runtime is copied, and it cannot be the dev-shell node.** nixpkgs'
+  build is dynamically linked against `/nix/store` paths that do not exist on
+  the NAS. What gets copied is the official portable build, cached once per
+  checkout under `.cache/` and written to the storage root — ~110MB once,
+  shared by every source, pinned so a re-run cannot silently change runtimes.
+
+### The staging packages
+
+Shared staging code lives in `packages/staging-*`, split by concern so a SQL
+source's bundle never pulls in an HTML parser:
+
+| package | holds |
+| --- | --- |
+| `staging-core` | `readLines`, `cleanBodyText`/`stripHtml`, `nyWallToUtc`, the `NdjsonPost` record and `NdjsonWriter`, and the `sh`/`linkInto`/`expectFiles` helpers |
+| `staging-sql` | mysqldump tuple parsing, `sqlNormalize`, `postsThreadsToNdjson` |
+| `staging-html` | the fybertech markup generations, `htmlToNdjson`, `stageNativeHtml`, `reconcileBoards`, WARC extraction, the HTML tree walker |
+| `staging-json` | `threadsJsonToNdjson`, `asagiExportToNdjson` |
+
+`site-config-4chan` publishes the board timeline and `boardSlugs()`.
+
+`sqlNormalize` keeps its awk program rather than being rewritten in
+JavaScript: it is a streaming text rewrite over hundreds of gigabytes, awk is
+already on the archive host, and the output was verified byte-identical
+against the readers it replaced. Since the prepare script calling it now runs
+on that host, awk is a local child process rather than a remote command.
 
 ### The runner abstraction
 
@@ -498,24 +532,15 @@ this file said before.
 
 ## Conventions
 
-- Manifest `prepare` steps must be idempotent and are skipped when `out/`
-  exists (`--force` re-runs). Prefer `cp -al || cp -a` (hardlink, fall back to
-  copy) for staging rather than symlinks: `ingestInputs` globs real files, and
-  symlinks break when the tree is read over a different mount.
-- A step prefixed `local:` runs on this machine rather than the target, for
-  work needing this CLI. It gets `$PROJECT` (repo root), `$CLI` (absolute path
-  to cli.ts), `$DIR` (dataset dir as the target sees it) and `$TARGET` (flags
-  reproducing the current runner). Use `$CLI` rather than spelling out the
-  package path, so manifests survive the code moving.
-  **A `local:` step's shell runs HERE, so `$DIR` is a path it cannot see.**
-  fybertech guarded its WARC fallback with `ls "$DIR/out"/*.html`, which could
-  never succeed against a NAS path, so every `--force` run fell through to
-  WARC extraction and then died trying to `toString()` a >512MB buffer. Test
-  the target's filesystem in a `run` step, never a `local:` one.
-- **Killing a local `prepare` does not stop the remote work.** The command is
-  reparented to init and carries on; a `--force` re-run started while an
-  orphan is still writing will `rm -rf out` underneath it. Check with `pgrep`
-  on the target before re-running a long step.
+- Prepare scripts must be idempotent: the pipeline is re-run whenever a source
+  is re-staged, and `--force` re-runs it over a populated tree. Prefer
+  `cp -al || cp -a` (hardlink, fall back to copy) rather than symlinks —
+  ingest globs real files, and a symlink breaks when the tree is read over a
+  different mount.
+- End every prepare script by asserting it produced something
+  (`expectFiles`). A step that stages zero files and exits 0 looks exactly
+  like a source whose data was already in place, which is the failure mode
+  this codebase keeps being bitten by.
 - `list manifests` `s/e/o` column shows which stage dirs are non-empty — the
   quickest way to see where a source actually is.
 - Record non-obvious facts about a source in `source.capture` (free text, not
