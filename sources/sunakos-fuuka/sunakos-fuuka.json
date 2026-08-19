@@ -11,16 +11,6 @@
   "download": {
     "exclude": ["-media-", "-images?-", "-thumbs?[-.]", "/image/"]
   },
-  "prepare": [
-    {
-      "name": "unpack the sql tarball",
-      "run": "mkdir -p extracted && find . -name '*sql*.tar.gz' -not -path './out/*' -not -path './extracted/*' -exec tar xzf {} -C ./extracted ';'"
-    },
-    {
-      "name": "stage the .sql dumps for ingest",
-      "run": "mkdir -p out && find extracted -name '*.sql' -exec sh -c 'cp -al \"$1\" out/ 2>/dev/null || cp -a \"$1\" out/' _ {} ';'"
-    }
-  ],
   "ingest": {
     "adapter": null,
     "path": "Memetic Sociology/Datasets/4chan/sunakos-fuuka/out",

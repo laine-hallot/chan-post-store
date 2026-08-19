@@ -10,16 +10,6 @@
   "download": {
     "exclude": ["\\.7z$", "-meta\\.warc\\.gz$", "\\.cdx(\\.gz|\\.idx)?$"]
   },
-  "prepare": [
-    {
-      "name": "extract the WARC into per-page HTML",
-      "run": "local: mkdir -p \"$DIR/extracted\" && for w in \"$DIR/source\"/*.warc.gz; do [ -e \"$w\" ] || continue; node \"$CLI\" warc-extract --warc \"$w\" --out \"$DIR/extracted\"; done"
-    },
-    {
-      "name": "stage the extracted pages for ingest",
-      "run": "mkdir -p out && (cp -al extracted/. out/ 2>/dev/null || cp -a extracted/. out/)"
-    }
-  ],
   "ingest": {
     "adapter": null,
     "path": "Memetic Sociology/Datasets/4chan/studionyami-com_penfifteen-2012-03-05/out",

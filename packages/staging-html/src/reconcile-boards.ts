@@ -1,8 +1,14 @@
 import { Buffer } from 'node:buffer';
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+} from 'node:fs';
 
-import { isDir, listHtmlPages } from '../html-tree.ts';
+import { isDir, listHtmlPages } from './html-tree.ts';
 
 /**
  * The staging step for `sources/archives-yotsubasociety-org.json`: reconciles
@@ -482,4 +488,48 @@ export const reconcileYotsubasocietyBoards = (
   }
 
   return { stats, ops };
+};
+
+/**
+ * Plans the reconciliation and applies it, in one call.
+ *
+ * The planning half is unchanged; what used to happen after it is not. This
+ * ran as a CLI builtin that read the tree through the NFS mount and then sent
+ * the moves back over SSH as a generated shell script. Reading 23,295 files
+ * over that mount is what took it down -- `readdir` began returning empty
+ * while `stat` still worked, so the tree looked deleted rather than broken.
+ *
+ * As part of a prepare script the whole thing runs on the archive host, so
+ * both halves are ordinary local filesystem calls and no script generation is
+ * needed. Paths stay Buffers throughout: one filename in this mirror is not
+ * valid UTF-8, and decoding it to build a destination would name a file that
+ * does not exist.
+ */
+export const reconcileBoards = (opts: ReconcileOptions): ReconcileStats => {
+  const { stats, ops } = reconcileYotsubasocietyBoards(opts);
+  const root = Buffer.from(opts.root);
+  const at = (rel: Buffer): Buffer =>
+    Buffer.concat([root, Buffer.from('/'), rel]);
+
+  for (const op of ops) {
+    const from = at(op.from);
+    if (op.kind === 'remove') {
+      rmSync(from, { force: true });
+      continue;
+    }
+    const to = at(op.to!);
+    const slash = to.lastIndexOf(0x2f);
+    if (slash > 0) {
+      mkdirSync(to.subarray(0, slash), { recursive: true });
+    }
+    try {
+      renameSync(from, to);
+    } catch (e) {
+      // Asset directories may legitimately already be gone; a page may not.
+      if (!op.optional) {
+        throw e;
+      }
+    }
+  }
+  return stats;
 };

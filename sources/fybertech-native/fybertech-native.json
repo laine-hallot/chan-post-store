@@ -10,15 +10,6 @@
   "download": {
     "exclude": ["^fybertech-2015-02-16\\.7z$"]
   },
-  "prepare": [
-    {
-      "name": "stage 4chan's own markup as <board>/<name>.html",
-      "stage-html": {
-        "from": "out",
-        "to": "out-native"
-      }
-    }
-  ],
   "ingest": {
     "adapter": "html",
     "path": "Memetic Sociology/Datasets/4chan/fybertech/out-native",

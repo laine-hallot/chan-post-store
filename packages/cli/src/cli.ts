@@ -10,6 +10,7 @@ import { mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gunzipSync } from 'node:zlib';
+import { htmlPages, uriToFilename } from 'staging-html';
 
 import { ingestHtml } from './adapters/html.ts';
 import { ingestJson } from './adapters/json.ts';
@@ -47,7 +48,6 @@ import { makeRunner, shQuote } from './runner.ts';
 import { ensureNodeRuntime, NODE_VERSION } from './runtime.ts';
 import { readSourcePackage } from './source-package.ts';
 import { boardList, hasStats, refreshPostStats } from './stats.ts';
-import { htmlPages, uriToFilename } from './warc.ts';
 
 /**
  * Per-command argument types, narrowed out of the one grammar in parsers.ts.

@@ -7,24 +7,6 @@
     "short-desc": "Yotsuba Society thread archives: /3/, /aco/, /adv/, /an/, /asp/.",
     "capture": "IA identifier is `yotsuba-society-archives_part-2`, with an UNDERSCORE. The local dir is deliberately named ...-part-2-small instead, because Yotsuba Society published two items whose identifiers differ only by that one character -- `yotsuba-society-archives-part-2` (hyphen) is a different, much larger item with a different layout, and two local directories differing only by hyphen-vs-underscore is a trap. This is the only source where dir does not mirror the IA identifier; `link` still carries the real one.\n\nSmall by design, and 5 boards is the whole item, not a partial download: IA lists exactly 3.tar.gz, aco.tar.gz, adv.tar.gz, an.tar.gz, asp.tar.gz plus bookkeeping (verified against _files.xml). That is 45 threads total -- 3:4, aco:1, adv:38, an:1, asp:1 -- so an ingest finishing in under two seconds with 0 new posts is the correct result, not a staging failure. It contributed 2263 posts when first ingested; everything else in it had already been supplied by another archive.\n\n4chan JSON API thread dumps, one tar.gz per board, laid out as <board>/<threadno>/<threadno>.json alongside the rendered HTML and assets."
   },
-  "prepare": [
-    {
-      "name": "untar the per-board archives",
-      "run": "mkdir -p extracted && for f in source/*.tar.gz; do [ -e \"$f\" ] || continue; tar xzf \"$f\" -C extracted; done"
-    },
-    {
-      "name": "stage the thread tree for ingest",
-      "run": "rm -rf out && (cp -al extracted out 2>/dev/null || cp -a extracted out)"
-    },
-    {
-      "name": "convert the thread dumps to out-ndjson/<board>/posts.ndjson",
-      "payload": {
-        "dir": "_payloads/threads-json-to-ndjson",
-        "entry": "threads-json-to-ndjson.ts",
-        "args": ["--from", "out", "--to", "out-ndjson"]
-      }
-    }
-  ],
   "ingest": {
     "adapter": "json",
     "path": "Memetic Sociology/Datasets/4chan/yotsuba-society-archives-part-2-small/out-ndjson",

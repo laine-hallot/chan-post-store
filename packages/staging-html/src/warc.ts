@@ -1,3 +1,11 @@
+import {
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
+import { join } from 'node:path';
 import { brotliDecompressSync, gunzipSync, inflateSync } from 'node:zlib';
 
 /**
@@ -151,4 +159,55 @@ export const htmlPages = function* (
 export const uriToFilename = (uri: string): string => {
   const u = uri.replace(/^https?:\/\//, '').replace(/\/$/, '');
   return `${u.replace(/[^A-Za-z0-9._-]+/g, '_')}.html`;
+};
+
+/**
+ * Extracts every captured HTML page from a WARC (or a directory of them)
+ * into `out/`, named after the URL it was captured from.
+ *
+ * The naming is load-bearing: `stageNativeHtml` reads the board and thread
+ * back out of `boards.4chan.org_<board>_thread_<no>.html`, which is why this
+ * writes that shape rather than an opaque index.
+ *
+ * Runs where the archives are -- a WARC here is 700MB, and the previous
+ * arrangement read it back to the other machine through the runner and then
+ * tried to hold it in a single string, which fails outright above 512MB
+ * (ERR_STRING_TOO_LONG).
+ */
+export const extractWarcPages = (opts: {
+  /** A `.warc`/`.warc.gz`, or a directory holding them. */
+  warc: string;
+  out: string;
+  /** Which host's pages to keep. */
+  host?: RegExp;
+}): number => {
+  const host = opts.host ?? /boards\.4chan(?:nel)?\.org/;
+  const files = statSync(opts.warc).isDirectory()
+    ? readdirSync(opts.warc)
+        .filter((f) => /\.warc(\.gz)?$/i.test(f))
+        .sort()
+        .map((f) => join(opts.warc, f))
+    : [opts.warc];
+
+  mkdirSync(opts.out, { recursive: true });
+  let n = 0;
+  for (const file of files) {
+    const raw = readFileSync(file);
+    const buf = file.endsWith('.gz') ? gunzipSync(raw) : raw;
+    for (const rec of htmlPages(buf, host)) {
+      // A record with no target URI cannot be named after one; the reader
+      // takes board and thread from the filename, so an opaque name would be
+      // an unattributable page rather than a useful one.
+      if (!rec.uri) {
+        continue;
+      }
+      writeFileSync(join(opts.out, uriToFilename(rec.uri)), rec.body);
+      n++;
+    }
+  }
+  if (n === 0) {
+    console.error(`no pages matching ${host} in ${opts.warc}`);
+    process.exit(1);
+  }
+  return n;
 };

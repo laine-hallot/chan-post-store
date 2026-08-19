@@ -8,16 +8,6 @@
     "short-desc": "4chan-data-20181015",
     "capture": "A SEARCH INDEX, NOT A CORPUS. 95.6GB across three multi-volume 7z sets (data/ 8 volumes, index/ 3 volumes, post/ one small file) that unpack to per-board binary files: <board>.nozomi, and <board>_{postext,subject,filename,imagemd5,trip,username}.{index,data}. 69 boards, /g/ included.\n\nThere is no post text anywhere in it, and no timestamps at all for any board. Verified, not sampled: `strings -n 6` over the ENTIRE 3_postext.data (18.7MB) yields 26,440 strings and ZERO English words -- the same test over 200MB of g_postext.data gives 42,812 strings, all gibberish, which is the background rate for binary. subject.data is identically unreadable. The only per-board file types present are filename, imagemd5, postext, subject, trip, username -- nothing temporal.\n\nWhat IS readable: <board>.nozomi is a flat array of big-endian uint32 post numbers, ascending. g.nozomi holds 2,295,412 of them spanning 8,118,808 to 68,080,098, i.e. roughly Feb 2010 to Oct 2018 (cross-checked against installgentoo, which dates /g/ post 8,984,497 to 2010-03-12). The coverage is exactly the range this corpus is missing; the content is not there to take. g_postext.data is exactly 4,294,967,296 bytes -- 2^32 on the nose -- consistent with 32-bit offsets capping a board's posting lists at 4GiB.\n\nDO NOT INGEST THE POST NUMBERS. posts is first-writer-wins on UNIQUE (site, board, post_no), so bodyless rows would claim those numbers and permanently block a real source from supplying the actual text later. That would be worse than leaving it out.\n\nFORMAT UNIDENTIFIED, AND WORTH MORE RESEARCH BEFORE WRITING THIS OFF FOR GOOD. The open question is whether this is half of something: an inverted index is normally useless without the document store it points into, so this may have been uploaded as the companion to a separate posts dump that lives elsewhere, in which case the index becomes valuable rather than dead. The alternative is that it is simply a bad archive -- someone backed up the search tier and not the data tier. Nothing in the IA item disambiguates it: title, subject and description are all just the literal string '4chan-data-20181015', there is no README, and the uploader left no notes. The `.nozomi` extension is the strongest lead -- it is the term hitomi.la uses for its search backend's ID lists -- so identifying the engine may identify the missing half."
   },
-  "prepare": [
-    {
-      "name": "extract the multi-volume 7z sets",
-      "run": "mkdir -p extracted && for part in data index post; do d=source/4chan-data-20181015/$part; [ -d \"$d\" ] || continue; mkdir -p \"extracted/$part\"; for v in \"$d\"/*.7z.001 \"$d\"/*.7z; do [ -e \"$v\" ] || continue; 7z x -aos -o\"./extracted/$part\" \"$v\"; done; done"
-    },
-    {
-      "name": "stage for ingest",
-      "run": "rm -rf out && (cp -al extracted out 2>/dev/null || cp -a extracted out)"
-    }
-  ],
   "ingest": {
     "adapter": null,
     "path": "Memetic Sociology/Datasets/4chan/4chan-data-20181015/out",

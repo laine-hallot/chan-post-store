@@ -2,9 +2,9 @@ import type { Pool } from 'pg';
 
 import { parse, type HTMLElement } from 'node-html-parser';
 import { readFileSync } from 'node:fs';
+import { listHtmlPages } from 'staging-html';
 
 import { makeBoardFilter } from '../boards.ts';
-import { listHtmlPages } from '../html-tree.ts';
 import { cleanBodyText } from '../html.ts';
 import { collectPending, PostInserter } from '../ingest.ts';
 import { makeBar } from '../progress.ts';

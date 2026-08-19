@@ -4,5 +4,5 @@
     "tsBuildInfoFile": "./tsconfig.tsbuildinfo",
     "resolveJsonModule": true
   },
-  "include": ["*.json"]
+  "include": ["src/**/*.ts"]
 }

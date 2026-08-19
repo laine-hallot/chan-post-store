@@ -6,28 +6,6 @@
     "link": "https://archive.org/details/4chanThreads_201809",
     "short-desc": "Threads were scraped at various times between May 2017 and September 2018. This archive is by no means exhaustive of all threads created during that time period."
   },
-  "prepare": [
-    {
-      "name": "extract the 7z of thread dumps",
-      "run": "mkdir -p extracted && 7z x -aos -o./extracted 'source/4chan threads.7z'"
-    },
-    {
-      "name": "rename .txt thread dumps to .json",
-      "run": "find extracted -name '*.txt' -exec sh -c 'mv -- \"$1\" \"${1%.txt}.json\"' _ {} ';'"
-    },
-    {
-      "name": "stage for ingest",
-      "run": "rm -rf out && (cp -al extracted out 2>/dev/null || cp -a extracted out)"
-    },
-    {
-      "name": "convert the thread dumps to out-ndjson/<board>/posts.ndjson",
-      "payload": {
-        "dir": "_payloads/threads-json-to-ndjson",
-        "entry": "threads-json-to-ndjson.ts",
-        "args": ["--from", "out", "--to", "out-ndjson"]
-      }
-    }
-  ],
   "ingest": {
     "adapter": "json",
     "path": "Memetic Sociology/Datasets/4chan/4chan threads/out-ndjson",

@@ -8,7 +8,6 @@
     "short-desc": "Desuarchive /g/ media dump, March 2019, part 1.",
     "capture": "IMAGES ONLY — 293 numbered .tar files, 760GB, holding .jpg/.png named by post timestamp (verified by reading a tar header). No post text, so nothing here is ingestable; recorded for provenance."
   },
-  "prepare": [],
   "ingest": {
     "adapter": null,
     "path": "Memetic Sociology/Datasets/4chan/desuarchive_201903_g_1/out",

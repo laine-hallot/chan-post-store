@@ -10,20 +10,6 @@
   "download": {
     "exclude": ["^archive-2-22-14\\.tar\\.gz$"]
   },
-  "prepare": [
-    {
-      "name": "unpack the mysqldump (bzip2 despite the .tar.xz name, so no -J)",
-      "run": "mkdir -p extracted && ls extracted/*.sql >/dev/null 2>&1 || tar xf source/installgentoo-mysql-2014-02-22.tar.xz -C extracted"
-    },
-    {
-      "name": "split into the standard out/<board>.sql layout",
-      "sql-normalize": {
-        "from": "extracted",
-        "to": "out",
-        "rename": "fuuka"
-      }
-    }
-  ],
   "ingest": {
     "adapter": "sql",
     "path": "Memetic Sociology/Datasets/4chan/installgentoo-net/out",

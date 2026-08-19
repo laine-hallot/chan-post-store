@@ -11,20 +11,6 @@
   "download": {
     "exclude": ["^threads/html/(?!b\\.tar\\.gz$|p\\.tar\\.gz$)"]
   },
-  "prepare": [
-    {
-      "name": "unpack the per-board XML tarballs",
-      "run": "mkdir -p extracted/xml && for f in source/threads/xml/*.tar.gz; do [ -e \"$f\" ] || continue; b=$(basename \"$f\" .tar.gz); [ -d \"extracted/xml/$b\" ] || tar xzf \"$f\" -C extracted/xml; done"
-    },
-    {
-      "name": "unpack the /b/ and /p/ HTML tarballs (the boards the XML tree omits)",
-      "run": "mkdir -p extracted/html && for b in b p; do f=\"source/threads/html/$b.tar.gz\"; [ -e \"$f\" ] || continue; [ -d \"extracted/html/$b\" ] || tar xzf \"$f\" -C extracted/html; done"
-    },
-    {
-      "name": "stage for ingest",
-      "run": "rm -rf out && (cp -al extracted out 2>/dev/null || cp -a extracted out)"
-    }
-  ],
   "ingest": {
     "adapter": null,
     "path": "Memetic Sociology/Datasets/4chan/4chan_threads_archive_10_billion/out/xml",

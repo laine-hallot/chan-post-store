@@ -10,28 +10,6 @@
   "download": {
     "exclude": ["^fybertech-2015-02-16\\.7z$"]
   },
-  "prepare": [
-    {
-      "name": "unpack the crawl if only the .7z is present",
-      "run": "mkdir -p extracted && if [ ! -d extracted/www.fybertech.com ] && [ ! -d extracted/2015-02-16-WARC ]; then 7z x -aos -o./extracted source/fybertech/fybertech-2015-02-16.7z; fi"
-    },
-    {
-      "name": "stage the rendered thread pages (no WARC parsing: the crawl ships them)",
-      "run": "rm -rf out && if [ -d extracted/www.fybertech.com/4thread ]; then (cp -al extracted/www.fybertech.com/4thread out 2>/dev/null || cp -a extracted/www.fybertech.com/4thread out); else echo 'no 4thread/ tree; falling back to the WARCs' >&2; mkdir -p out; fi"
-    },
-    {
-      "name": "assert the crawl tree actually staged",
-      "run": "ls out/*.html >/dev/null 2>&1 || { echo 'no pages in out/: extracted/www.fybertech.com/4thread is missing.' >&2; echo 'The item also ships the raw WARCs; stage those instead with' >&2; echo '  node packages/cli/src/cli.ts warc-extract --remote <host> \\\\' >&2; echo '    --warc \"<dir>/extracted\" --out \"<dir>/out\"' >&2; exit 1; }"
-    },
-    {
-      "name": "parse the rendered pages into out-ndjson/<board>/posts.ndjson",
-      "payload": {
-        "entry": "html-to-ndjson.ts",
-        "args": ["--from", "out", "--to", "out-ndjson"],
-        "dir": "_payloads/html-to-ndjson"
-      }
-    }
-  ],
   "ingest": {
     "adapter": "json",
     "path": "Memetic Sociology/Datasets/4chan/fybertech/out-ndjson",

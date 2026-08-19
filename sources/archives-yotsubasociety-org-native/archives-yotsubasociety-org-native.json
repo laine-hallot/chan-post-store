@@ -7,15 +7,6 @@
     "short-desc": "The subset of the Yotsuba Society mirror saved as 4chan's own HTML rather than the classic Futaba template.",
     "capture": "The ~14% of the Yotsuba Society mirror saved as 4chan's own markup -- postContainer wrappers with data-utc timestamps -- rather than the classic Futaba template the rest uses. Read by chan-html; fybertech-html skips these and this skips fybertech-html's, so both run over the same staged tree without double-counting. Unlike the classic pages these carry real UTC epochs, so their timestamps are second-accurate rather than minute-precision New-York wall time. Staged by the archives-yotsubasociety-org source; nothing to prepare here."
   },
-  "prepare": [
-    {
-      "name": "stage 4chan's own markup as <board>/<name>.html",
-      "stage-html": {
-        "from": "out/4chan",
-        "to": "out-native"
-      }
-    }
-  ],
   "ingest": {
     "adapter": "html",
     "path": "Memetic Sociology/Datasets/4chan/archives-yotsubasociety-org/out-native",

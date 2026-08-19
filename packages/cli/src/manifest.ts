@@ -304,11 +304,14 @@ export const manifestPath = (idOrPath: string, projectRoot: string): string => {
   if (idOrPath.endsWith('.json')) {
     return resolve(projectRoot, idOrPath);
   }
-  const dir = join(projectRoot, SOURCES_DIR, idOrPath, 'manifest.json');
-  if (existsSync(dir)) {
-    return dir;
+  // A source package names its own manifest; `<id>/<id>.json` is the
+  // convention every one of them follows.
+  const dir = join(projectRoot, SOURCES_DIR, idOrPath);
+  const declared = join(dir, `${idOrPath}.json`);
+  if (existsSync(declared)) {
+    return declared;
   }
-  return join(projectRoot, SOURCES_DIR, `${idOrPath}.json`);
+  return join(dir, 'manifest.json');
 };
 
 /**
@@ -328,29 +331,25 @@ export const payloadDir = (manifestFile: string): string | undefined => {
   return existsSync(d) ? d : undefined;
 };
 
+/**
+ * Every source package in the registry, by directory name.
+ *
+ * The registry is what exists on disk. Which of those this checkout is
+ * actually working with is `sources` in chan.config.json -- a 12TB corpus is
+ * not all present on every machine, and a source that is not listed there is
+ * inert rather than broken.
+ */
 export const listManifestIds = (projectRoot: string): string[] => {
   const dir = join(projectRoot, SOURCES_DIR);
   if (!existsSync(dir)) {
     return [];
   }
-  const ids: string[] = [];
-  for (const e of readdirSync(dir, { withFileTypes: true })) {
-    if (e.isDirectory()) {
-      // Directory form: sources/<id>/manifest.json
-      if (existsSync(join(dir, e.name, 'manifest.json'))) {
-        ids.push(e.name);
-      }
-      continue;
-    }
-    // sources/ also holds tooling that is not a source: tsconfig.json for
-    // the payloads, and _payloads/ itself (skipped above, having no
-    // manifest.json). Without this the registry lists a manifest called
-    // "tsconfig" and reports it as an error on every run.
-    if (e.name.endsWith('.json') && e.name !== 'tsconfig.json') {
-      ids.push(basename(e.name, '.json'));
-    }
-  }
-  return ids.sort();
+  return readdirSync(dir, { withFileTypes: true })
+    .filter(
+      (e) => e.isDirectory() && existsSync(join(dir, e.name, 'package.json'))
+    )
+    .map((e) => e.name)
+    .sort();
 };
 
 /**

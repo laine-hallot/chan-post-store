@@ -10,24 +10,6 @@
   "download": {
     "exclude": ["-images?-", "-img-", "-thumbs?[-.]"]
   },
-  "prepare": [
-    {
-      "name": "decompress the gzipped mysqldumps (daily_4klaani_*, w-*)",
-      "run": "mkdir -p extracted && find source -maxdepth 1 -name '*.sql.gz' | while read -r f; do b=$(basename \"${f%.gz}\"); [ -e \"extracted/$b\" ] || [ -e \"out/$b\" ] || gunzip -c \"$f\" > \"extracted/$b\"; done"
-    },
-    {
-      "name": "unpack the xz-compressed per-board tarballs (qa, con)",
-      "run": "mkdir -p extracted && for f in source/*.sql.tar.xz; do [ -e \"$f\" ] || continue; tar xf \"$f\" -C ./extracted; done"
-    },
-    {
-      "name": "split into the standard out/<board>.sql layout",
-      "sql-normalize": {
-        "from": "extracted",
-        "to": "out",
-        "rename": "fuuka"
-      }
-    }
-  ],
   "ingest": {
     "adapter": "sql",
     "path": "Memetic Sociology/Datasets/4chan/rbt-asia/out",

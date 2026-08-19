@@ -3,14 +3,15 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "devDependencies": {
-    "tsdown": "^0.22.14"
-  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "echo \"dead end: nothing to stage\""
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "module"
+  "type": "module",
+  "chan": {
+    "manifest": "./desuarchive_201903_g_1.json"
+  }
 }

@@ -7,24 +7,6 @@
     "short-desc": "Yotsuba Society thread archives, single 83GB tarball dated 2016-12-04.",
     "capture": "4chan JSON API thread dumps nested under a 4chan/ prefix: 4chan/<board>/<threadno>/<threadno>.json. The extra level is stripped when staging so the adapter sees <board>/<threadno>/."
   },
-  "prepare": [
-    {
-      "name": "untar the archive (83GB, slow)",
-      "run": "mkdir -p extracted && for f in source/*.tar.gz; do [ -e \"$f\" ] || continue; tar xzf \"$f\" -C extracted; done"
-    },
-    {
-      "name": "stage the thread tree for ingest (dropping the 4chan/ prefix)",
-      "run": "rm -rf out && src=extracted && [ -d extracted/4chan ] && src=extracted/4chan; (cp -al \"$src\" out 2>/dev/null || cp -a \"$src\" out)"
-    },
-    {
-      "name": "convert the thread dumps to out-ndjson/<board>/posts.ndjson",
-      "payload": {
-        "dir": "_payloads/threads-json-to-ndjson",
-        "entry": "threads-json-to-ndjson.ts",
-        "args": ["--from", "out", "--to", "out-ndjson"]
-      }
-    }
-  ],
   "ingest": {
     "adapter": "json",
     "path": "Memetic Sociology/Datasets/4chan/yotsuba-society-archives-part-2/out-ndjson",

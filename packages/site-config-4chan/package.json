@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "description": "",
   "files": [
-    "4chan-board-lifespans.json"
+    "4chan-board-lifespans.json",
+    "src"
   ],
   "devDependencies": {},
   "scripts": {
@@ -12,5 +13,9 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "module"
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./4chan-board-lifespans.json": "./4chan-board-lifespans.json"
+  }
 }

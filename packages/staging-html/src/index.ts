@@ -12,3 +12,10 @@ export type {
 } from './html-to-ndjson.ts';
 export { parse, readAnyGeneration } from './fybertech-markup.ts';
 export type { ParsedPost } from './fybertech-markup.ts';
+export { stageNativeHtml } from './stage-native.ts';
+export type { StageNativeOptions, StageNativeStats } from './stage-native.ts';
+export { reconcileBoards } from './reconcile-boards.ts';
+export type { ReconcileOptions, ReconcileStats } from './reconcile-boards.ts';
+export { isDir, listHtmlPages } from './html-tree.ts';
+export type { HtmlPageRef } from './html-tree.ts';
+export { extractWarcPages, htmlPages, uriToFilename } from './warc.ts';

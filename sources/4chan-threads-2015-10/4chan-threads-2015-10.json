@@ -6,16 +6,6 @@
     "link": "https://archive.org/details/4chan-threads-2015-10",
     "short-desc": ""
   },
-  "prepare": [
-    {
-      "name": "extract the per-board archives",
-      "run": "mkdir -p extracted && for f in source/*.tar.gz source/*.tgz source/*.7z source/*.zip; do [ -e \"$f\" ] || continue; case \"$f\" in *.tar.gz|*.tgz) tar xzf \"$f\" -C extracted;; *) 7z x -aos -o./extracted \"$f\";; esac; done"
-    },
-    {
-      "name": "stage for ingest",
-      "run": "rm -rf out && (cp -al extracted out 2>/dev/null || cp -a extracted out)"
-    }
-  ],
   "ingest": {
     "adapter": null,
     "path": "Memetic Sociology/Datasets/4chan/4chan-threads-2015-10/out",

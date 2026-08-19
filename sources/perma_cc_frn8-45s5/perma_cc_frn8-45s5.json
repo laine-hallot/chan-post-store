@@ -7,19 +7,6 @@
     "short-desc": "Perma.cc archive of https://boards.4channel.org/a/thread/231722770 created on 2021-12-15 23:45:35+00:00.",
     "capture": "thread-page: one complete thread (161 posts, no omitted replies)"
   },
-  "prepare": [
-    {
-      "name": "extract the captured pages from the WARC",
-      "run": "local: node \"$CLI\" warc-extract $TARGET --warc \"$DIR/source/FRN8-45S5.warc.gz\" --out \"$DIR/extracted\""
-    },
-    {
-      "name": "stage 4chan's own markup as <board>/<name>.html",
-      "stage-html": {
-        "from": "extracted",
-        "to": "out"
-      }
-    }
-  ],
   "ingest": {
     "adapter": "html",
     "path": "Memetic Sociology/Datasets/4chan/perma_cc_FRN8-45S5/out",
