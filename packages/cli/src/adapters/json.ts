@@ -4,7 +4,7 @@ import { createReadStream, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { makeBoardFilter } from '../boards.ts';
-import { collectPending, PostInserter } from '../ingest.ts';
+import { type BoardTotals, collectPending, PostInserter } from '../ingest.ts';
 import { readLines } from '../lines.ts';
 import { makeBar } from '../progress.ts';
 
@@ -65,6 +65,8 @@ interface IngestStats {
   skippedDup: number;
   skippedGhost: number;
   badLines: number;
+  /** Per-board run totals, for --count-only. */
+  totals: BoardTotals[];
 }
 
 /** `<root>/<board>/posts.ndjson` for every board present. */
@@ -100,16 +102,19 @@ export const ingestJson = async (
     site: string;
     boards?: string[];
     excludeBoards?: string[];
+    /** Parse and tally, but write nothing. See PostInserter. */
+    countOnly?: boolean;
   }
 ): Promise<IngestStats> => {
   const boardFilter = makeBoardFilter(opts.excludeBoards);
-  const inserter = new PostInserter(db, opts.sourceId);
+  const inserter = new PostInserter(db, opts.sourceId, opts.countOnly);
   const stats: IngestStats = {
     boards: 0,
     posts: 0,
     skippedDup: 0,
     skippedGhost: 0,
     badLines: 0,
+    totals: [],
   };
 
   const files = boardFiles(opts.root, opts.boards);
@@ -200,5 +205,6 @@ export const ingestJson = async (
   bar.stop(
     `${stats.posts} posts from ${stats.boards} board(s)` + boardFilter.summary()
   );
+  stats.totals = inserter.report();
   return stats;
 };

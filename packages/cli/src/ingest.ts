@@ -22,6 +22,20 @@ interface StatCell {
   maxTs: number | null;
 }
 
+/**
+ * Per-board totals for the whole run, kept separately from `#stats` because
+ * that map is CLEARED by every `finish()` and adapters call `finish()`
+ * periodically. These are what `--count-only` reports, and they are the three
+ * numbers a staged source has to be checked on: rows read, OPs among them,
+ * and rows whose timestamp did not parse.
+ */
+export interface BoardTotals {
+  board: string;
+  posts: number;
+  ops: number;
+  nullTs: number;
+}
+
 // 2000 rows * 13 columns = 26000 bound params, comfortably under Postgres's
 // 65535-param ceiling (floor(65535/13) = 5041 is the hard cap) while cutting
 // per-row round trips to a NAS-hosted server by 2000x.
@@ -90,10 +104,21 @@ export class PostInserter {
   #flushing: Promise<void> | null = null;
   /** Per-(site, board, year) tallies, flushed to post_stats by `finish()`. */
   #stats = new Map<string, StatCell>();
+  /** Per-board run totals; unlike `#stats`, never cleared. */
+  #totals = new Map<string, BoardTotals>();
+  #countOnly: boolean;
 
-  constructor(pool: Pool, sourceId: number) {
+  constructor(pool: Pool, sourceId: number, countOnly = false) {
     this.#pool = pool;
     this.#sourceId = sourceId;
+    this.#countOnly = countOnly;
+  }
+
+  /** Per-board totals accumulated so far, board order. */
+  report(): BoardTotals[] {
+    return [...this.#totals.values()].sort((a, b) =>
+      a.board.localeCompare(b.board)
+    );
   }
 
   /**
@@ -172,6 +197,20 @@ export class PostInserter {
     batch: PostRow[],
     waiters: ((ok: boolean) => void)[]
   ): Promise<void> {
+    // Count-only: the readers are what is under test, so tally every row and
+    // tell each waiter it was stored. Nothing is deduplicated, because
+    // deduplicating means holding every key of a 278M-row source in memory --
+    // the database is what normally does it, and it is not in play here. The
+    // number reported is therefore ROWS READ, which is what the registry's
+    // recorded survey figures are counts of.
+    if (this.#countOnly) {
+      for (let i = 0; i < batch.length; i++) {
+        this.#tally(batch[i]!);
+        waiters[i]!(true);
+      }
+      return;
+    }
+
     const params: unknown[] = [];
     const values = batch
       .map((r, i) => {
@@ -234,6 +273,24 @@ export class PostInserter {
   }
 
   #tally(p: PostRow): void {
+    const total = this.#totals.get(p.board);
+    if (total) {
+      total.posts++;
+      if (p.isOp) {
+        total.ops++;
+      }
+      if (p.tsUtc == null) {
+        total.nullTs++;
+      }
+    } else {
+      this.#totals.set(p.board, {
+        board: p.board,
+        posts: 1,
+        ops: p.isOp ? 1 : 0,
+        nullTs: p.tsUtc == null ? 1 : 0,
+      });
+    }
+
     const year =
       p.tsUtc == null ? null : new Date(p.tsUtc * 1000).getUTCFullYear();
     // Tab-separated: neither a site nor a board name contains one, so the
@@ -275,6 +332,13 @@ export class PostInserter {
     // checkpoint, and its caller is awaiting it, so nothing new is arriving.
     while (this.#buffer.length > 0 || this.#flushing) {
       await this.#flush();
+    }
+    // A count-only run must leave post_stats exactly as it found it: the
+    // tallies describe rows that were never inserted, and folding them in
+    // would inflate every count for a source already in the store.
+    if (this.#countOnly) {
+      this.#stats.clear();
+      return;
     }
     for (const [key, c] of this.#stats) {
       const [site, board, year] = key.split('\t');

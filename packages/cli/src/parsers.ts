@@ -178,6 +178,12 @@ const ingestCmd = command(
           description: message`Read only these boards. Repeatable. Note this does NOT mark the source complete: it covers part of the source by construction.`,
         })
       ),
+      'count-only': withDefault(
+        flag('--count-only', {
+          description: message`Run the reader and report per-board rows, OPs and unparsed timestamps, writing NOTHING -- no posts, no post_stats, no completion mark. This is how a staged source is checked against its recorded figures: a plain re-ingest cannot do it, because every post already in the store is rejected by ON CONFLICT and counts as zero.`,
+        }),
+        false
+      ),
     }),
     dbOptions
   ),

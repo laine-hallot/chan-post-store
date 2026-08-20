@@ -6,7 +6,7 @@ import { listHtmlPages } from 'staging-html';
 
 import { makeBoardFilter } from '../boards.ts';
 import { cleanBodyText } from '../html.ts';
-import { collectPending, PostInserter } from '../ingest.ts';
+import { type BoardTotals, collectPending, PostInserter } from '../ingest.ts';
 import { makeBar } from '../progress.ts';
 
 /**
@@ -64,6 +64,8 @@ interface IngestStats {
   posts: number;
   skippedDup: number;
   badFiles: number;
+  /** Per-board run totals, for --count-only. */
+  totals: BoardTotals[];
 }
 
 /** Text of the first match, or null when absent or empty. */
@@ -168,16 +170,19 @@ export const ingestHtml = async (
     site: string;
     boards?: string[];
     excludeBoards?: string[];
+    /** Parse and tally, but write nothing. See PostInserter. */
+    countOnly?: boolean;
   }
 ): Promise<IngestStats> => {
   const boardFilter = makeBoardFilter(opts.excludeBoards);
-  const inserter = new PostInserter(db, opts.sourceId);
+  const inserter = new PostInserter(db, opts.sourceId, opts.countOnly);
   const stats: IngestStats = {
     files: 0,
     threads: 0,
     posts: 0,
     skippedDup: 0,
     badFiles: 0,
+    totals: [],
   };
 
   const pages = listHtmlPages(opts.root, opts.boards);
@@ -297,5 +302,6 @@ export const ingestHtml = async (
   bar.stop(
     `${stats.posts} posts from ${stats.files} page(s)` + boardFilter.summary()
   );
+  stats.totals = inserter.report();
   return stats;
 };

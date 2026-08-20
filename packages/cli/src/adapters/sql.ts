@@ -3,7 +3,7 @@ import type { Pool } from 'pg';
 import { createReadStream } from 'node:fs';
 
 import { makeBoardFilter } from '../boards.ts';
-import { collectPending, PostInserter } from '../ingest.ts';
+import { type BoardTotals, collectPending, PostInserter } from '../ingest.ts';
 import { readLines } from '../lines.ts';
 import {
   CREATE_TABLE_RE,
@@ -81,6 +81,8 @@ interface IngestStats {
   skippedGhost: number;
   badLines: number;
   tables: string[];
+  /** Per-board run totals, for --count-only. */
+  totals: BoardTotals[];
 }
 
 export const ingestSql = async (
@@ -91,17 +93,20 @@ export const ingestSql = async (
     site: string;
     boards?: string[];
     excludeBoards?: string[];
+    /** Parse and tally, but write nothing. See PostInserter. */
+    countOnly?: boolean;
     fileSize?: number;
   }
 ): Promise<IngestStats> => {
   const boardFilter = makeBoardFilter(opts.excludeBoards);
-  const inserter = new PostInserter(db, opts.sourceId);
+  const inserter = new PostInserter(db, opts.sourceId, opts.countOnly);
   const stats: IngestStats = {
     posts: 0,
     skippedDup: 0,
     skippedGhost: 0,
     badLines: 0,
     tables: [],
+    totals: [],
   };
 
   const input =
@@ -302,5 +307,6 @@ export const ingestSql = async (
     `${stats.posts} posts from tables [${stats.tables.join(', ')}]` +
       boardFilter.summary()
   );
+  stats.totals = inserter.report();
   return stats;
 };

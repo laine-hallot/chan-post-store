@@ -1,6 +1,7 @@
 import type { InferValue } from '@optique/core/parser';
 import type { Pool } from 'pg';
 
+import type { BoardTotals } from './ingest.ts';
 import type { Adapter, Manifest } from './manifest.ts';
 
 import { log } from '@clack/prompts';
@@ -370,8 +371,9 @@ const ingestOne = async (
   manifest: Manifest,
   sourceId: number,
   inputs: string[],
-  boards: string[] | undefined
-): Promise<{ posts: number; summary: string }> => {
+  boards: string[] | undefined,
+  countOnly = false
+): Promise<{ posts: number; summary: string; totals: BoardTotals[] }> => {
   const t0 = Date.now();
 
   if (manifest.adapter === 'json') {
@@ -381,10 +383,12 @@ const ingestOne = async (
       site: manifest.site,
       boards,
       excludeBoards: manifest.excludeBoards,
+      countOnly,
     });
     const secs = ((Date.now() - t0) / 1000).toFixed(1);
     return {
       posts: stats.posts,
+      totals: stats.totals,
       summary:
         `ingested ${stats.posts} posts from ${stats.boards} board(s) in ${secs}s` +
         ` (${stats.skippedDup} already present, ${stats.skippedGhost} ghost,` +
@@ -397,10 +401,12 @@ const ingestOne = async (
       site: manifest.site,
       boards,
       excludeBoards: manifest.excludeBoards,
+      countOnly,
     });
     const secs = ((Date.now() - t0) / 1000).toFixed(1);
     return {
       posts: stats.posts,
+      totals: stats.totals,
       summary:
         `ingested ${stats.posts} posts from ${stats.files} page(s)` +
         ` (${stats.threads} thread(s)) in ${secs}s` +
@@ -410,6 +416,10 @@ const ingestOne = async (
   } else {
     let posts = 0;
     const tables: string[] = [];
+    // One source is normally several board files, each read by its own
+    // inserter, so the per-board totals have to be concatenated rather than
+    // taken from the last file.
+    const totals: BoardTotals[] = [];
     for (const file of inputs) {
       // The standard SQL layout is one file per board, so a source is
       // normally several files; each is streamed in turn into the same
@@ -424,13 +434,16 @@ const ingestOne = async (
         boards,
         excludeBoards: manifest.excludeBoards,
         fileSize: statSync(file).size,
+        countOnly,
       });
       posts += stats.posts;
       tables.push(...stats.tables);
+      totals.push(...stats.totals);
     }
     const secs = ((Date.now() - t0) / 1000).toFixed(1);
     return {
       posts,
+      totals,
       summary:
         `ingested ${posts} posts from tables [${tables.join(', ')}]` +
         ` across ${inputs.length} file(s) in ${secs}s`,
@@ -459,20 +472,49 @@ const cmdIngest = async (o: IngestArgs): Promise<void> => {
   }
   const { manifest, inputs } = resolved.value;
 
+  const countOnly = o['count-only'];
   const db = await openDb(connectionString(o));
   try {
-    const sourceId = await getOrCreateSource(db, manifest.name, manifest.link);
+    // Count-only must not create a source row either -- registering a source
+    // is a write, and the point of the mode is that the store is untouched.
+    // The id is never used, because nothing is inserted.
+    const sourceId = countOnly
+      ? 0
+      : await getOrCreateSource(db, manifest.name, manifest.link);
     console.log(
-      `ingesting ${manifest.name} [${manifest.adapter}] from ${manifest.path}`
+      `${countOnly ? 'counting' : 'ingesting'} ${manifest.name}` +
+        ` [${manifest.adapter}] from ${manifest.path}`
     );
-    const { summary } = await ingestOne(
+    const { summary, totals } = await ingestOne(
       db,
       manifest,
       sourceId,
       inputs,
-      o.board.length ? [...o.board] : undefined
+      o.board.length ? [...o.board] : undefined,
+      countOnly
     );
     console.log(summary);
+
+    if (countOnly) {
+      printTable(
+        ['board', 'rows', 'ops', 'no timestamp'],
+        totals.map((t) => [
+          t.board,
+          t.posts.toLocaleString(),
+          t.ops.toLocaleString(),
+          t.nullTs.toLocaleString(),
+        ])
+      );
+      const sum = (f: (t: BoardTotals) => number): number =>
+        totals.reduce((a, t) => a + f(t), 0);
+      console.log(
+        `\n${totals.length} board(s), ${sum((t) => t.posts).toLocaleString()} row(s),` +
+          ` ${sum((t) => t.ops).toLocaleString()} OP(s),` +
+          ` ${sum((t) => t.nullTs).toLocaleString()} without a timestamp`
+      );
+      console.log('nothing written: --count-only');
+      return;
+    }
     // A --board run covers part of the source, so it is progress, not
     // completion -- leaving completed_at null keeps ingest-all honest about
     // the boards this run never looked at.
