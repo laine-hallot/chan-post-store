@@ -24,8 +24,8 @@ import { isDir, listHtmlPages } from './html-tree.ts';
  * accumulate every archive's exceptions or quietly apply this archive's to a
  * tree that does not have them.
  *
- * A nested mirror gives the adapter exactly one signal for the board -- the
- * directory name -- and `fybertech-html` takes it on trust. On the Yotsuba
+ * A nested mirror gives the reader exactly one signal for the board -- the
+ * directory name -- and `html-to-ndjson` takes it on trust. On the Yotsuba
  * Society mirror that trust is misplaced: it was assembled by hand, and 530 of
  * its 23,295 pages sit in a directory the page itself contradicts. A /tv/
  * thread filed under `r9k/` ingests as a /r9k/ post, and a thread filed under
@@ -288,7 +288,8 @@ export interface ReconcilePlan {
  * A free name for `name` in `destDir`, or null if a hundred are taken.
  *
  * The suffix goes *after* the stem and before the extension so the leading
- * digits survive: `fybertech-html` reads the thread number with `^(\d+)` off
+ * digits survive: `html-to-ndjson`'s `nestedThreadNo` reads the thread number
+ * with `^(\d+)` off
  * the filename, so `4026079.snap1.html` still parses as thread 4026079, while
  * `snap1.4026079.html` would parse as nothing.
  */

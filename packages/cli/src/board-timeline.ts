@@ -5,12 +5,12 @@ import { readFileSync } from 'node:fs';
  * creations and deletions.
  *
  * The file is a repo-level asset rather than any one source's business -- it
- * describes 4chan, not an archive of it -- so the knowledge of how to read it
- * lives here rather than in the one `prepare-steps/` module that currently
- * wants it. What that module needs today is only the slug set; the events
- * carry dates and citations, and a consumer that wants era-awareness (which
- * incarnation of /r9k/ a 2011 post belongs to, say) should read them here
- * rather than re-parsing the file elsewhere.
+ * describes 4chan, not an archive of it. `site-config-4chan` is what the
+ * staging packages read it through today, and all they take from it is the
+ * slug set (`boardSlugs()`); the events carry dates and citations, and a
+ * consumer that wants era-awareness (which incarnation of /r9k/ a 2011 post
+ * belongs to, say) should read them rather than re-parsing the file
+ * elsewhere.
  *
  * TWO BUCKETS, AND ONLY ONE IS EVIDENCE:
  *

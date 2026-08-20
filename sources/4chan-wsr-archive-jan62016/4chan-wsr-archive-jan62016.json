@@ -5,7 +5,7 @@
     "name": "BASC-Archiver: 4chan /wsr/ board (Jan 6, 2016)",
     "link": "https://archive.org/details/4chan-wsr-archive-jan62016",
     "short-desc": "An archive of 4chan's /wsr/ board as of January 6, 2016.",
-    "capture": "BASC-Archiver output, 1944 threads of /wsr/ staged as out/wsr/<threadno>/<threadno>.{json,html}. It saves BOTH the rendered HTML and the thread's 4chan JSON API response, so json-api reads it and no HTML adapter is needed — an earlier note here claimed 'No JSON', which was wrong. Each thread dir also holds css/, js/, images/ and thumbs/ that ingest ignores. Timestamps are the API's real UTC epochs, not displayed wall time."
+    "capture": "BASC-Archiver output, 1944 threads of /wsr/ staged as out/wsr/<threadno>/<threadno>.{json,html}. It saves BOTH the rendered HTML and the thread's 4chan JSON API response, so `threads-json-to-ndjson` stages it for the `json` reader and no HTML parsing is needed — an earlier note here claimed 'No JSON', which was wrong. Each thread dir also holds css/, js/, images/ and thumbs/ that ingest ignores. Timestamps are the API's real UTC epochs, not displayed wall time."
   },
   "ingest": {
     "adapter": "json",

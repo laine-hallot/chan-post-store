@@ -240,7 +240,8 @@ const readClassic = (doc: HTMLElement, threadNo: number): ParsedPost[] => {
 
 /**
  * Picks the reader for this page's markup generation. The crawl spans two of
- * them (plus 4chan's own, handled by `chan-html`), so the layout is detected
+ * them (plus 4chan's own, which `stage-native` pulls out for the `html`
+ * reader), so the layout is detected
  * per page rather than assumed for the tree; an empty result means neither
  * matched and the caller counts the page as unparsed.
  */

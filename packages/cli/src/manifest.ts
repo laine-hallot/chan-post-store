@@ -354,9 +354,9 @@ export const listManifestIds = (projectRoot: string): string[] => {
 
 /**
  * Expands a manifest's ingest path into the concrete inputs an adapter takes.
- * json-api and chan-html want the directory itself and walk it; the SQL
- * adapters want one file per call, and warosu backups ship a separate dump
- * per board.
+ * The `json` and `html` readers want the directory itself and walk it; `sql`
+ * wants one file per call, and the standard SQL layout is one dump per board,
+ * so a source is normally several files.
  */
 export const ingestInputs = (m: Manifest): Result<string[], ManifestError> => {
   if (!existsSync(m.path)) {

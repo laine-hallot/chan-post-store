@@ -5,7 +5,7 @@
     "name": "Fybertech 4chan Archive (pages in 4chan's own markup)",
     "link": "https://archive.org/details/fybertech",
     "short-desc": "The subset of the Fybertech crawl saved as 4chan's own HTML rather than fybertech's rendered template.",
-    "capture": "The 20 pages inside the fybertech crawl that are 4chan's own markup -- postContainer wrappers with data-utc timestamps -- rather than fybertech's rendered template, so chan-html reads them and fybertech-html skips them. Mostly /co/ and /v/, 2012-2014. Shares the staged out/ directory with the fybertech source: each adapter ignores what belongs to the other, so both can run over the same tree without double-counting. Unlike the rest of the crawl these carry real UTC epochs, so their timestamps are second-accurate."
+    "capture": "The 20 pages inside the fybertech crawl that are 4chan's own markup -- postContainer wrappers with data-utc timestamps -- rather than fybertech's rendered template, so `stage-native` moves them to out-native/ at prepare time and the `html` reader takes them from there. Mostly /co/ and /v/, 2012-2014. Both manifests read the same crawl, but no longer the same directory: `html-to-ndjson` parses the rendered generations into out-ndjson/ and `stage-native` copies these into out-native/, so the two readers cannot see each other's pages and the old mutual-skip logic is gone. Unlike the rest of the crawl these carry real UTC epochs, so their timestamps are second-accurate."
   },
   "download": {
     "exclude": ["^fybertech-2015-02-16\\.7z$"]
