@@ -1,6 +1,6 @@
 import type { BoardTotals } from './ingest.ts';
 
-import { printTable } from './table.ts';
+import { printTable } from '../table.ts';
 
 /**
  * Renders what a source's STAGED FILES contain, as opposed to what the store

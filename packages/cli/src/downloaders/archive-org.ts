@@ -1,6 +1,6 @@
 import { Result } from '@badrap/result';
 
-import { shQuote, type Runner } from '../runner.ts';
+import { shQuote, type Runner } from '../utils/exec/runner.ts';
 
 /**
  * Downloads Internet Archive items via the metadata API.

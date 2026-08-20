@@ -1,13 +1,15 @@
 import type { Pool } from 'pg';
 
+import type { BoardTotals } from '../commands/ingest.ts';
+
 import { parse, type HTMLElement } from 'node-html-parser';
 import { readFileSync } from 'node:fs';
 import { listHtmlPages } from 'staging-html';
 
 import { makeBoardFilter } from '../boards.ts';
-import { cleanBodyText } from '../html.ts';
-import { type BoardTotals, collectPending, PostInserter } from '../ingest.ts';
+import { collectPending, PostInserter } from '../commands/ingest.ts';
 import { makeBar } from '../progress.ts';
+import { cleanBodyText } from '../utils/html.ts';
 
 /**
  * Ingests saved pages in 4chan's own HTML -- the markup `boards.4chan.org`

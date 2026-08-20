@@ -5,7 +5,7 @@ import { integer, string } from '@optique/core/valueparser';
 import { bindEnv, createEnvContext } from '@optique/env';
 import { join } from 'node:path';
 
-import { PROJECT_ROOT } from './paths.ts';
+import { PROJECT_ROOT } from './utils/paths.ts';
 
 /**
  * Environment plumbing: the `.env` layer and the Postgres connection.

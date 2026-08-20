@@ -1,12 +1,14 @@
 import type { Pool } from 'pg';
 
+import type { BoardTotals } from '../commands/ingest.ts';
+
 import { createReadStream, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { makeBoardFilter } from '../boards.ts';
-import { type BoardTotals, collectPending, PostInserter } from '../ingest.ts';
-import { readLines } from '../lines.ts';
+import { collectPending, PostInserter } from '../commands/ingest.ts';
 import { makeBar } from '../progress.ts';
+import { readLines } from '../utils/lines.ts';
 
 /**
  * The one JSON reader. Ingests the standard staged layout,

@@ -1,12 +1,12 @@
-import type { Runner } from './runner.ts';
-import type { SourcePackage } from './source-package.ts';
+import type { Runner } from '../utils/exec/runner.ts';
+import type { SourcePackage } from '../utils/source-package.ts';
 
 import { Result } from '@badrap/result';
 import { existsSync, readFileSync } from 'node:fs';
 import { basename } from 'node:path';
 
-import { shQuote } from './runner.ts';
-import { ensureNodeRuntime } from './runtime.ts';
+import { shQuote } from '../utils/exec/runner.ts';
+import { ensureNodeRuntime } from '../utils/exec/runtime.ts';
 
 /**
  * Runs a source's prepare script.

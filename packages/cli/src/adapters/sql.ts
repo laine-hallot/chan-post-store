@@ -1,18 +1,20 @@
 import type { Pool } from 'pg';
 
+import type { BoardTotals } from '../commands/ingest.ts';
+
 import { createReadStream } from 'node:fs';
 
 import { makeBoardFilter } from '../boards.ts';
-import { type BoardTotals, collectPending, PostInserter } from '../ingest.ts';
-import { readLines } from '../lines.ts';
+import { collectPending, PostInserter } from '../commands/ingest.ts';
+import { makeBar } from '../progress.ts';
+import { readLines } from '../utils/lines.ts';
 import {
   CREATE_TABLE_RE,
   insertColumns,
   nyWallToUtc,
   parseTuples,
   takeCompleteTuples,
-} from '../mysqldump.ts';
-import { makeBar } from '../progress.ts';
+} from '../utils/mysqldump.ts';
 
 /**
  * The one SQL reader. Ingests `out/<board>.sql` in the staged standard format:

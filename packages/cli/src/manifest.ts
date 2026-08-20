@@ -2,7 +2,7 @@ import { Result } from '@badrap/result';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 
-import { SOURCES_DIR } from './paths.ts';
+import { SOURCES_DIR } from './utils/paths.ts';
 
 export const ADAPTERS = ['sql', 'json', 'html'] as const;
 export type Adapter = (typeof ADAPTERS)[number];

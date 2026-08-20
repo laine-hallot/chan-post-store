@@ -1,7 +1,7 @@
 import type { InferValue } from '@optique/core/parser';
 import type { Pool } from 'pg';
 
-import type { BoardTotals } from './ingest.ts';
+import type { BoardTotals } from './commands/ingest.ts';
 import type { Adapter, Manifest } from './manifest.ts';
 
 import { log } from '@clack/prompts';
@@ -16,6 +16,8 @@ import { htmlPages, uriToFilename } from 'staging-html';
 import { ingestHtml } from './adapters/html.ts';
 import { ingestJson } from './adapters/json.ts';
 import { ingestSql } from './adapters/sql.ts';
+import { runPrepare } from './commands/prepare.ts';
+import { printBoardTable, printBucketTable } from './commands/survey.ts';
 import { configContext, CONFIG_FILE } from './config.ts';
 import {
   openDb,
@@ -24,13 +26,14 @@ import {
   completedSources,
   QUERY_INDEXES,
   queryIndexStatus,
-} from './db.ts';
+} from './database/db.ts';
+import { boardList, hasStats, refreshPostStats } from './database/stats.ts';
 import {
   downloadItem,
   fetchItem,
   humanBytes,
   identifierFromLink,
-} from './archive-org.ts';
+} from './downloaders/archive-org.ts';
 import { connectionString, envContext } from './env.ts';
 import {
   ingestInputs,
@@ -42,15 +45,12 @@ import {
   readSourceInfo,
 } from './manifest.ts';
 import { cli } from './parsers.ts';
-import { PROJECT_ROOT, SOURCES_DIR } from './paths.ts';
-import { runPrepare } from './prepare.ts';
 import { makeBar } from './progress.ts';
-import { makeRunner, shQuote } from './runner.ts';
-import { ensureNodeRuntime, NODE_VERSION } from './runtime.ts';
-import { readSourcePackage } from './source-package.ts';
-import { boardList, hasStats, refreshPostStats } from './stats.ts';
-import { printBoardTable, printBucketTable } from './survey.ts';
 import { printTable, totalsRow, type TotalRule } from './table.ts';
+import { makeRunner, shQuote } from './utils/exec/runner.ts';
+import { ensureNodeRuntime, NODE_VERSION } from './utils/exec/runtime.ts';
+import { PROJECT_ROOT, SOURCES_DIR } from './utils/paths.ts';
+import { readSourcePackage } from './utils/source-package.ts';
 
 /**
  * Per-command argument types, narrowed out of the one grammar in parsers.ts.
