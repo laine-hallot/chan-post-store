@@ -95,7 +95,8 @@ const boardFiles = (
 };
 
 export const ingestJson = async (
-  db: Pool,
+  /** Null when counting rather than storing; see PostInserter. */
+  db: Pool | null,
   opts: {
     root: string;
     sourceId: number;
@@ -120,7 +121,9 @@ export const ingestJson = async (
   const files = boardFiles(opts.root, opts.boards);
   const total = files.reduce((n, f) => n + statSync(f.file).size, 0);
   const bar = makeBar({ max: total });
-  bar.start(`ingesting ${files.length} board file(s)`);
+  bar.start(
+    `${opts.countOnly ? 'reading' : 'ingesting'} ${files.length} board file(s)`
+  );
 
   const COMMIT_EVERY = 50_000;
   let sinceCommit = 0;

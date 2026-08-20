@@ -219,6 +219,12 @@ const ingestAllCmd = command(
         }),
         false
       ),
+      'count-only': withDefault(
+        flag('--count-only', {
+          description: message`Run every reader and report rows, OPs and unparsed timestamps per source, writing NOTHING. Needs no --db at all, and ignores completed_at -- completion records writes, and there are none. This is the verification sweep: a plain re-ingest cannot check a staged source, because posts already in the store are rejected by ON CONFLICT and counted as zero.`,
+        }),
+        false
+      ),
     }),
     dbOptions
   ),
@@ -401,7 +407,36 @@ const listCmd = command(
   }
 );
 
+const surveyCmd = command(
+  'survey',
+  object({
+    action: constant('survey' as const),
+    source: argument(string({ metavar: 'SOURCE' })),
+    board: multiple(
+      option('--board', string(), {
+        description: message`Report only these boards. Repeatable.`,
+      })
+    ),
+    by: withDefault(
+      option('--by', choice(['year', 'month'] as const), {
+        description: message`Bucket size for the post-count table.`,
+      }),
+      'year' as const
+    ),
+    'per-board': withDefault(
+      flag('--per-board', {
+        description: message`Also print a bucket table for each board, not just the aggregate.`,
+      }),
+      false
+    ),
+  }),
+  {
+    description: message`Describe a source's STAGED FILES: which boards it holds, each board's post-number and date span, and posts per year or month. Reads out/ directly and needs no database -- so unlike \`list boards\`, which answers from post_stats and therefore shows only what survived ON CONFLICT, this attributes every row to the source that actually carries it. Counts are rows present in the files, deduplicated by nothing.`,
+  }
+);
+
 export const cli = or(
+  surveyCmd,
   downloadCmd,
   prepareCmd,
   prepareRuntimeCmd,

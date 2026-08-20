@@ -30,10 +30,18 @@ interface StatCell {
  * and rows whose timestamp did not parse.
  */
 export interface BoardTotals {
+  site: string;
   board: string;
   posts: number;
   ops: number;
+  /** Rows whose timestamp did not parse; they land in no month bucket. */
   nullTs: number;
+  minPostNo: number;
+  maxPostNo: number;
+  minTs: number | null;
+  maxTs: number | null;
+  /** Dated posts per calendar month, keyed `YYYY-MM` (UTC). */
+  months: Map<string, number>;
 }
 
 // 2000 rows * 13 columns = 26000 bound params, comfortably under Postgres's
@@ -59,6 +67,14 @@ const COLUMNS = [
 
 const keyOf = (site: string, board: string, postNo: number): string =>
   `${site}\t${board}\t${postNo}`;
+
+/** `YYYY-MM` in UTC. Built from the Date parts rather than slicing an ISO
+ * string so a negative epoch (which formats as `-000001-…`) cannot shift the
+ * field positions. */
+const monthKey = (tsUtc: number): string => {
+  const d = new Date(tsUtc * 1000);
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+};
 
 // Postgres's text type flatly rejects a lone NUL code point (error: invalid
 // byte sequence for encoding UTF8). Some archives' source data genuinely
@@ -97,7 +113,13 @@ export const collectPending = (
  * multi-row INSERT per flush rather than one round trip per row, and skips
  * any post already in the store -- whichever archive contributed it. */
 export class PostInserter {
-  #pool: Pool;
+  /**
+   * Null when counting rather than storing. `survey` reads staged files with
+   * no database at all, and requiring a live connection to describe files on
+   * disk would make the store's availability a precondition for reading them.
+   * Every write path asserts it; `#countOnly` is what keeps them unreached.
+   */
+  #pool: Pool | null;
   #sourceId: number;
   #buffer: PostRow[] = [];
   #waiters: ((ok: boolean) => void)[] = [];
@@ -108,7 +130,7 @@ export class PostInserter {
   #totals = new Map<string, BoardTotals>();
   #countOnly: boolean;
 
-  constructor(pool: Pool, sourceId: number, countOnly = false) {
+  constructor(pool: Pool | null, sourceId: number, countOnly = false) {
     this.#pool = pool;
     this.#sourceId = sourceId;
     this.#countOnly = countOnly;
@@ -116,8 +138,8 @@ export class PostInserter {
 
   /** Per-board totals accumulated so far, board order. */
   report(): BoardTotals[] {
-    return [...this.#totals.values()].sort((a, b) =>
-      a.board.localeCompare(b.board)
+    return [...this.#totals.values()].sort(
+      (a, b) => a.site.localeCompare(b.site) || a.board.localeCompare(b.board)
     );
   }
 
@@ -234,7 +256,8 @@ export class PostInserter {
       })
       .join(',');
 
-    const { rows } = await this.#pool.query<{
+    const pool = this.#requirePool();
+    const { rows } = await pool.query<{
       site: string;
       board: string;
       post_no: number;
@@ -272,22 +295,62 @@ export class PostInserter {
     }
   }
 
+  /** The pool, or a loud failure. Unreachable while `#countOnly` holds. */
+  #requirePool(): Pool {
+    if (!this.#pool) {
+      throw new Error(
+        'PostInserter: a write was attempted with no database connection ' +
+          '(count-only mode should have short-circuited before this)'
+      );
+    }
+    return this.#pool;
+  }
+
   #tally(p: PostRow): void {
-    const total = this.#totals.get(p.board);
+    // Keyed by site AND board, not board alone: archive_ten_billion_patched
+    // carries may.not4chan.org and orly.yi.org alongside 4chan, and several of
+    // those share board names. Keying on the board would silently merge them.
+    const tkey = `${p.site}\t${p.board}`;
+    const total = this.#totals.get(tkey);
     if (total) {
       total.posts++;
       if (p.isOp) {
         total.ops++;
       }
+      if (p.postNo < total.minPostNo) {
+        total.minPostNo = p.postNo;
+      }
+      if (p.postNo > total.maxPostNo) {
+        total.maxPostNo = p.postNo;
+      }
       if (p.tsUtc == null) {
         total.nullTs++;
+      } else {
+        if (total.minTs == null || p.tsUtc < total.minTs) {
+          total.minTs = p.tsUtc;
+        }
+        if (total.maxTs == null || p.tsUtc > total.maxTs) {
+          total.maxTs = p.tsUtc;
+        }
+        const m = monthKey(p.tsUtc);
+        total.months.set(m, (total.months.get(m) ?? 0) + 1);
       }
     } else {
-      this.#totals.set(p.board, {
+      const months = new Map<string, number>();
+      if (p.tsUtc != null) {
+        months.set(monthKey(p.tsUtc), 1);
+      }
+      this.#totals.set(tkey, {
+        site: p.site,
         board: p.board,
         posts: 1,
         ops: p.isOp ? 1 : 0,
         nullTs: p.tsUtc == null ? 1 : 0,
+        minPostNo: p.postNo,
+        maxPostNo: p.postNo,
+        minTs: p.tsUtc,
+        maxTs: p.tsUtc,
+        months,
       });
     }
 
@@ -340,9 +403,10 @@ export class PostInserter {
       this.#stats.clear();
       return;
     }
+    const pool = this.#requirePool();
     for (const [key, c] of this.#stats) {
       const [site, board, year] = key.split('\t');
-      await this.#pool.query(
+      await pool.query(
         `INSERT INTO post_stats (source_id, site, board, year, posts, min_ts, max_ts)
          VALUES ($1, $2, $3, $4, $5, $6, $7)
          ON CONFLICT (source_id, site, board, COALESCE(year, -1)) DO UPDATE SET

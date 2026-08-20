@@ -86,7 +86,8 @@ interface IngestStats {
 }
 
 export const ingestSql = async (
-  db: Pool,
+  /** Null when counting rather than storing; see PostInserter. */
+  db: Pool | null,
   opts: {
     file: string;
     sourceId: number;

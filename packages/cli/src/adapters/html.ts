@@ -163,7 +163,8 @@ const threadNoFromName = (fileName: string): number | null => {
 };
 
 export const ingestHtml = async (
-  db: Pool,
+  /** Null when counting rather than storing; see PostInserter. */
+  db: Pool | null,
   opts: {
     root: string;
     sourceId: number;
@@ -192,7 +193,9 @@ export const ingestHtml = async (
   const threadKeys = new Set<string>();
   const pending: Promise<void>[] = [];
   const bar = makeBar({ max: pages.length });
-  bar.start(`ingesting ${pages.length} page(s)`);
+  bar.start(
+    `${opts.countOnly ? 'reading' : 'ingesting'} ${pages.length} page(s)`
+  );
 
   for (const page of pages) {
     // Advance unconditionally, before any recognize/skip logic below, so the

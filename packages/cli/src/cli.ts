@@ -16,12 +16,6 @@ import { htmlPages, uriToFilename } from 'staging-html';
 import { ingestHtml } from './adapters/html.ts';
 import { ingestJson } from './adapters/json.ts';
 import { ingestSql } from './adapters/sql.ts';
-import {
-  downloadItem,
-  fetchItem,
-  humanBytes,
-  identifierFromLink,
-} from './archive-org.ts';
 import { configContext, CONFIG_FILE } from './config.ts';
 import {
   openDb,
@@ -31,6 +25,12 @@ import {
   QUERY_INDEXES,
   queryIndexStatus,
 } from './db.ts';
+import {
+  downloadItem,
+  fetchItem,
+  humanBytes,
+  identifierFromLink,
+} from './archive-org.ts';
 import { connectionString, envContext } from './env.ts';
 import {
   ingestInputs,
@@ -49,6 +49,8 @@ import { makeRunner, shQuote } from './runner.ts';
 import { ensureNodeRuntime, NODE_VERSION } from './runtime.ts';
 import { readSourcePackage } from './source-package.ts';
 import { boardList, hasStats, refreshPostStats } from './stats.ts';
+import { printBoardTable, printBucketTable } from './survey.ts';
+import { printTable, totalsRow, type TotalRule } from './table.ts';
 
 /**
  * Per-command argument types, narrowed out of the one grammar in parsers.ts.
@@ -65,6 +67,7 @@ type PrepareArgs = Pick_<'prepare'>;
 type PrepareRuntimeArgs = Pick_<'prepare-runtime'>;
 type WarcExtractArgs = Pick_<'warc-extract'>;
 type IngestArgs = Pick_<'ingest'>;
+type SurveyArgs = Pick_<'survey'>;
 type IngestAllArgs = Pick_<'ingest-all'>;
 type IndexesArgs = Pick_<'indexes'>;
 type BoardsArgs = Pick_<'boards'>;
@@ -367,7 +370,7 @@ const cmdPrepareRuntime = async (o: PrepareRuntimeArgs): Promise<void> => {
  * `cmdIngestAll` (every `ready` source, run in sequence).
  */
 const ingestOne = async (
-  db: Pool,
+  db: Pool | null,
   manifest: Manifest,
   sourceId: number,
   inputs: string[],
@@ -448,6 +451,55 @@ const ingestOne = async (
         `ingested ${posts} posts from tables [${tables.join(', ')}]` +
         ` across ${inputs.length} file(s) in ${secs}s`,
     };
+  }
+};
+
+/**
+ * Describes a source's staged files without touching the database.
+ *
+ * This runs the ordinary reader for the manifest's adapter -- the same code
+ * ingest uses -- with a null pool and count-only set, so the figures are
+ * exactly what an ingest of these files would offer the store, not a second
+ * implementation that could disagree with it.
+ */
+const cmdSurvey = async (o: SurveyArgs): Promise<void> => {
+  const resolved = readManifest(
+    manifestPath(o.source, PROJECT_ROOT),
+    PROJECT_ROOT
+  ).chain((m) => ingestInputs(m).map((inputs) => ({ manifest: m, inputs })));
+  if (resolved.isErr) {
+    if (resolved.error.kind === 'pending') {
+      console.error(resolved.error.message);
+      process.exit(2);
+    }
+    fail(resolved.error.message);
+  }
+  const { manifest, inputs } = resolved.value;
+
+  console.log(
+    `surveying ${manifest.name} [${manifest.adapter}] from ${manifest.path}\n`
+  );
+  const { totals } = await ingestOne(
+    null,
+    manifest,
+    0,
+    inputs,
+    o.board.length ? [...o.board] : undefined,
+    true
+  );
+  if (totals.length === 0) {
+    console.log('no posts found in the staged files');
+    return;
+  }
+
+  console.log();
+  printBoardTable(totals);
+  printBucketTable(totals, o.by, `posts by ${o.by}, all boards`);
+
+  if (o['per-board']) {
+    for (const t of totals) {
+      printBucketTable([t], o.by, `posts by ${o.by} — /${t.board}/`);
+    }
   }
 };
 
@@ -751,6 +803,7 @@ const readySources = (): ReadySource[] => {
  * source done -- see markSourceCompleted.
  */
 const cmdIngestAll = async (o: IngestAllArgs): Promise<void> => {
+  const countOnly = o['count-only'];
   let ready: ReadySource[];
   try {
     ready = readySources();
@@ -790,9 +843,11 @@ const cmdIngestAll = async (o: IngestAllArgs): Promise<void> => {
   // actually be skipped when it has one. Without --db it still lists the ready
   // set, but says plainly that it cannot see completion rather than implying
   // every source listed would run.
-  if (o['dry-run'] && !connectionString(o)) {
+  if (o['dry-run'] && (countOnly || !connectionString(o))) {
     console.log(
-      `${ready.length} ready source(s) (no --db: cannot tell which are already complete):`
+      countOnly
+        ? `${ready.length} ready source(s) would be counted (completion is not consulted):`
+        : `${ready.length} ready source(s) (no --db: cannot tell which are already complete):`
     );
     for (const { id, manifest } of ready) {
       console.log(`  ${id} [${manifest.adapter}] <- ${manifest.path}`);
@@ -800,15 +855,26 @@ const cmdIngestAll = async (o: IngestAllArgs): Promise<void> => {
     return;
   }
 
-  if (!connectionString(o)) {
+  if (!countOnly && !connectionString(o)) {
     fail('ingest-all requires --db');
   }
 
-  const results: { name: string; ok: boolean; posts: number; secs: number }[] =
-    [];
-  const db = await openDb(connectionString(o));
+  const results: {
+    name: string;
+    ok: boolean;
+    posts: number;
+    boards: number;
+    ops: number;
+    undated: number;
+    secs: number;
+  }[] = [];
+  // Count-only writes nothing, so it needs no connection at all -- not even
+  // to read completion, which records writes that by definition did not
+  // happen. Every ready source is surveyed on every run.
+  const db = countOnly ? null : await openDb(connectionString(o));
   try {
-    const done = o.force ? new Map<string, Date>() : await completedSources(db);
+    const done =
+      o.force || !db ? new Map<string, Date>() : await completedSources(db);
     // --redo and --force only decide what the skip check below sees; neither
     // writes. A re-run that succeeds refreshes completed_at through the same
     // markSourceCompleted call every other run uses, and a re-run that fails
@@ -842,7 +908,9 @@ const cmdIngestAll = async (o: IngestAllArgs): Promise<void> => {
     // Not an error and not auto-fixed -- dropping an index is the user's
     // call, and rebuilding one costs hours. But a long unattended run that
     // is silently paying for them is worth one line up front.
-    const present = (await queryIndexStatus(db)).filter((i) => i.exists);
+    const present = db
+      ? (await queryIndexStatus(db)).filter((i) => i.exists)
+      : [];
     if (present.length) {
       log.warn(
         `${present.length} query index(es) present ` +
@@ -870,45 +938,85 @@ const cmdIngestAll = async (o: IngestAllArgs): Promise<void> => {
       log.step(`${id} [${manifest.adapter}] <- ${manifest.path}`);
       const t0 = Date.now();
       try {
-        const sourceId = await getOrCreateSource(
-          db,
-          manifest.name,
-          manifest.link
-        );
-        const { posts, summary } = await ingestOne(
+        const sourceId = db
+          ? await getOrCreateSource(db, manifest.name, manifest.link)
+          : 0;
+        const { posts, summary, totals } = await ingestOne(
           db,
           manifest,
           sourceId,
           inputs,
-          undefined
+          undefined,
+          countOnly
         );
         // Only a normal return counts. A source that threw has still written
         // rows, and marking it here would make the next run skip a source
         // that never finished.
-        await markSourceCompleted(db, sourceId);
+        if (db) {
+          await markSourceCompleted(db, sourceId);
+        }
         const secs = (Date.now() - t0) / 1000;
-        log.success(summary);
-        results.push({ name: id, ok: true, posts, secs });
+        const agg = {
+          boards: totals.length,
+          ops: totals.reduce((n, t) => n + t.ops, 0),
+          undated: totals.reduce((n, t) => n + t.nullTs, 0),
+          rows: totals.reduce((n, t) => n + t.posts, 0),
+        };
+        log.success(
+          countOnly
+            ? `${agg.boards} board(s), ${agg.rows.toLocaleString()} row(s), ` +
+                `${agg.ops.toLocaleString()} OP(s), ${agg.undated.toLocaleString()} without a timestamp`
+            : summary
+        );
+        results.push({
+          name: id,
+          ok: true,
+          posts: countOnly ? agg.rows : posts,
+          ...agg,
+          secs,
+        });
       } catch (e) {
         const secs = (Date.now() - t0) / 1000;
         const msg = String((e as Error).message);
         log.error(`${id} failed: ${msg}`);
-        results.push({ name: id, ok: false, posts: 0, secs });
+        results.push({
+          name: id,
+          ok: false,
+          posts: 0,
+          boards: 0,
+          ops: 0,
+          undated: 0,
+          secs,
+        });
       }
     }
   } finally {
-    await db.end();
+    await db?.end();
   }
 
   console.log();
   printTable(
-    ['source', 'status', 'posts', 'seconds'],
-    results.map((r) => [
-      r.name,
-      r.ok ? 'ok' : 'FAILED',
-      r.posts,
-      Math.round(r.secs * 10) / 10,
-    ])
+    countOnly
+      ? ['source', 'status', 'boards', 'rows', 'ops', 'undated', 'seconds']
+      : ['source', 'status', 'posts', 'seconds'],
+    results.map((r) =>
+      countOnly
+        ? [
+            r.name,
+            r.ok ? 'ok' : 'FAILED',
+            r.boards,
+            r.posts,
+            r.ops,
+            r.undated,
+            Math.round(r.secs * 10) / 10,
+          ]
+        : [
+            r.name,
+            r.ok ? 'ok' : 'FAILED',
+            r.posts,
+            Math.round(r.secs * 10) / 10,
+          ]
+    )
   );
   if (results.some((r) => !r.ok)) {
     process.exit(1);
@@ -1341,75 +1449,6 @@ const cmdSearch = async (o: SearchArgs): Promise<void> => {
   }
 };
 
-const printTable = (
-  headers: string[],
-  rows: (string | number | null)[][],
-  footer?: (string | number | null)[]
-): void => {
-  const bodyAndFoot = footer ? [...rows, footer] : rows;
-  const numeric = headers.map((_, i) =>
-    rows.every((r) => r[i] == null || typeof r[i] === 'number')
-  );
-  const fmt = (v: string | number | null): string => {
-    if (v == null) {
-      return '-';
-    }
-    return typeof v === 'number' ? v.toLocaleString('en-US') : v;
-  };
-  const cells = bodyAndFoot.map((r) => r.map(fmt));
-  const widths = headers.map((h, i) =>
-    Math.max(h.length, ...cells.map((r) => r[i].length))
-  );
-  const line = (row: string[]): string =>
-    row
-      .map((c, i) => (numeric[i] ? c.padStart(widths[i]) : c.padEnd(widths[i])))
-      .join('  ')
-      .trimEnd();
-  const rule = line(widths.map((w) => '-'.repeat(w)));
-  console.log(line(headers));
-  console.log(rule);
-  for (const r of cells.slice(0, rows.length)) {
-    console.log(line(r));
-  }
-  if (footer) {
-    console.log(rule);
-    console.log(line(cells[rows.length]));
-  }
-};
-
-// How each column of the totals row is derived from the body rows. "sum"
-// adds the values, "min"/"max" span dates, "label" holds the "TOTAL" tag,
-// and "blank" leaves free-text columns (e.g. a source link) empty.
-type TotalRule = 'sum' | 'min' | 'max' | 'label' | 'blank';
-
-const totalsRow = (
-  rules: TotalRule[],
-  rows: (string | number | null)[][]
-): (string | number | null)[] => {
-  return rules.map((rule, i) => {
-    switch (rule) {
-      case 'label':
-        return 'TOTAL';
-      case 'blank':
-        return null;
-      case 'sum':
-        return rows.reduce((acc, r) => acc + (Number(r[i]) || 0), 0);
-      case 'min':
-      case 'max': {
-        const vals = rows
-          .map((r) => r[i])
-          .filter((v): v is string => v != null);
-        if (vals.length === 0) {
-          return null;
-        }
-        return rule === 'min'
-          ? vals.reduce((a, b) => (a < b ? a : b))
-          : vals.reduce((a, b) => (a > b ? a : b));
-      }
-    }
-  });
-};
-
 const LIST_QUERIES: Record<
   string,
   { headers: string[]; totals: TotalRule[]; sql: string }
@@ -1515,6 +1554,9 @@ switch (args.action) {
     break;
   case 'warc-extract':
     await cmdWarcExtract(args);
+    break;
+  case 'survey':
+    await cmdSurvey(args);
     break;
   case 'ingest':
     await cmdIngest(args);
