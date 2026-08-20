@@ -1,5 +1,5 @@
 {
-  "dir": "Memetic Sociology/Datasets/4chan/perma_cc_X9PP-YCVX",
+  "dir": "nas-data/Datasets/4chan/perma_cc_X9PP-YCVX",
   "source": {
     "type": "internet-archive",
     "name": "X9PP-YCVX: /pol/ - Politically Incorrect - 4chan",
@@ -9,7 +9,7 @@
   },
   "ingest": {
     "adapter": "html",
-    "path": "Memetic Sociology/Datasets/4chan/perma_cc_X9PP-YCVX/out",
+    "path": "nas-data/Datasets/4chan/perma_cc_X9PP-YCVX/out",
     "site": "4chan"
   },
   "files": {

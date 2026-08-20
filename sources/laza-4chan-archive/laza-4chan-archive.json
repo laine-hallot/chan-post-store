@@ -1,5 +1,5 @@
 {
-  "dir": "Memetic Sociology/Datasets/4chan/laza-4chan-archive",
+  "dir": "nas-data/Datasets/4chan/laza-4chan-archive",
   "source": {
     "type": "internet-archive",
     "name": "Laza 4chan Fuuka Archive",
@@ -11,7 +11,7 @@
   },
   "ingest": {
     "adapter": "sql",
-    "path": "Memetic Sociology/Datasets/4chan/laza-4chan-archive/out",
+    "path": "nas-data/Datasets/4chan/laza-4chan-archive/out",
     "site": "4chan"
   },
   "files": {

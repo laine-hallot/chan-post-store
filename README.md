@@ -45,7 +45,7 @@ Runs on Node 24+ with `.ts` files executed directly via type stripping.
   (provenance plus the adapter and path needed to ingest it) and a prepare
   script that runs where the archives are. `chan.config.json` says which of
   them this checkout is working with.
-- `Memetic Sociology/` — symlink to an sshfs mount of the raw archives
+- `nas-data/` — symlink to an NFS mount of the raw archives
   (slow; don't recursively list it). Each dataset also keeps a local
   `manifest.json` so the directory is self-describing when read outside
   this tool. Mount it with the same key the runner uses:
@@ -75,7 +75,7 @@ registry of what's in the corpus travels with the repo:
   },
   "ingest": {
     "adapter": "sql",
-    "path": "Memetic Sociology/Datasets/4chan/rbt-asia/out",
+    "path": "nas-data/Datasets/4chan/rbt-asia/out",
     "site": "4chan"
   },
   "files": { "…": "staging paths for the download/prepare pipeline" }
@@ -86,7 +86,7 @@ registry of what's in the corpus travels with the repo:
 be given explicitly — the archives are all `type: internet-archive` regardless
 of what format is inside, so it can't be inferred. `ingest.path` is relative to
 the project root, so moving the archive storage only means repointing the
-`Memetic Sociology` symlink.
+`nas-data` symlink.
 
 `ingest.path` points at the staged tree the reader consumes — usually `out/`,
 but a source that needs conversion writes elsewhere (`out-ndjson/`,

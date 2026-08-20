@@ -1,5 +1,5 @@
 {
-  "dir": "Memetic Sociology/Datasets/4chan/rbt-asia",
+  "dir": "nas-data/Datasets/4chan/rbt-asia",
   "source": {
     "type": "internet-archive",
     "name": "RebeccaBlackTech 4chan Archiver Backups",
@@ -12,7 +12,7 @@
   },
   "ingest": {
     "adapter": "sql",
-    "path": "Memetic Sociology/Datasets/4chan/rbt-asia/out",
+    "path": "nas-data/Datasets/4chan/rbt-asia/out",
     "site": "4chan"
   },
   "files": {

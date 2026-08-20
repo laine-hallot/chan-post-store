@@ -99,7 +99,7 @@ const pending = <T>(msg: string): Result<T, ManifestError> =>
  * (name/link) and the `ingest` block says what the CLI needs: which adapter
  * to run and where the ingest-ready data sits. Paths are project-root
  * relative so they survive the archive storage moving, as long as the
- * "Memetic Sociology" symlink is repointed.
+ * `nas-data` symlink is repointed.
  */
 export const readManifest = (
   file: string,

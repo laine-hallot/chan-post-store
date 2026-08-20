@@ -1,5 +1,5 @@
 {
-  "dir": "Memetic Sociology/Datasets/4chan/4chan-threads-2015-10",
+  "dir": "nas-data/Datasets/4chan/4chan-threads-2015-10",
   "source": {
     "type": "internet-archive",
     "name": "4chan-threads-2015-10",
@@ -8,7 +8,7 @@
   },
   "ingest": {
     "adapter": null,
-    "path": "Memetic Sociology/Datasets/4chan/4chan-threads-2015-10/out",
+    "path": "nas-data/Datasets/4chan/4chan-threads-2015-10/out",
     "site": "4chan"
   },
   "files": {

@@ -348,7 +348,7 @@ const cmdPrepareRuntime = async (o: PrepareRuntimeArgs): Promise<void> => {
   try {
     const root = runner.rootIsDatasets
       ? runner.path('.')
-      : join(PROJECT_ROOT, 'Memetic Sociology', 'Datasets', '4chan');
+      : join(PROJECT_ROOT, 'nas-data', 'Datasets', '4chan');
     console.log(`runtime root: ${root} (${runner.where})`);
     const r = await ensureNodeRuntime(runner, root, PROJECT_ROOT);
     if (r.isErr) {

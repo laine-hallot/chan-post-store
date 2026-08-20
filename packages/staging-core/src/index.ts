@@ -10,6 +10,6 @@
 export { readLines } from './lines.ts';
 export { cleanBodyText, stripHtml } from './text.ts';
 export { nyWallToUtc } from './time.ts';
-export { expectFiles, linkInto, sh } from './shell.ts';
+export { expectFiles, link, linkInto, sh } from './shell.ts';
 export type { NdjsonPost } from './record.ts';
 export { NdjsonWriter } from './record.ts';

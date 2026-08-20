@@ -1,5 +1,5 @@
 {
-  "dir": "Memetic Sociology/Datasets/4chan/4chan-wsr-archive-jan62016",
+  "dir": "nas-data/Datasets/4chan/4chan-wsr-archive-jan62016",
   "source": {
     "type": "internet-archive",
     "name": "BASC-Archiver: 4chan /wsr/ board (Jan 6, 2016)",
@@ -9,7 +9,7 @@
   },
   "ingest": {
     "adapter": "json",
-    "path": "Memetic Sociology/Datasets/4chan/4chan-wsr-archive-jan62016/out-ndjson",
+    "path": "nas-data/Datasets/4chan/4chan-wsr-archive-jan62016/out-ndjson",
     "site": "4chan"
   },
   "files": {

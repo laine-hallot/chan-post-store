@@ -1,5 +1,5 @@
 {
-  "dir": "Memetic Sociology/Datasets/4chan/sunakos-fuuka",
+  "dir": "nas-data/Datasets/4chan/sunakos-fuuka",
   "dead-end": true,
   "source": {
     "type": "internet-archive",
@@ -13,7 +13,7 @@
   },
   "ingest": {
     "adapter": null,
-    "path": "Memetic Sociology/Datasets/4chan/sunakos-fuuka/out",
+    "path": "nas-data/Datasets/4chan/sunakos-fuuka/out",
     "site": "4chan"
   },
   "files": {

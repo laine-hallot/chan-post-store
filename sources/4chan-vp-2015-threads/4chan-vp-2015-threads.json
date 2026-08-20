@@ -1,5 +1,5 @@
 {
-  "dir": "Memetic Sociology/Datasets/4chan/4chan-vp-2015-threads",
+  "dir": "nas-data/Datasets/4chan/4chan-vp-2015-threads",
   "source": {
     "type": "internet-archive",
     "name": "4chan-vp-2015-threads",
@@ -9,7 +9,7 @@
   },
   "ingest": {
     "adapter": "html",
-    "path": "Memetic Sociology/Datasets/4chan/4chan-vp-2015-threads/out",
+    "path": "nas-data/Datasets/4chan/4chan-vp-2015-threads/out",
     "site": "4chan"
   },
   "files": {

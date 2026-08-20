@@ -1,5 +1,5 @@
 {
-  "dir": "Memetic Sociology/Datasets/4chan/archive_ten_billion_patched",
+  "dir": "nas-data/Datasets/4chan/archive_ten_billion_patched",
   "source": {
     "type": "internet-archive",
     "name": "Patched 4chan Archive Ten Billion (repaired & updated)",
@@ -9,7 +9,7 @@
   },
   "ingest": {
     "adapter": "json",
-    "path": "Memetic Sociology/Datasets/4chan/archive_ten_billion_patched/out-ndjson",
+    "path": "nas-data/Datasets/4chan/archive_ten_billion_patched/out-ndjson",
     "site": "4chan"
   },
   "files": {

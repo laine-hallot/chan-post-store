@@ -1,5 +1,5 @@
 {
-  "dir": "Memetic Sociology/Datasets/4chan/4chan-data-20181015",
+  "dir": "nas-data/Datasets/4chan/4chan-data-20181015",
   "dead-end": true,
   "source": {
     "type": "internet-archive",
@@ -10,7 +10,7 @@
   },
   "ingest": {
     "adapter": null,
-    "path": "Memetic Sociology/Datasets/4chan/4chan-data-20181015/out",
+    "path": "nas-data/Datasets/4chan/4chan-data-20181015/out",
     "site": "4chan"
   },
   "files": {

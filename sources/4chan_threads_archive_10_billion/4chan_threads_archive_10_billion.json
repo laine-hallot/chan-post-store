@@ -1,5 +1,5 @@
 {
-  "dir": "Memetic Sociology/Datasets/4chan/4chan_threads_archive_10_billion",
+  "dir": "nas-data/Datasets/4chan/4chan_threads_archive_10_billion",
   "dead-end": true,
   "source": {
     "type": "internet-archive",
@@ -13,7 +13,7 @@
   },
   "ingest": {
     "adapter": null,
-    "path": "Memetic Sociology/Datasets/4chan/4chan_threads_archive_10_billion/out/xml",
+    "path": "nas-data/Datasets/4chan/4chan_threads_archive_10_billion/out/xml",
     "site": "4chan"
   },
   "files": {

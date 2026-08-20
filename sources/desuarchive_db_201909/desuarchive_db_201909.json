@@ -1,5 +1,5 @@
 {
-  "dir": "Memetic Sociology/Datasets/4chan/desuarchive_db_201909",
+  "dir": "nas-data/Datasets/4chan/desuarchive_db_201909",
   "source": {
     "type": "internet-archive",
     "name": "Desuarchive + RBT database dumps (2019-09)",
@@ -9,7 +9,7 @@
   },
   "ingest": {
     "adapter": "sql",
-    "path": "Memetic Sociology/Datasets/4chan/desuarchive_db_201909/out",
+    "path": "nas-data/Datasets/4chan/desuarchive_db_201909/out",
     "site": "4chan"
   },
   "files": {

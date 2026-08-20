@@ -1,6 +1,6 @@
 import { mkdirSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
-import { sh } from 'staging-core';
+import { link } from 'staging-core';
 
 /**
  * Selects 4chan's own markup out of a mixed crawl and lands it as
@@ -97,10 +97,7 @@ export const stageNativeHtml = (opts: StageNativeOptions): StageNativeStats => {
     }
     const dest = join(opts.to, id.board);
     mkdirSync(dest, { recursive: true });
-    sh(
-      `cp -al ${JSON.stringify(path)} ${JSON.stringify(join(dest, id.file))} 2>/dev/null || ` +
-        `cp -a ${JSON.stringify(path)} ${JSON.stringify(join(dest, id.file))}`
-    );
+    link(path, join(dest, id.file));
     stats.staged++;
   };
 

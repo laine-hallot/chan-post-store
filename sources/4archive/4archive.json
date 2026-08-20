@@ -1,5 +1,5 @@
 {
-  "dir": "Memetic Sociology/Datasets/4chan/4archive",
+  "dir": "nas-data/Datasets/4chan/4archive",
   "source": {
     "type": "internet-archive",
     "name": "4archive Complete SQL Dump",
@@ -12,7 +12,7 @@
   },
   "ingest": {
     "adapter": "json",
-    "path": "Memetic Sociology/Datasets/4chan/4archive/out-ndjson",
+    "path": "nas-data/Datasets/4chan/4archive/out-ndjson",
     "site": "4chan"
   },
   "files": {

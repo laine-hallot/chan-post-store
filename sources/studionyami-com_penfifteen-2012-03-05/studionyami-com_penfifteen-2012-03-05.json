@@ -1,5 +1,5 @@
 {
-  "dir": "Memetic Sociology/Datasets/4chan/studionyami-com_penfifteen-2012-03-05",
+  "dir": "nas-data/Datasets/4chan/studionyami-com_penfifteen-2012-03-05",
   "source": {
     "type": "internet-archive",
     "name": "studionyami.com/penfifteen/",
@@ -12,7 +12,7 @@
   },
   "ingest": {
     "adapter": null,
-    "path": "Memetic Sociology/Datasets/4chan/studionyami-com_penfifteen-2012-03-05/out",
+    "path": "nas-data/Datasets/4chan/studionyami-com_penfifteen-2012-03-05/out",
     "site": "4chan"
   },
   "files": {

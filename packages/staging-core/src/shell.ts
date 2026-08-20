@@ -1,5 +1,12 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync } from 'node:fs';
+import {
+  copyFileSync,
+  existsSync,
+  linkSync,
+  mkdirSync,
+  readdirSync,
+  rmSync,
+} from 'node:fs';
 import { join } from 'node:path';
 
 /**
@@ -32,21 +39,37 @@ export const linkInto = (
   to: string,
   pattern = /\.sql$/i
 ): number => {
-  sh(`rm -rf ${JSON.stringify(to)}`);
+  rmSync(to, { recursive: true, force: true });
   mkdirSync(to, { recursive: true });
   let n = 0;
   for (const name of readdirSync(from)) {
     if (!pattern.test(name)) {
       continue;
     }
-    const src = join(from, name);
-    sh(
-      `cp -al ${JSON.stringify(src)} ${JSON.stringify(to)}/ 2>/dev/null || ` +
-        `cp -a ${JSON.stringify(src)} ${JSON.stringify(to)}/`
-    );
+    link(join(from, name), join(to, name));
     n++;
   }
   return n;
+};
+
+/**
+ * Hardlink one file, copying if the link cannot be made.
+ *
+ * Not `sh("cp -al ...")`. Building that command means quoting a filename into
+ * a shell string, and these archives contain names the shell will happily
+ * mangle: one page in the yotsubasociety mirror is called
+ * `_g_ - Why are people paying $108 for Windows...`, and inside the double
+ * quotes JSON.stringify produces, `$1` expands to nothing -- so the copy
+ * looked for `$08` and failed. Names also contain quotes, spaces and bytes
+ * that are not valid UTF-8. The filesystem API takes the name as-is.
+ */
+export const link = (from: string, to: string): void => {
+  try {
+    linkSync(from, to);
+  } catch {
+    // Cross-device, or the destination already exists.
+    copyFileSync(from, to);
+  }
 };
 
 /**

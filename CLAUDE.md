@@ -233,7 +233,14 @@ Things that will bite you here:
   — safe here because this mount is read-only for ingest. `hard` is usually
   recommended specifically because a `soft` mount can silently corrupt data
   on a write that times out mid-flight; that risk doesn't apply to a
-  read-only workload. The `Memetic Sociology` symlink points at this mount.
+  read-only workload. The `nas-data` symlink points at this mount.
+
+  Keep it OUT of any tool that walks the project tree. It is a symlink into
+  12TB, and an editor indexing it is enough on its own to take the share
+  down -- Zed walked it for hours behind two collapses, and `.gitignore` does
+  not stop its scanner (`file_scan_exclusions` does). prettier and eslint do
+  not descend into symlinked directories, which is the only reason the
+  pre-commit hook was never a problem.
 
   Unmounting: `fusermount -u` doesn't apply to NFS. Use `sudo umount
   ~/mnt/laines_data`, or `sudo umount -l` (lazy) if something still has it

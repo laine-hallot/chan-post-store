@@ -1,5 +1,5 @@
 {
-  "dir": "Memetic Sociology/Datasets/4chan/archives-yotsubasociety-org",
+  "dir": "nas-data/Datasets/4chan/archives-yotsubasociety-org",
   "source": {
     "type": "internet-archive",
     "name": "archives.yotsubasociety.org (pages in 4chan's own markup)",
@@ -9,7 +9,7 @@
   },
   "ingest": {
     "adapter": "html",
-    "path": "Memetic Sociology/Datasets/4chan/archives-yotsubasociety-org/out-native",
+    "path": "nas-data/Datasets/4chan/archives-yotsubasociety-org/out-native",
     "site": "4chan"
   },
   "files": {
