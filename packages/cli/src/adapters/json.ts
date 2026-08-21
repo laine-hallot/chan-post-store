@@ -1,12 +1,12 @@
 import type { Pool } from 'pg';
 
-import type { BoardTotals } from '../commands/ingest.ts';
+import type { BoardTotals } from '../database/ingest.ts';
 
 import { createReadStream, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { makeBoardFilter } from '../boards.ts';
-import { collectPending, PostInserter } from '../commands/ingest.ts';
+import { collectPending, PostInserter } from '../database/ingest.ts';
 import { makeBar } from '../progress.ts';
 import { readLines } from '../utils/lines.ts';
 

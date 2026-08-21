@@ -1,6 +1,24 @@
-import type { BoardTotals } from './ingest.ts';
+import type { InferValue } from '@optique/core/parser';
 
+import type { BoardTotals } from '../database/ingest.ts';
+
+import { merge, object } from '@optique/core/constructs';
+import { message } from '@optique/core/message';
+import { multiple, withDefault } from '@optique/core/modifiers';
+import {
+  argument,
+  command,
+  constant,
+  flag,
+  option,
+} from '@optique/core/primitives';
+import { choice, string } from '@optique/core/valueparser';
+
+import { ingestOne } from '../database/ingest.ts';
+import { readManifest, manifestPath, ingestInputs } from '../manifest.ts';
 import { printTable } from '../table.ts';
+import { fail } from '../utils/console.ts';
+import { PROJECT_ROOT } from '../utils/paths.ts';
 
 /**
  * Renders what a source's STAGED FILES contain, as opposed to what the store
@@ -150,3 +168,82 @@ export const printBucketTable = (
       : undefined
   );
 };
+
+/**
+ * Describes a source's staged files without touching the database.
+ *
+ * This runs the ordinary reader for the manifest's adapter -- the same code
+ * ingest uses -- with a null pool and count-only set, so the figures are
+ * exactly what an ingest of these files would offer the store, not a second
+ * implementation that could disagree with it.
+ */
+export const execSurvey = async (o: SurveyArgs): Promise<void> => {
+  const resolved = readManifest(
+    manifestPath(o.source, PROJECT_ROOT),
+    PROJECT_ROOT
+  ).chain((m) => ingestInputs(m).map((inputs) => ({ manifest: m, inputs })));
+  if (resolved.isErr) {
+    if (resolved.error.kind === 'pending') {
+      console.error(resolved.error.message);
+      process.exit(2);
+    }
+    fail(resolved.error.message);
+  }
+  const { manifest, inputs } = resolved.value;
+
+  console.log(
+    `surveying ${manifest.name} [${manifest.adapter}] from ${manifest.path}\n`
+  );
+  const { totals } = await ingestOne(
+    null,
+    manifest,
+    0,
+    inputs,
+    o.board.length ? [...o.board] : undefined,
+    true
+  );
+  if (totals.length === 0) {
+    console.log('no posts found in the staged files');
+    return;
+  }
+
+  console.log();
+  printBoardTable(totals);
+  printBucketTable(totals, o.by, `posts by ${o.by}, all boards`);
+
+  if (o['per-board']) {
+    for (const t of totals) {
+      printBucketTable([t], o.by, `posts by ${o.by} — /${t.board}/`);
+    }
+  }
+};
+
+export const surveyCmd = command(
+  'survey',
+  object({
+    action: constant('survey' as const),
+    source: argument(string({ metavar: 'SOURCE' })),
+    board: multiple(
+      option('--board', string(), {
+        description: message`Report only these boards. Repeatable.`,
+      })
+    ),
+    by: withDefault(
+      option('--by', choice(['year', 'month'] as const), {
+        description: message`Bucket size for the post-count table.`,
+      }),
+      'year' as const
+    ),
+    'per-board': withDefault(
+      flag('--per-board', {
+        description: message`Also print a bucket table for each board, not just the aggregate.`,
+      }),
+      false
+    ),
+  }),
+  {
+    description: message`Describe a source's STAGED FILES: which boards it holds, each board's post-number and date span, and posts per year or month. Reads out/ directly and needs no database -- so unlike \`list boards\`, which answers from post_stats and therefore shows only what survived ON CONFLICT, this attributes every row to the source that actually carries it. Counts are rows present in the files, deduplicated by nothing.`,
+  }
+);
+
+export type SurveyArgs = InferValue<typeof surveyCmd>;

@@ -1,13 +1,13 @@
 import type { Pool } from 'pg';
 
-import type { BoardTotals } from '../commands/ingest.ts';
+import type { BoardTotals } from '../database/ingest.ts';
 
 import { parse, type HTMLElement } from 'node-html-parser';
 import { readFileSync } from 'node:fs';
 import { listHtmlPages } from 'staging-html';
 
 import { makeBoardFilter } from '../boards.ts';
-import { collectPending, PostInserter } from '../commands/ingest.ts';
+import { collectPending, PostInserter } from '../database/ingest.ts';
 import { makeBar } from '../progress.ts';
 import { cleanBodyText } from '../utils/html.ts';
 
