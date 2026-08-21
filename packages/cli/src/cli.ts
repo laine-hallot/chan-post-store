@@ -92,7 +92,6 @@ switch (args.action) {
     break;
   case 'list-boards':
   case 'list-sites':
-  case 'list-sources':
     await execList(args);
     break;
   default: {

@@ -37,14 +37,10 @@ const listSitesCmd = command(
   'sites',
   merge(object({ action: constant('list-sites' as const) }), listQuery)
 );
-const listSourcesCmd = command(
-  'sources',
-  merge(object({ action: constant('list-sources' as const) }), listQuery)
-);
 
 export const listCmd = command(
   'list',
-  or(listManifestsCmd, listBoardsCmd, listSitesCmd, listSourcesCmd),
+  or(listManifestsCmd, listBoardsCmd, listSitesCmd),
   {
     description: message`List what the store or the manifest registry contains.`,
   }
@@ -85,23 +81,6 @@ const LIST_QUERIES: Record<
       FROM posts p {WHERE}
       GROUP BY p.site
       ORDER BY p.site`,
-  },
-  sources: {
-    headers: ['source', 'posts', 'boards', 'first', 'last', 'link'],
-    // Each post belongs to exactly one source -- whichever archive supplied
-    // it first -- so these sum cleanly and reconcile with the site totals.
-    totals: ['label', 'sum', 'sum', 'min', 'max', 'blank'],
-    sql: `
-      SELECT s.name,
-             COUNT(p.id) AS posts,
-             COUNT(DISTINCT p.site || '/' || p.board) AS boards,
-             to_char(to_timestamp(MIN(p.ts_utc)) AT TIME ZONE 'UTC', 'YYYY-MM-DD') AS first,
-             to_char(to_timestamp(MAX(p.ts_utc)) AT TIME ZONE 'UTC', 'YYYY-MM-DD') AS last,
-             s.link
-      FROM sources s
-      LEFT JOIN posts p ON p.source_id = s.id {WHERE}
-      GROUP BY s.id
-      ORDER BY s.name`,
   },
 };
 
