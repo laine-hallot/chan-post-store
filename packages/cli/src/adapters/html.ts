@@ -175,10 +175,17 @@ export const ingestHtml = async (
     excludeBoards?: string[];
     /** Parse and tally, but write nothing. See PostInserter. */
     countOnly?: boolean;
+    /** Also count DISTINCT post numbers per board. Costs 4 bytes a row. */
+    distinct?: boolean;
   }
 ): Promise<IngestStats> => {
   const boardFilter = makeBoardFilter(opts.excludeBoards);
-  const inserter = new PostInserter(db, opts.sourceId, opts.countOnly);
+  const inserter = new PostInserter(
+    db,
+    opts.sourceId,
+    opts.countOnly,
+    opts.distinct
+  );
   const stats: IngestStats = {
     files: 0,
     threads: 0,

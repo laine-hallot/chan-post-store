@@ -50,6 +50,60 @@ export interface BoardTotals {
   maxTs: number | null;
   /** Dated posts per calendar month, keyed `YYYY-MM` (UTC). */
   months: Map<string, number>;
+  /**
+   * Distinct post numbers, or null when not tracked.
+   *
+   * Only meaningful alongside count-only, which tallies EVERY row read. A
+   * normal ingest tallies only rows the store accepted, which are already
+   * distinct, so the figure would be the post count restated.
+   */
+  distinct: number | null;
+}
+
+/**
+ * Post numbers for one board, kept to count distinct ones.
+ *
+ * A Set of numbers costs ~50 bytes an entry and would need tens of GB on the
+ * larger boards. Post numbers are small non-negative integers, so they go in
+ * a Uint32Array at 4 bytes each and are sorted once at the end -- counting
+ * duplicates is a linear pass over sorted values, and never needs them all
+ * addressable at once the way hashing does.
+ *
+ * Anything outside the uint32 range goes to a Set instead rather than being
+ * silently truncated. That set should always be empty (4chan is at ~9 digits
+ * against a 4.29-billion ceiling); it exists because a corrupt dump producing
+ * one enormous number must not quietly become a collision with a real post.
+ */
+class PostNumbers {
+  #buf = new Uint32Array(1024);
+  #len = 0;
+  #wide: Set<number> | null = null;
+
+  add(n: number): void {
+    if (Number.isInteger(n) && n >= 0 && n <= 0xffffffff) {
+      if (this.#len === this.#buf.length) {
+        const next = new Uint32Array(this.#buf.length * 2);
+        next.set(this.#buf);
+        this.#buf = next;
+      }
+      this.#buf[this.#len++] = n;
+    } else {
+      (this.#wide ??= new Set()).add(n);
+    }
+  }
+
+  /** Distinct count. Sorts in place, so the instance is spent afterwards. */
+  count(): number {
+    const a = this.#buf.subarray(0, this.#len);
+    a.sort();
+    let d = 0;
+    for (let i = 0; i < a.length; i++) {
+      if (i === 0 || a[i] !== a[i - 1]) {
+        d++;
+      }
+    }
+    return d + (this.#wide?.size ?? 0);
+  }
 }
 
 // 2000 rows * 13 columns = 26000 bound params, comfortably under Postgres's
@@ -137,15 +191,30 @@ export class PostInserter {
   /** Per-board run totals; unlike `#stats`, never cleared. */
   #totals = new Map<string, BoardTotals>();
   #countOnly: boolean;
+  /** Per-board post numbers, when --distinct is on; empty otherwise. */
+  #seen = new Map<string, PostNumbers>();
+  #distinct: boolean;
 
-  constructor(pool: Pool | null, sourceId: number, countOnly = false) {
+  constructor(
+    pool: Pool | null,
+    sourceId: number,
+    countOnly = false,
+    distinct = false
+  ) {
     this.#pool = pool;
     this.#sourceId = sourceId;
     this.#countOnly = countOnly;
+    this.#distinct = distinct;
   }
 
   /** Per-board totals accumulated so far, board order. */
   report(): BoardTotals[] {
+    for (const [key, nums] of this.#seen) {
+      const t = this.#totals.get(key);
+      if (t) {
+        t.distinct = nums.count();
+      }
+    }
     return [...this.#totals.values()].sort(
       (a, b) => a.site.localeCompare(b.site) || a.board.localeCompare(b.board)
     );
@@ -319,6 +388,14 @@ export class PostInserter {
     // carries may.not4chan.org and orly.yi.org alongside 4chan, and several of
     // those share board names. Keying on the board would silently merge them.
     const tkey = `${p.site}\t${p.board}`;
+    if (this.#distinct) {
+      let nums = this.#seen.get(tkey);
+      if (!nums) {
+        nums = new PostNumbers();
+        this.#seen.set(tkey, nums);
+      }
+      nums.add(p.postNo);
+    }
     const total = this.#totals.get(tkey);
     if (total) {
       total.posts++;
@@ -359,6 +436,7 @@ export class PostInserter {
         minTs: p.tsUtc,
         maxTs: p.tsUtc,
         months,
+        distinct: null,
       });
     }
 
@@ -453,7 +531,8 @@ export const ingestOne = async (
   sourceId: number,
   inputs: string[],
   boards: string[] | undefined,
-  countOnly = false
+  countOnly = false,
+  distinct = false
 ): Promise<{ posts: number; summary: string; totals: BoardTotals[] }> => {
   const t0 = Date.now();
 
@@ -465,6 +544,7 @@ export const ingestOne = async (
       boards,
       excludeBoards: manifest.excludeBoards,
       countOnly,
+      distinct,
     });
     const secs = ((Date.now() - t0) / 1000).toFixed(1);
     return {
@@ -483,6 +563,7 @@ export const ingestOne = async (
       boards,
       excludeBoards: manifest.excludeBoards,
       countOnly,
+      distinct,
     });
     const secs = ((Date.now() - t0) / 1000).toFixed(1);
     return {
@@ -516,6 +597,7 @@ export const ingestOne = async (
         excludeBoards: manifest.excludeBoards,
         fileSize: statSync(file).size,
         countOnly,
+        distinct,
       });
       posts += stats.posts;
       tables.push(...stats.tables);

@@ -62,10 +62,12 @@ const sum = (ns: number[]): number => ns.reduce((a, b) => a + b, 0);
 /** Per-board summary: what boards, what post-number span, what date span. */
 export const printBoardTable = (totals: BoardTotals[]): void => {
   const multiSite = new Set(totals.map((t) => t.site)).size > 1;
+  const withDistinct = totals.some((t) => t.distinct != null);
   const headers = [
     ...(multiSite ? ['site'] : []),
     'board',
     'posts',
+    ...(withDistinct ? ['distinct', 'repeats'] : []),
     'ops',
     'undated',
     'first post',
@@ -77,6 +79,7 @@ export const printBoardTable = (totals: BoardTotals[]): void => {
     ...(multiSite ? [t.site] : []),
     t.board,
     t.posts,
+    ...(withDistinct ? [t.distinct, t.posts - (t.distinct ?? t.posts)] : []),
     t.ops,
     t.nullTs,
     id(t.minPostNo),
@@ -95,6 +98,12 @@ export const printBoardTable = (totals: BoardTotals[]): void => {
           ...(multiSite ? ['TOTAL'] : []),
           multiSite ? '' : 'TOTAL',
           sum(totals.map((t) => t.posts)),
+          ...(withDistinct
+            ? [
+                sum(totals.map((t) => t.distinct ?? 0)),
+                sum(totals.map((t) => t.posts - (t.distinct ?? t.posts))),
+              ]
+            : []),
           sum(totals.map((t) => t.ops)),
           sum(totals.map((t) => t.nullTs)),
           id(Math.min(...totals.map((t) => t.minPostNo))),
@@ -200,7 +209,8 @@ export const execSurvey = async (o: SurveyArgs): Promise<void> => {
     0,
     inputs,
     o.board.length ? [...o.board] : undefined,
-    true
+    true,
+    o.distinct
   );
   if (totals.length === 0) {
     console.log('no posts found in the staged files');
@@ -233,6 +243,12 @@ export const surveyCmd = command(
         description: message`Bucket size for the post-count table.`,
       }),
       'year' as const
+    ),
+    distinct: withDefault(
+      flag('--distinct', {
+        description: message`Also count DISTINCT post numbers per board, and how many rows are repeats. Costs about 4 bytes per row held in memory. Worth it where staging concatenates snapshots of one database -- rbt-asia reads 299M rows for ~76M posts, because its four daily_4klaani dumps each carry the same boards.`,
+      }),
+      false
     ),
     'per-board': withDefault(
       flag('--per-board', {
