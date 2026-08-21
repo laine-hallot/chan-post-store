@@ -1,93 +1,43 @@
+import { or } from '@optique/core/constructs';
 import { runAsync } from '@optique/run';
 import { join } from 'node:path';
 
-import { execBoards } from './commands/boards.ts';
-import { execCount } from './commands/count.ts';
-import { execDownload } from './commands/download.ts';
-import { execIndexes } from './commands/indexes.ts';
-import { execIngestAll } from './commands/ingest-all.ts';
-import { execIngest } from './commands/ingest.ts';
-import { execList } from './commands/list/list.ts';
+import { boardsCmd, execBoards } from './commands/boards.ts';
+import { countCmd, execCount } from './commands/count.ts';
+import { downloadCmd, execDownload } from './commands/download.ts';
+import { execIndexes, indexesCmd } from './commands/indexes.ts';
+import { execIngestAll, ingestAllCmd } from './commands/ingest-all.ts';
+import { execIngest, ingestCmd } from './commands/ingest.ts';
+import { execList, listCmd } from './commands/list/list.ts';
 import { execListManifests } from './commands/list/manifests.ts';
-import { execPrepareRuntime } from './commands/prepare-runtime.ts';
-import { execPrepare } from './commands/prepare.ts';
-import { execRefreshStats } from './commands/refresh-stats.ts';
-import { execSearch } from './commands/search.ts';
-import { execSurvey } from './commands/survey.ts';
-import { execWarcExtract } from './commands/warc-extract.ts';
+import {
+  execPrepareRuntime,
+  prepareRuntimeCmd,
+} from './commands/prepare-runtime.ts';
+import { execPrepare, prepareCmd } from './commands/prepare.ts';
+import { execRefreshStats, refreshStatsCmd } from './commands/refresh-stats.ts';
+import { execSearch, searchCmd } from './commands/search.ts';
+import { execSurvey, surveyCmd } from './commands/survey.ts';
+import { execWarcExtract, warcExtractCmd } from './commands/warc-extract.ts';
 import { configContext, CONFIG_FILE } from './config.ts';
 import { envContext } from './env.ts';
-import { cli } from './parsers.ts';
-import { fail } from './utils/console.ts';
 import { PROJECT_ROOT } from './utils/paths.ts';
 
-/** Parse a date bound; returns epoch seconds. End bounds are advanced by one
- * unit of their precision so they can be used as an exclusive upper bound. */
-const parseBound = (s: string, end: boolean): number => {
-  const m = /^(\d{4})(?:-(\d{2}))?(?:-(\d{2}))?$/.exec(s);
-  if (!m) {
-    fail(`invalid date: ${s}`);
-  }
-  let [year, month, day] = [
-    Number(m[1]),
-    m[2] ? Number(m[2]) : null,
-    m[3] ? Number(m[3]) : null,
-  ];
-  if (end) {
-    if (day != null) {
-      day++;
-    } else if (month != null) {
-      month++;
-    } else {
-      year++;
-    }
-  }
-  return Date.UTC(year, (month ?? 1) - 1, day ?? 1) / 1000;
-};
-
-export const FILTER_OPTIONS = {
-  db: { type: 'string' },
-  phrase: { type: 'string' },
-  board: { type: 'string' },
-  site: { type: 'string', default: '4chan' },
-  from: { type: 'string' },
-  to: { type: 'string' },
-} as const;
-
-export interface FilterValues {
-  phrase?: string;
-  board?: string;
-  site: string;
-  from?: string;
-  to?: string;
-}
-
-/** WHERE clauses + params shared by `count` and `search`. */
-export const phraseFilters = (
-  o: FilterValues
-): {
-  where: string;
-  params: (string | number)[];
-} => {
-  const where: string[] = [
-    "p.search_vector @@ phraseto_tsquery('simple', $1)",
-    'p.site = $2',
-  ];
-  const params: (string | number)[] = [o.phrase!, o.site];
-  if (o.board) {
-    params.push(o.board);
-    where.push(`p.board = $${params.length}`);
-  }
-  if (o.from) {
-    params.push(parseBound(o.from, false));
-    where.push(`p.ts_utc >= $${params.length}`);
-  }
-  if (o.to) {
-    params.push(parseBound(o.to, true));
-    where.push(`p.ts_utc < $${params.length}`);
-  }
-  return { where: where.join(' AND '), params };
-};
+export const cli = or(
+  surveyCmd,
+  downloadCmd,
+  prepareCmd,
+  prepareRuntimeCmd,
+  warcExtractCmd,
+  ingestCmd,
+  ingestAllCmd,
+  indexesCmd,
+  boardsCmd,
+  refreshStatsCmd,
+  countCmd,
+  searchCmd,
+  listCmd
+);
 
 export const args = await runAsync(cli, {
   contexts: [envContext, configContext],

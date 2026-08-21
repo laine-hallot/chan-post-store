@@ -7,8 +7,8 @@ import { command, constant, flag, option } from '@optique/core/primitives';
 import { integer } from '@optique/core/valueparser';
 
 import { filterOptions } from '../cli-common-args.ts';
-import { phraseFilters } from '../cli.ts';
 import { openDb } from '../database/db.ts';
+import { phraseFilters } from '../database/filter.ts';
 import { connectionString, dbOptions } from '../env.ts';
 import { fail, write } from '../utils/console.ts';
 

@@ -14,8 +14,8 @@ import {
 import { choice, string } from '@optique/core/valueparser';
 
 import { filterOptions } from '../cli-common-args.ts';
-import { phraseFilters } from '../cli.ts';
 import { openDb } from '../database/db.ts';
+import { phraseFilters } from '../database/filter.ts';
 import { connectionString, dbOptions } from '../env.ts';
 import { fail } from '../utils/console.ts';
 
