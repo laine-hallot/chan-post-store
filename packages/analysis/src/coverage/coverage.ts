@@ -10,11 +10,11 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 import {
+  PROJECT_ROOT,
   connectionString,
   dbOptions,
   envContext,
-} from '@chan-post-store/cli/env';
-import { PROJECT_ROOT } from '@chan-post-store/cli/paths';
+} from '@chan-post-store/cli';
 
 import { openReadOnly } from '../db.ts';
 import {

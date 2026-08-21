@@ -9,7 +9,7 @@ import { spawnSync } from 'node:child_process';
 import { mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
-import { PROJECT_ROOT } from '@chan-post-store/cli/paths';
+import { PROJECT_ROOT } from '@chan-post-store/cli';
 
 import { renderTimeline, type Kind, type TimelineEvent } from './svg.ts';
 
