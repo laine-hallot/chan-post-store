@@ -32,7 +32,16 @@ import { PROJECT_ROOT } from '../utils/paths.ts';
  * whether a dump is worth keeping, or which archive to ingest first where two
  * overlap.
  *
- * Counts are therefore ROWS PRESENT IN THE FILES, deduplicated by nothing.
+ * Counts are therefore ROWS PRESENT IN THE FILES. `--distinct` additionally
+ * reports how many distinct post numbers those rows carry.
+ *
+ * NEITHER NUMBER PREDICTS WHAT AN INGEST WOULD ADD, and the distinct one is
+ * the more tempting to misread. Ingest attempts every row -- the UNIQUE
+ * constraint is what collapses repeats, not the reader -- so `posts` is the
+ * count of insert attempts, and `distinct` is at best an upper bound on what
+ * lands. It is only an upper bound because a post already claimed by another
+ * archive is rejected too, and nothing here can see the store. Use these to
+ * describe what a source HOLDS; use post_stats to ask what it CONTRIBUTED.
  */
 
 /** `YYYY-MM-DD HH:MM` in UTC, assembled from parts rather than sliced out of
@@ -246,7 +255,7 @@ export const surveyCmd = command(
     ),
     distinct: withDefault(
       flag('--distinct', {
-        description: message`Also count DISTINCT post numbers per board, and how many rows are repeats. Costs about 4 bytes per row held in memory. Worth it where staging concatenates snapshots of one database -- rbt-asia reads 299M rows for ~76M posts, because its four daily_4klaani dumps each carry the same boards.`,
+        description: message`Also count DISTINCT post numbers per board, and how many rows are repeats WITHIN THIS SOURCE. Costs about 4 bytes per row held in memory. Worth it where staging concatenates snapshots of one database -- rbt-asia reads 299M rows for ~76M posts, because its four daily_4klaani dumps each carry the same boards. This is NOT a prediction of what an ingest would add: ingest attempts every row and lets the UNIQUE constraint collapse repeats, and posts another archive already claimed are rejected as well, which nothing here can see.`,
       }),
       false
     ),
@@ -258,7 +267,7 @@ export const surveyCmd = command(
     ),
   }),
   {
-    description: message`Describe a source's STAGED FILES: which boards it holds, each board's post-number and date span, and posts per year or month. Reads out/ directly and needs no database -- so unlike \`list boards\`, which answers from post_stats and therefore shows only what survived ON CONFLICT, this attributes every row to the source that actually carries it. Counts are rows present in the files, deduplicated by nothing.`,
+    description: message`Describe a source's STAGED FILES: which boards it holds, each board's post-number and date span, and posts per year or month. Reads out/ directly and needs no database -- so unlike \`list boards\`, which answers from post_stats and therefore shows only what survived ON CONFLICT, this attributes every row to the source that actually carries it. Counts are rows present in the files; --distinct adds how many distinct post numbers they carry. Neither predicts what an ingest would store -- see --distinct.`,
   }
 );
 
