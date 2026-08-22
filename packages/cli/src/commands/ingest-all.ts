@@ -189,6 +189,8 @@ export const execIngestAll = async (o: IngestAllArgs): Promise<void> => {
     boards: number;
     ops: number;
     undated: number;
+    ghost: number;
+    bad: number;
     secs: number;
   }[] = [];
   // Count-only writes nothing, so it needs no connection at all -- not even
@@ -264,7 +266,7 @@ export const execIngestAll = async (o: IngestAllArgs): Promise<void> => {
         const sourceId = db
           ? await getOrCreateSource(db, manifest.name, manifest.link)
           : 0;
-        const { posts, summary, totals } = await ingestOne(
+        const { posts, summary, totals, skipped } = await ingestOne(
           db,
           manifest,
           sourceId,
@@ -288,7 +290,8 @@ export const execIngestAll = async (o: IngestAllArgs): Promise<void> => {
         log.success(
           countOnly
             ? `${agg.boards} board(s), ${agg.rows.toLocaleString()} row(s), ` +
-                `${agg.ops.toLocaleString()} OP(s), ${agg.undated.toLocaleString()} without a timestamp`
+                `${agg.ops.toLocaleString()} OP(s), ${agg.undated.toLocaleString()} without a timestamp, ` +
+                `${skipped.ghost.toLocaleString()} ghost, ${skipped.bad.toLocaleString()} unparsable`
             : summary
         );
         results.push({
@@ -296,6 +299,8 @@ export const execIngestAll = async (o: IngestAllArgs): Promise<void> => {
           ok: true,
           posts: countOnly ? agg.rows : posts,
           ...agg,
+          ghost: skipped.ghost,
+          bad: skipped.bad,
           secs,
         });
       } catch (e) {
@@ -309,6 +314,8 @@ export const execIngestAll = async (o: IngestAllArgs): Promise<void> => {
           boards: 0,
           ops: 0,
           undated: 0,
+          ghost: 0,
+          bad: 0,
           secs,
         });
       }
@@ -320,7 +327,17 @@ export const execIngestAll = async (o: IngestAllArgs): Promise<void> => {
   console.log();
   printTable(
     countOnly
-      ? ['source', 'status', 'boards', 'rows', 'ops', 'undated', 'seconds']
+      ? [
+          'source',
+          'status',
+          'boards',
+          'rows',
+          'ops',
+          'undated',
+          'ghost',
+          'bad',
+          'seconds',
+        ]
       : ['source', 'status', 'posts', 'seconds'],
     results.map((r) =>
       countOnly
@@ -331,6 +348,8 @@ export const execIngestAll = async (o: IngestAllArgs): Promise<void> => {
             r.posts,
             r.ops,
             r.undated,
+            r.ghost,
+            r.bad,
             Math.round(r.secs * 10) / 10,
           ]
         : [

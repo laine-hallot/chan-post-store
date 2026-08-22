@@ -521,6 +521,21 @@ export class PostInserter {
 }
 
 /**
+ * Rows a reader declined, returned as data rather than only as prose in
+ * `summary`. `--count-only` builds its own report line from `totals` and
+ * never renders `summary`, so a counter that exists only inside that string
+ * is invisible in exactly the mode that exists to check a reader's arithmetic.
+ */
+export interface Skipped {
+  /** Rejected by the UNIQUE constraint. Always 0 under `--count-only`. */
+  dup: number;
+  /** `subnum != 0` — replies made on the archive site, not on 4chan. */
+  ghost: number;
+  /** Lines (sql/json) or files (html) the reader could not parse. */
+  bad: number;
+}
+
+/**
  * Runs one manifest's adapter and returns a formatted summary line, shared
  * by `cmdIngest` (single source, given on the command line) and
  * `cmdIngestAll` (every `ready` source, run in sequence).
@@ -533,7 +548,12 @@ export const ingestOne = async (
   boards: string[] | undefined,
   countOnly = false,
   distinct = false
-): Promise<{ posts: number; summary: string; totals: BoardTotals[] }> => {
+): Promise<{
+  posts: number;
+  summary: string;
+  totals: BoardTotals[];
+  skipped: Skipped;
+}> => {
   const t0 = Date.now();
 
   if (manifest.adapter === 'json') {
@@ -550,6 +570,11 @@ export const ingestOne = async (
     return {
       posts: stats.posts,
       totals: stats.totals,
+      skipped: {
+        dup: stats.skippedDup,
+        ghost: stats.skippedGhost,
+        bad: stats.badLines,
+      },
       summary:
         `ingested ${stats.posts} posts from ${stats.boards} board(s) in ${secs}s` +
         ` (${stats.skippedDup} already present, ${stats.skippedGhost} ghost,` +
@@ -569,6 +594,7 @@ export const ingestOne = async (
     return {
       posts: stats.posts,
       totals: stats.totals,
+      skipped: { dup: stats.skippedDup, ghost: 0, bad: stats.badFiles },
       summary:
         `ingested ${stats.posts} posts from ${stats.files} page(s)` +
         ` (${stats.threads} thread(s)) in ${secs}s` +
@@ -617,6 +643,7 @@ export const ingestOne = async (
     return {
       posts,
       totals,
+      skipped: { dup: skippedDup, ghost: skippedGhost, bad: badLines },
       summary:
         `ingested ${posts} posts from tables [${tables.join(', ')}]` +
         ` across ${inputs.length} file(s) in ${secs}s` +
