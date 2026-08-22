@@ -577,6 +577,13 @@ export const ingestOne = async (
     };
   } else {
     let posts = 0;
+    // Ghost and unparsable counts are per-file and must be summed, not taken
+    // from the last file. Dropping them is how a reconciliation goes unsolved:
+    // warosu's ghosts are ~0.2% of rows, exactly the size of the gap between a
+    // dump's recorded row total and what this reader reports.
+    let skippedDup = 0;
+    let skippedGhost = 0;
+    let badLines = 0;
     const tables: string[] = [];
     // One source is normally several board files, each read by its own
     // inserter, so the per-board totals have to be concatenated rather than
@@ -600,6 +607,9 @@ export const ingestOne = async (
         distinct,
       });
       posts += stats.posts;
+      skippedDup += stats.skippedDup;
+      skippedGhost += stats.skippedGhost;
+      badLines += stats.badLines;
       tables.push(...stats.tables);
       totals.push(...stats.totals);
     }
@@ -609,7 +619,9 @@ export const ingestOne = async (
       totals,
       summary:
         `ingested ${posts} posts from tables [${tables.join(', ')}]` +
-        ` across ${inputs.length} file(s) in ${secs}s`,
+        ` across ${inputs.length} file(s) in ${secs}s` +
+        ` (${skippedDup} already present, ${skippedGhost} ghost,` +
+        ` ${badLines} unparsable line(s))`,
     };
   }
 };
