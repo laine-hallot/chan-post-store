@@ -2,20 +2,19 @@ import { or } from '@optique/core/constructs';
 import { runAsync } from '@optique/run';
 import { join } from 'node:path';
 
-import { boardsCmd, execBoards } from './commands/boards.ts';
 import { countCmd, execCount } from './commands/count.ts';
 import { downloadCmd, execDownload } from './commands/download.ts';
 import { execIndexes, indexesCmd } from './commands/indexes.ts';
 import { execIngestAll, ingestAllCmd } from './commands/ingest-all.ts';
 import { execIngest, ingestCmd } from './commands/ingest.ts';
-import { execList, listCmd } from './commands/list/list.ts';
+import * as list from './commands/list/list.ts';
 import { execListManifests } from './commands/list/manifests.ts';
-import {
-  execPrepareRuntime,
-  prepareRuntimeCmd,
-} from './commands/prepare-runtime.ts';
 import { execPrepare, prepareCmd } from './commands/prepare.ts';
 import { execRefreshStats, refreshStatsCmd } from './commands/refresh-stats.ts';
+import {
+  execInstallRemoteRuntime,
+  remoteRuntimeCmd,
+} from './commands/remote-runtime.ts';
 import { execSearch, searchCmd } from './commands/search.ts';
 import { execSurvey, surveyCmd } from './commands/survey.ts';
 import { execWarcExtract, warcExtractCmd } from './commands/warc-extract.ts';
@@ -24,27 +23,24 @@ import { envContext } from './env.ts';
 import { PROJECT_ROOT } from './utils/paths.ts';
 
 export const cli = or(
-  surveyCmd,
+  remoteRuntimeCmd,
   downloadCmd,
   prepareCmd,
-  prepareRuntimeCmd,
-  warcExtractCmd,
   ingestCmd,
   ingestAllCmd,
   indexesCmd,
-  boardsCmd,
+  warcExtractCmd,
   refreshStatsCmd,
   countCmd,
   searchCmd,
-  listCmd
+  surveyCmd,
+  list.listCmd
 );
 
 export const args = await runAsync(cli, {
   contexts: [envContext, configContext],
   contextOptions: { getConfigPath: () => join(PROJECT_ROOT, CONFIG_FILE) },
   programName: 'cli.ts',
-  // Both spellings: `cli.ts --help` and `cli.ts help indexes`. Without this
-  // Optique registers neither and --help is just an unknown option.
   help: 'both',
 });
 
@@ -57,8 +53,8 @@ switch (args.action) {
   case 'prepare':
     await execPrepare(args);
     break;
-  case 'prepare-runtime':
-    await execPrepareRuntime(args);
+  case 'install-remote-runtime':
+    await execInstallRemoteRuntime(args);
     break;
   case 'warc-extract':
     await execWarcExtract(args);
@@ -75,9 +71,6 @@ switch (args.action) {
   case 'indexes':
     await execIndexes(args);
     break;
-  case 'boards':
-    await execBoards(args);
-    break;
   case 'refresh-stats':
     await execRefreshStats(args);
     break;
@@ -92,7 +85,7 @@ switch (args.action) {
     break;
   case 'list-boards':
   case 'list-sites':
-    await execList(args);
+    await list.execList(args);
     break;
   default: {
     const never: never = args;

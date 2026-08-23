@@ -1,7 +1,7 @@
 import type { InferValue } from '@optique/core/parser';
 
 import { bindConfig } from '@optique/config';
-import { merge, object } from '@optique/core/constructs';
+import { merge, object, or } from '@optique/core/constructs';
 import { message } from '@optique/core/message';
 import { multiple, optional, withDefault } from '@optique/core/modifiers';
 import {
@@ -20,24 +20,20 @@ import { makeRunner } from '../utils/exec/runner.ts';
 import { ensureNodeRuntime, NODE_VERSION } from '../utils/exec/runtime.ts';
 import { PROJECT_ROOT } from '../utils/paths.ts';
 
-/**
- * `list manifests` is the odd one: it probes the archive tree rather than the
- * database, so it takes the runner flags and no --db. That asymmetry used to
- * be a bug -- USAGE advertised --db for every `list` subcommand and this one
- * rejected it -- and is now simply what the grammar says.
- */
-export const prepareRuntimeCmd = command(
-  'prepare-runtime',
+const installCmd = command(
+  'install',
   merge(
-    object({ action: constant('prepare-runtime' as const) }),
+    object({ action: constant('install-remote-runtime' as const) }),
     runnerOptions
   ),
   {
-    description: message`Install the Node runtime that payload prepare steps run under, on whichever machine holds the archives. Idempotent, and done automatically by the first payload step that needs it.`,
+    description: message`Install a portable Node runtime used to run prepare scripts on whichever machine holds the archives. Usually done automatically by the first payload step that needs it.`,
   }
 );
 
-export type PrepareRuntimeArgs = InferValue<typeof prepareRuntimeCmd>;
+export const remoteRuntimeCmd = command('remote-runtime', or(installCmd));
+
+export type InstallRemoteRuntimeArgs = InferValue<typeof remoteRuntimeCmd>;
 
 /**
  * Installs the runtime that payload prepare steps execute under.
@@ -46,8 +42,8 @@ export type PrepareRuntimeArgs = InferValue<typeof prepareRuntimeCmd>;
  * ~50MB on the target -- rather than only as a side effect of the first
  * source that needs it. Idempotent either way.
  */
-export const execPrepareRuntime = async (
-  o: PrepareRuntimeArgs
+export const execInstallRemoteRuntime = async (
+  o: InstallRemoteRuntimeArgs
 ): Promise<void> => {
   const runnerR = await makeRunner({
     projectRoot: PROJECT_ROOT,
