@@ -16,6 +16,7 @@ import {
   remoteRuntimeCmd,
 } from './commands/remote-runtime.ts';
 import { execSearch, searchCmd } from './commands/search.ts';
+import { execSources, sourcesCmd } from './commands/sources.ts';
 import { execSurvey, surveyCmd } from './commands/survey.ts';
 import { execWarcExtract, warcExtractCmd } from './commands/warc-extract.ts';
 import { configContext, CONFIG_FILE } from './config.ts';
@@ -34,6 +35,7 @@ export const cli = or(
   countCmd,
   searchCmd,
   surveyCmd,
+  sourcesCmd,
   list.listCmd
 );
 
@@ -61,6 +63,9 @@ switch (args.action) {
     break;
   case 'survey':
     await execSurvey(args);
+    break;
+  case 'sources-delete':
+    await execSources(args);
     break;
   case 'ingest':
     await execIngest(args);
