@@ -87,23 +87,44 @@ const stageDirs = async (
     .filter(Boolean);
 };
 
-/** Apparent size of a directory, or null when it does not exist. */
+/**
+ * What a directory holds, and what deleting it would actually give back.
+ *
+ * These differ, and badly. Prepare stages `out/` from `extracted/` with
+ * `cp -al` (staging-core's `linkInto`), so most staged files are HARDLINKS
+ * sharing one inode. `du` counts those bytes under whichever tree it walks,
+ * but removing one link of two frees nothing -- the inode lives on under the
+ * other name.
+ *
+ * Measured: deleting every source's `extracted/` reported 936.8GB by `du`
+ * and the array gained 453GB. Reporting the `du` figure as "freed" was
+ * wrong by more than a factor of two.
+ *
+ * `-links 1` is therefore the number that matters: files no other name
+ * refers to. It slightly UNDER-counts a file hardlinked twice inside this
+ * same tree, where deleting the tree does free it -- rare here, and erring
+ * low on a delete's payoff is the right direction to be wrong in.
+ */
 const sizeOf = async (
   runner: Runner,
   dir: string
-): Promise<{ human: string; bytes: number } | null> => {
+): Promise<{ bytes: number; freeable: number } | null> => {
   const r = await runner.exec(
-    `if [ -d ${shQuote(dir)} ]; then du -sb ${shQuote(dir)} 2>/dev/null | cut -f1; else echo MISSING; fi`
+    `if [ -d ${shQuote(dir)} ]; then ` +
+      `du -sb ${shQuote(dir)} 2>/dev/null | cut -f1; ` +
+      `find ${shQuote(dir)} -type f -links 1 -printf '%s\n' 2>/dev/null ` +
+      `| awk '{t+=$1} END {print t+0}'; ` +
+      `else echo MISSING; fi`
   );
   const out = r.stdout.trim();
   if (out === 'MISSING' || out === '') {
     return null;
   }
-  const bytes = Number(out);
-  if (!Number.isFinite(bytes)) {
+  const [a, b] = out.split('\n').map((v) => Number(v.trim()));
+  if (!Number.isFinite(a)) {
     return null;
   }
-  return { human: humanBytes(bytes), bytes };
+  return { bytes: a, freeable: Number.isFinite(b) ? b : a };
 };
 
 const humanBytes = (n: number): string => {
@@ -156,6 +177,7 @@ export const execSources = async (o: SourcesArgs): Promise<void> => {
     }
 
     let total = 0;
+    let apparent = 0;
     const present: string[] = [];
     for (const d of dirs) {
       const s = await sizeOf(runner, d);
@@ -164,8 +186,14 @@ export const execSources = async (o: SourcesArgs): Promise<void> => {
         continue;
       }
       present.push(d);
-      total += s.bytes;
-      console.log(`  ${d}  ${s.human}`);
+      total += s.freeable;
+      apparent += s.bytes;
+      const shared =
+        s.bytes > s.freeable
+          ? `  (${humanBytes(s.bytes)} on disk, ` +
+            `${humanBytes(s.bytes - s.freeable)} hardlinked elsewhere)`
+          : '';
+      console.log(`  ${d}  ${humanBytes(s.freeable)}${shared}`);
     }
 
     if (present.length === 0) {
@@ -175,7 +203,7 @@ export const execSources = async (o: SourcesArgs): Promise<void> => {
 
     if (!o.yes) {
       console.log(
-        `\n${id}: would free ${humanBytes(total)} on ${runner.where}` +
+        `\n${id}: would free ${humanBytes(total)} of ${humanBytes(apparent)} on ${runner.where}` +
           `\n  rebuild with: ${RECOVERY[stage]}` +
           `\n  re-run with --yes to delete`
       );
