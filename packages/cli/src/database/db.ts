@@ -57,12 +57,30 @@ CREATE TABLE IF NOT EXISTS posts (
   body_text      TEXT,
   media_filename TEXT,
   media_md5      TEXT,
-  -- 'simple' config: no stemming, no stopword removal -- matches FTS5's
-  -- unicode61 tokenizer fidelity. Swapping configs later means dropping and
-  -- recreating this column (comparable cost to FTS5's old
-  -- posts_fts(posts_fts) VALUES('rebuild')).
+  -- 'english': stems and drops stopwords, so searching one form of a word
+  -- finds them all and you never have to guess which permutations the
+  -- corpus happens to contain. That is deliberately lossy in the other
+  -- direction -- 'simple' can count \`tranny\` and \`trannies\` apart,
+  -- 'english' only ever gives the union -- and the unstemmed direction is
+  -- preserved by idx_posts_search_simple below, not by this column.
+  --
+  -- STORED rather than an expression index, and that is measured rather
+  -- than assumed. An expression index has to recompute to_tsvector for
+  -- every candidate row during the bitmap recheck, at ~73us each: 1,861ms
+  -- against 144ms on the same warm phrase query, 13x.
+  --
+  -- Dropping the column would halve the heap (563GB -> 251GB) but NOT halve
+  -- the blocks a search reads, which is the intuition worth keeping: matches
+  -- scattered through tens of millions of blocks land roughly one per block
+  -- however tightly rows are packed. Measured, same 23,548 candidates:
+  -- 19,998 blocks on a heap less than half the size of one that took 21,964.
+  -- So the cold saving is ~7% and the warm cost is 13x.
+  --
+  -- Changing this config is a full table rewrite (ADD COLUMN ... STORED
+  -- changes relfilenode), so it is a rebuild-time decision only.
+  -- See artifacts/search-index-rebuild.md.
   search_vector  tsvector GENERATED ALWAYS AS (
-                   to_tsvector('simple', coalesce(subject, '') || ' ' || coalesce(body_text, ''))
+                   to_tsvector('english', coalesce(subject, '') || ' ' || coalesce(body_text, ''))
                  ) STORED,
   UNIQUE (site, board, post_no)
 );
@@ -105,6 +123,27 @@ CREATE UNIQUE INDEX IF NOT EXISTS post_stats_key
 CREATE INDEX IF NOT EXISTS idx_post_stats_board
   ON post_stats (site, board, year);
 `;
+
+/**
+ * The `simple` tokenization, spelled in exactly one place.
+ *
+ * Postgres matches an expression index by the expression's parse tree, so a
+ * query that spells this differently does not error -- it silently gets a
+ * sequential scan over the whole heap, i.e. a query that never returns.
+ * Every caller that wants the unstemmed index must build its predicate from
+ * this function.
+ *
+ * The alias is a parameter because the parse tree is what matters, not the
+ * text: `p.subject` and `subject` resolve to the same column reference, so
+ * an aliased query still matches an index built without one.
+ */
+export const searchExprSimple = (alias = ''): string => {
+  const q = alias ? `${alias}.` : '';
+  return (
+    `to_tsvector('simple', coalesce(${q}subject, '')` +
+    ` || ' ' || coalesce(${q}body_text, ''))`
+  );
+};
 
 /**
  * Indexes that only queries need, kept out of `SCHEMA` on purpose.
@@ -154,6 +193,22 @@ export const QUERY_INDEXES: { name: string; sql: string }[] = [
     name: 'idx_posts_search',
     sql:
       'CREATE INDEX IF NOT EXISTS idx_posts_search ON posts USING GIN (search_vector)' +
+      ' WITH (gin_pending_list_limit = 262144)',
+  },
+  {
+    // The unstemmed half of the pair. An EXPRESSION index, not a second
+    // stored column: the index is the same size either way (measured 367MB
+    // stored vs 353MB expression on 3.98M rows), so a column would be pure
+    // heap on top. Its recheck is the slow one, which is the right way round
+    // -- 'english' above is the everyday path, this is for when a word's
+    // exact form matters.
+    //
+    // Costs ~78GB against ~68GB for the english GIN; both fit on `fast`
+    // alongside the btrees (298GB of 468GB usable).
+    name: 'idx_posts_search_simple',
+    sql:
+      'CREATE INDEX IF NOT EXISTS idx_posts_search_simple ON posts' +
+      ` USING GIN (${searchExprSimple()})` +
       ' WITH (gin_pending_list_limit = 262144)',
   },
 ];

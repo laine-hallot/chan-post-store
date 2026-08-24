@@ -98,7 +98,10 @@ type Row = {
 };
 
 const where: string = [
-  "posts.search_vector @@ to_tsquery('simple', $1)",
+  // Must match the config search_vector is generated with (see db.ts).
+  // Note this now stems the SEARCH TERM too, so a phrase-over-time run
+  // counts every form of a word together rather than the one spelled here.
+  "posts.search_vector @@ to_tsquery('english', $1)",
   'posts.board = $2',
   'posts.site = $3',
 ].join(' AND ');

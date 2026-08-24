@@ -40,7 +40,10 @@ export const phraseFilters = (
   params: (string | number)[];
 } => {
   const where: string[] = [
-    "p.search_vector @@ phraseto_tsquery('simple', $1)",
+    // 'english' must match the config search_vector is generated with, or
+    // the query stems its terms differently from the stored lexemes and
+    // quietly matches nothing.
+    "p.search_vector @@ phraseto_tsquery('english', $1)",
     'p.site = $2',
   ];
   const params: (string | number)[] = [o.phrase!, o.site];
