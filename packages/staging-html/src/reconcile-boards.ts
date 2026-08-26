@@ -182,7 +182,10 @@ const modeOf = (text: string, re: RegExp): string | null => {
   // `re` is a module constant with /g, so lastIndex must not carry over.
   re.lastIndex = 0;
   for (const m of text.matchAll(re)) {
-    const b = m[1].toLowerCase();
+    const b = m[1]?.toLowerCase();
+    if (b === undefined) {
+      continue;
+    }
     counts.set(b, (counts.get(b) ?? 0) + 1);
   }
   let best: string | null = null;
@@ -225,12 +228,12 @@ const readEvidence = (path: Buffer): PageEvidence => {
   } catch {
     return { board: null, titleBoard: null };
   }
-  const tm = TITLE_TAG.exec(text);
-  const title = tm ? normalizeTitle(tm[1]) : null;
+  const tm = TITLE_TAG.exec(text)?.[1];
+  const title = tm === undefined ? null : normalizeTitle(tm);
   const tb = title === null ? null : TITLE_BOARD.exec(title);
   return {
     board: modeOf(text, FORM_BOARD) ?? modeOf(text, SELF_BOARD),
-    titleBoard: tb ? tb[1] : null,
+    titleBoard: tb?.[1] ?? null,
   };
 };
 
@@ -250,7 +253,9 @@ const joinB = (dir: string, name: Buffer): Buffer =>
 /** Splits `4026079.html` into `4026079` and `.html`; `x.htm` into `x`, `.htm`. */
 const splitExt = (name: string): [string, string] => {
   const m = /^(.*?)(\.html?)$/i.exec(name);
-  return m ? [m[1], m[2]] : [name, ''];
+  // Both groups are mandatory in the pattern, so a match means both are
+  // present; the fallbacks are the compiler's, not a behaviour change.
+  return m ? [m[1] ?? name, m[2] ?? ''] : [name, ''];
 };
 
 /**

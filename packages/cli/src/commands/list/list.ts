@@ -51,8 +51,18 @@ export type ListQueryArgs = Exclude<
   { action: 'list-manifests' }
 >;
 
+/**
+ * The subcommand names, derived from the grammar rather than restated.
+ *
+ * Keying LIST_QUERIES on this union instead of `string` is what makes a
+ * subcommand added to the parser without a query here a compile error rather
+ * than an `undefined` at runtime -- the same rule cli.ts's action switch
+ * already follows.
+ */
+type ListKind = ListQueryArgs['action'] extends `list-${infer K}` ? K : never;
+
 const LIST_QUERIES: Record<
-  string,
+  ListKind,
   { headers: string[]; totals: TotalRule[]; sql: string }
 > = {
   boards: {
@@ -87,7 +97,7 @@ const LIST_QUERIES: Record<
 export const execList = async (o: ListQueryArgs): Promise<void> => {
   // The grammar already picked the subcommand, so there is nothing left to
   // validate here -- 'list-boards' etc. map straight onto the query table.
-  const query = LIST_QUERIES[o.action.slice('list-'.length)];
+  const query = LIST_QUERIES[o.action.slice('list-'.length) as ListKind];
 
   const params: string[] = [];
   let where = '';

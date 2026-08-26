@@ -22,12 +22,17 @@ export const printTable = (
     return typeof v === 'number' ? v.toLocaleString('en-US') : v;
   };
   const cells = bodyAndFoot.map((r) => r.map(fmt));
+  // A ragged row -- one shorter than the header -- contributes no width for
+  // the columns it lacks rather than throwing, and pads to nothing when
+  // rendered. Callers build rows by hand, so ragged is a live possibility.
   const widths = headers.map((h, i) =>
-    Math.max(h.length, ...cells.map((r) => r[i].length))
+    Math.max(h.length, ...cells.map((r) => r[i]?.length ?? 0))
   );
   const line = (row: string[]): string =>
     row
-      .map((c, i) => (numeric[i] ? c.padStart(widths[i]) : c.padEnd(widths[i])))
+      .map((c, i) =>
+        numeric[i] ? c.padStart(widths[i] ?? 0) : c.padEnd(widths[i] ?? 0)
+      )
       .join('  ')
       .trimEnd();
   const rule = line(widths.map((w) => '-'.repeat(w)));
@@ -36,9 +41,10 @@ export const printTable = (
   for (const r of cells.slice(0, rows.length)) {
     console.log(line(r));
   }
-  if (footer) {
+  const footCells = cells[rows.length];
+  if (footer && footCells) {
     console.log(rule);
-    console.log(line(cells[rows.length]));
+    console.log(line(footCells));
   }
 };
 

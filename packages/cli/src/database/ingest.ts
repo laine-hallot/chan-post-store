@@ -556,9 +556,24 @@ export const ingestOne = async (
 }> => {
   const t0 = Date.now();
 
+  // json and html each read ONE directory, where sql reads a file list. An
+  // empty list reaching either is a staging bug and must not read as
+  // "0 posts, ok" -- that is indistinguishable from a source whose posts
+  // were all already present, which is the failure this codebase keeps
+  // being bitten by.
+  const singleRoot = (): string => {
+    const root = inputs[0];
+    if (root === undefined) {
+      throw new Error(
+        `${manifest.id}: ingest.path resolved to no input (${manifest.path})`
+      );
+    }
+    return root;
+  };
+
   if (manifest.adapter === 'json') {
     const stats = await ingestJson(db, {
-      root: inputs[0],
+      root: singleRoot(),
       sourceId,
       site: manifest.site,
       boards,
@@ -582,7 +597,7 @@ export const ingestOne = async (
     };
   } else if (manifest.adapter === 'html') {
     const stats = await ingestHtml(db, {
-      root: inputs[0],
+      root: singleRoot(),
       sourceId,
       site: manifest.site,
       boards,

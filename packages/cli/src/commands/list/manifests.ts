@@ -107,8 +107,10 @@ export const execListManifests = async (
           `if [ -n "$(ls -A ${shQuote(p)} 2>/dev/null)" ]; then printf '${yes}'; else printf '${no}'; fi`;
         // Still one shell round-trip per source: the three stage dirs, plus
         // the ingest input when we know where it is.
+        // slice(0, 1) rather than [0]: the stage marker is the first letter,
+        // and slice yields '' for an empty name instead of undefined.
         const cmds = ['source', 'extracted', 'out'].map((s) =>
-          nonEmpty(`${base}/${s}`, s[0], '-')
+          nonEmpty(`${base}/${s}`, s.slice(0, 1), '-')
         );
         if (ingestRel) {
           cmds.push(nonEmpty(`${base}/${ingestRel}`, 'y', 'n'));

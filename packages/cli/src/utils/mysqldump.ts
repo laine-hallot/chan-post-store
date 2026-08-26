@@ -89,7 +89,10 @@ export const insertColumns = (
   const re = /`([^`]+)`/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(between)) !== null) {
-    out.push(m[1]);
+    const name = m[1];
+    if (name !== undefined) {
+      out.push(name);
+    }
   }
   return out.length > 0 ? out : null;
 };
@@ -227,6 +230,14 @@ export const parseTuples = function* (
           }
           if (ch === '\\') {
             const esc = line[i + 1];
+            if (esc === undefined) {
+              // A backslash as the final character: whatever it escapes is
+              // on the next line, so this string is unterminated. The loop
+              // reaches the same conclusion one iteration later anyway --
+              // saying it here stops `undefined` being concatenated into
+              // `out` as the literal text "undefined" on the way.
+              throw new Error('unterminated string');
+            }
             out += line.slice(seg, i) + (ESCAPES[esc] ?? esc);
             i += 2;
             seg = i;

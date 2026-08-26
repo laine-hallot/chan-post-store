@@ -74,6 +74,30 @@ import {
 
 const REQUIRED_COLS = ['num', 'subnum', 'thread_num', 'timestamp', 'comment'];
 
+/**
+ * Where each column sits in a tuple.
+ *
+ * The five in REQUIRED_COLS are non-optional because a statement missing any
+ * of them has already been rejected above; the rest genuinely may be absent.
+ * `op` is the one whose absence is load-bearing rather than incidental --
+ * original-Fuuka dumps have no such column and OP-ness is inferred from
+ * `num === thread_num` instead, so it must stay distinguishable from present
+ * -but-empty.
+ */
+interface ColIdx {
+  num: number;
+  subnum: number;
+  thread_num: number;
+  timestamp: number;
+  comment: number;
+  op?: number;
+  name?: number;
+  trip?: number;
+  title?: number;
+  media_filename?: number;
+  media_hash?: number;
+}
+
 /** A UTF-8 BOM appears before the first INSERT of each table in mysqlchump dumps. */
 const BOM = '﻿';
 
@@ -141,7 +165,7 @@ export const ingestSql = async (
   const tableCols = new Map<string, string[]>();
   let creating: string | null = null;
   /** Set while inside an INSERT statement; null between statements. */
-  let active: { board: string; idx: Record<string, number> } | null = null;
+  let active: { board: string; idx: ColIdx } | null = null;
 
   const COMMIT_EVERY = 50_000;
   let sinceCommit = 0;
@@ -177,6 +201,10 @@ export const ingestSql = async (
         const rawThread = Number(vals[idx.thread_num]);
         const threadNo = rawThread === 0 ? num : rawThread;
         const ts = Number(vals[idx.timestamp]);
+        // A column the dump does not have and a column that is empty both
+        // mean "no value" to the store, so they collapse to null together.
+        const field = (i: number | undefined): string | null =>
+          i === undefined ? null : (vals[i] ?? null);
         collectPending(
           pending,
           inserter
@@ -188,12 +216,12 @@ export const ingestSql = async (
               isOp:
                 idx.op !== undefined ? vals[idx.op] === '1' : num === threadNo,
               tsUtc: ts > 0 ? nyWallToUtc(ts) : null,
-              name: vals[idx.name] ?? null,
-              tripcode: vals[idx.trip] ?? null,
-              subject: vals[idx.title] ?? null,
-              bodyText: vals[idx.comment] ?? null,
-              mediaFilename: vals[idx.media_filename] ?? null,
-              mediaMd5: vals[idx.media_hash] ?? null,
+              name: field(idx.name),
+              tripcode: field(idx.trip),
+              subject: field(idx.title),
+              bodyText: field(idx.comment),
+              mediaFilename: field(idx.media_filename),
+              mediaMd5: field(idx.media_hash),
             })
             .then((ok) => {
               if (ok) {
@@ -223,9 +251,9 @@ export const ingestSql = async (
 
     // --- inside a CREATE TABLE body ---------------------------------------
     if (creating !== null) {
-      const col = /^\s*`([^`]+)`/.exec(line);
-      if (col) {
-        tableCols.get(creating)!.push(col[1]);
+      const colName = /^\s*`([^`]+)`/.exec(line)?.[1];
+      if (colName !== undefined) {
+        tableCols.get(creating)!.push(colName);
       } else if (line.startsWith(')')) {
         creating = null;
       }
@@ -250,10 +278,10 @@ export const ingestSql = async (
       }
     }
 
-    const create = CREATE_TABLE_RE.exec(line);
-    if (create) {
-      creating = create[1];
-      tableCols.set(creating, []);
+    const created = CREATE_TABLE_RE.exec(line)?.[1];
+    if (created !== undefined) {
+      creating = created;
+      tableCols.set(created, []);
       continue;
     }
 
@@ -293,9 +321,26 @@ export const ingestSql = async (
       }
       continue;
     }
-    const idx: Record<string, number> = {};
-    order.forEach((c, i) => (idx[c] = i));
-    active = { board, idx };
+    const at = (c: string): number | undefined => {
+      const i = order.indexOf(c);
+      return i < 0 ? undefined : i;
+    };
+    active = {
+      board,
+      idx: {
+        num: order.indexOf('num'),
+        subnum: order.indexOf('subnum'),
+        thread_num: order.indexOf('thread_num'),
+        timestamp: order.indexOf('timestamp'),
+        comment: order.indexOf('comment'),
+        op: at('op'),
+        name: at('name'),
+        trip: at('trip'),
+        title: at('title'),
+        media_filename: at('media_filename'),
+        media_hash: at('media_hash'),
+      },
+    };
     if (!stats.tables.includes(table)) {
       stats.tables.push(table);
     }

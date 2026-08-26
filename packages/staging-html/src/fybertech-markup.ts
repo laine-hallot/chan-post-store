@@ -130,9 +130,9 @@ const fileNameFrom = (text: string | null): string | null => {
   if (!text) {
     return null;
   }
-  const paren = /\(([^)]*)\)\s*$/.exec(text);
-  if (paren) {
-    const parts = paren[1].split(',').map((p) => p.trim());
+  const paren = /\(([^)]*)\)\s*$/.exec(text)?.[1];
+  if (paren !== undefined) {
+    const parts = paren.split(',').map((p) => p.trim());
     const last = parts[parts.length - 1];
     // "51 KB, 287x700" alone means no original name was recorded.
     if (
@@ -143,8 +143,7 @@ const fileNameFrom = (text: string | null): string | null => {
       return last;
     }
   }
-  const served = /File\s*:?\s*([^\s-]+)/.exec(text);
-  return served ? served[1] : null;
+  return /File\s*:?\s*([^\s-]+)/.exec(text)?.[1] ?? null;
 };
 
 // ---- the two fybertech templates ----------------------------------------

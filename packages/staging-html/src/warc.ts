@@ -38,8 +38,10 @@ const deChunk = (buf: Buffer): Buffer => {
     if (nl < 0) {
       break;
     }
+    // split always yields at least one element, but say so for the compiler;
+    // parseInt('') is NaN, which the guard below already treats as "stop".
     const size = parseInt(
-      buf.subarray(i, nl).toString('latin1').split(';')[0],
+      buf.subarray(i, nl).toString('latin1').split(';')[0] ?? '',
       16
     );
     if (!Number.isFinite(size) || size <= 0) {

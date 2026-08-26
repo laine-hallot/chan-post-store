@@ -121,10 +121,13 @@ const sizeOf = async (
     return null;
   }
   const [a, b] = out.split('\n').map((v) => Number(v.trim()));
-  if (!Number.isFinite(a)) {
+  if (a === undefined || !Number.isFinite(a)) {
     return null;
   }
-  return { bytes: a, freeable: Number.isFinite(b) ? b : a };
+  // A `find` that printed nothing leaves b undefined; fall back to the du
+  // figure rather than reporting zero reclaimable bytes.
+  const freeable = b !== undefined && Number.isFinite(b) ? b : a;
+  return { bytes: a, freeable };
 };
 
 const humanBytes = (n: number): string => {

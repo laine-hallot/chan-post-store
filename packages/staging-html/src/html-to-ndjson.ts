@@ -110,7 +110,10 @@ const flatIdentity = (
   name: string
 ): { board: string; threadNo: number } | null => {
   const m = /^([a-z0-9]+)_(\d+)\.html?$/i.exec(name);
-  return m ? { board: m[1], threadNo: Number(m[2]) } : null;
+  if (m === null || m[1] === undefined) {
+    return null;
+  }
+  return { board: m[1], threadNo: Number(m[2]) };
 };
 
 /** Leading digits of a nested tree's filename; handmade archives annotate
@@ -169,7 +172,8 @@ export const htmlToNdjson = async (
     }
 
     const posts: ParsedPost[] = readAnyGeneration(doc, threadNo ?? 0);
-    if (posts.length === 0) {
+    const [firstPost] = posts;
+    if (firstPost === undefined) {
       // Neither generation matched: a listing page, an error page, or markup
       // this crawl did not actually contain posts in.
       stats.noPosts++;
@@ -178,7 +182,7 @@ export const htmlToNdjson = async (
 
     // The page's own OP beats the filename, which handmade archives annotate.
     const op = posts.find((p) => p.isOp);
-    const thread = op?.postNo ?? threadNo ?? posts[0].postNo;
+    const thread = op?.postNo ?? threadNo ?? firstPost.postNo;
 
     for (const p of posts) {
       if (p.tsUtc == null) {

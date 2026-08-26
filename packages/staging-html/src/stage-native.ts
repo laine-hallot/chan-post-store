@@ -54,19 +54,22 @@ const identify = (
   const thread = /^boards\.4chan(?:nel)?\.org_([a-z0-9]+)_thread_(\d+)/i.exec(
     name
   );
-  if (thread) {
+  if (thread?.[1] !== undefined) {
     return { board: thread[1], file: `${thread[2]}.html` };
   }
-  const index = /^boards\.4chan(?:nel)?\.org_([a-z0-9]+)\b/i.exec(name);
-  if (index) {
+  const index = /^boards\.4chan(?:nel)?\.org_([a-z0-9]+)\b/i.exec(name)?.[1];
+  if (index !== undefined) {
     // A board index names no single thread; the reader reads each OP's own.
-    return { board: index[1], file: 'index.html' };
+    return { board: index, file: 'index.html' };
   }
   if (parent !== null) {
     return { board: parent, file: name };
   }
   const mirrored = /^([a-z0-9]+)_(.+\.html?)$/i.exec(name);
-  return mirrored ? { board: mirrored[1], file: mirrored[2] } : null;
+  if (mirrored?.[1] === undefined || mirrored[2] === undefined) {
+    return null;
+  }
+  return { board: mirrored[1], file: mirrored[2] };
 };
 
 export const stageNativeHtml = (opts: StageNativeOptions): StageNativeStats => {
