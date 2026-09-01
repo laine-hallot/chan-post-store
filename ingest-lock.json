@@ -1,0 +1,93 @@
+{
+  "version": "0.0.1",
+  "sources": [
+    {
+      "name": "4chan-wsr-archive-jan62016",
+      "exclude": []
+    },
+    {
+      "name": "archives-yotsubasociety-org",
+      "exclude": []
+    },
+    {
+      "name": "archives-yotsubasociety-org-native",
+      "exclude": []
+    },
+    {
+      "name": "fybertech",
+      "exclude": []
+    },
+    {
+      "name": "fybertech-native",
+      "exclude": []
+    },
+    {
+      "name": "warosu-database-backup-2023-03-15",
+      "exclude": []
+    },
+    {
+      "name": "4chan-threads",
+      "exclude": []
+    },
+    {
+      "name": "laza-4chan-archive",
+      "exclude": []
+    },
+    {
+      "name": "warosu-database-backup-2025-08-15",
+      "exclude": []
+    },
+    {
+      "name": "yotsuba-society-archives-part-2",
+      "exclude": []
+    },
+    {
+      "name": "yotsuba-society-archives-part-2-small",
+      "exclude": []
+    },
+    {
+      "name": "installgentoo-net",
+      "exclude": []
+    },
+    {
+      "name": "4archive",
+      "exclude": []
+    },
+    {
+      "name": "archive.alice.al-20230111",
+      "exclude": []
+    },
+    {
+      "name": "archive_ten_billion_patched",
+      "exclude": []
+    },
+    {
+      "name": "desuarchive_db_201909",
+      "exclude": []
+    },
+    {
+      "name": "rbt-asia",
+      "exclude": []
+    },
+    {
+      "name": "warosu-database-backup-2026-07-15",
+      "exclude": []
+    },
+    {
+      "name": "perma_cc_frn8-45s5",
+      "exclude": []
+    },
+    {
+      "name": "perma_cc_x9pp-ycvx",
+      "exclude": []
+    },
+    {
+      "name": "4chan-vp-2015-threads",
+      "exclude": []
+    },
+    {
+      "name": "desuarchive_mlp_1_42799493_20251114215436",
+      "exclude": []
+    }
+  ]
+}

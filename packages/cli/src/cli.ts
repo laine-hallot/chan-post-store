@@ -5,7 +5,6 @@ import { join } from 'node:path';
 import { countCmd, execCount } from './commands/count.ts';
 import { downloadCmd, execDownload } from './commands/download.ts';
 import { execIndexes, indexesCmd } from './commands/indexes.ts';
-import { execIngestAll, ingestAllCmd } from './commands/ingest-all.ts';
 import { execIngest, ingestCmd } from './commands/ingest.ts';
 import * as list from './commands/list/list.ts';
 import { execListManifests } from './commands/list/manifests.ts';
@@ -28,7 +27,6 @@ export const cli = or(
   downloadCmd,
   prepareCmd,
   ingestCmd,
-  ingestAllCmd,
   indexesCmd,
   warcExtractCmd,
   refreshStatsCmd,
@@ -70,8 +68,8 @@ switch (args.action) {
   case 'ingest':
     await execIngest(args);
     break;
-  case 'ingest-all':
-    await execIngestAll(args);
+  case 'ingest-sync':
+    await execIngest(args);
     break;
   case 'indexes':
     await execIndexes(args);

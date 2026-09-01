@@ -1,4 +1,7 @@
 {
   "extends": "../../tsconfig.common.json",
+  "compilerOptions": {
+    "noUncheckedIndexedAccess": true
+  },
   "include": ["src"]
 }

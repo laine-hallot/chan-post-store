@@ -1,6 +1,7 @@
 import { Result } from '@badrap/result';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
+import * as z from 'zod';
 
 import { SOURCES_DIR } from './utils/paths.ts';
 
@@ -82,10 +83,7 @@ export class ManifestError extends Error {
  * A rejected manifest, as a `Result` error.
  *
  * Generic in the ok type so `return bad(file, msg)` type-checks inside any
- * reader regardless of what that reader returns. `return` is also what makes
- * the narrowing below work: the validators rely on the rejecting branch
- * ending control flow, which it did when this threw `never` and still does
- * now that it returns.
+ * reader regardless of what that reader returns.
  */
 const bad = <T>(file: string, msg: string): Result<T, ManifestError> =>
   Result.err(new ManifestError('invalid', `${file}: ${msg}`));
@@ -93,6 +91,160 @@ const bad = <T>(file: string, msg: string): Result<T, ManifestError> =>
 /** A manifest whose `ingest` block is still a scaffold placeholder. */
 const pending = <T>(msg: string): Result<T, ManifestError> =>
   Result.err(new ManifestError('pending', msg));
+
+/**
+ * Zod issues as one `invalid` ManifestError.
+ *
+ * Every issue renders as `path: message`, so the schemas below carry bare
+ * predicates ("must be a non-empty string") and let the path name the field.
+ * Array indices come along for free — `download.exclude.2: not a valid
+ * regex` — which the hand-rolled loop had to thread through by hand.
+ */
+const fromZod = <T>(
+  file: string,
+  error: z.ZodError,
+  /** Prepended to each path, for schemas parsed against a nested block. */
+  prefix = ''
+): Result<T, ManifestError> =>
+  bad(
+    file,
+    error.issues
+      .map((i) => {
+        const path = [...prefix.split('.').filter(Boolean), ...i.path].join(
+          '.'
+        );
+        return path ? `${path}: ${i.message}` : i.message;
+      })
+      .join('; ')
+  );
+
+/** Reads and parses one manifest file, before any shape is imposed. */
+const readJson = (file: string): Result<unknown, ManifestError> => {
+  if (!existsSync(file)) {
+    return bad(file, 'no such manifest');
+  }
+  try {
+    return Result.ok(JSON.parse(readFileSync(file, 'utf8')));
+  } catch (e) {
+    return bad(file, `invalid JSON: ${(e as Error).message}`);
+  }
+};
+
+// ---- schemas -------------------------------------------------------------
+
+/**
+ * A message repeated across the type, min-length and element checks of one
+ * field, so that every way of getting it wrong reads the same.
+ */
+const msg = (error: string): { error: string } => ({ error });
+
+const NonEmptyString = (error: string): z.ZodString =>
+  z.string(msg(error)).min(1, msg(error));
+
+/**
+ * `source`, as `readManifest` requires it: `link` must be a string when
+ * present. `readSourceInfo` deliberately does not validate `link` — see
+ * SourceInfoDoc.
+ */
+const SourceBlock = z.object(
+  {
+    name: NonEmptyString('must be a non-empty string'),
+    link: z.string(msg('must be a string')).nullish(),
+  },
+  msg('missing block')
+);
+
+/**
+ * Stage one of reading a manifest: the blocks, and the provenance inside
+ * `source`.
+ *
+ * Split from the ingest details on purpose, because ORDER decides `kind`.
+ * A manifest with both a broken `source.name` and a null adapter is
+ * `invalid`, not `pending` — the file is wrong regardless of whether it has
+ * been staged, and reporting it as "not prepared yet" would send someone to
+ * run a prepare step that cannot fix it.
+ */
+const ManifestBlocks = z.object({
+  source: SourceBlock,
+  // Presence only; the fields are checked after the scaffold test below.
+  ingest: z.looseObject({}, msg('missing block')),
+});
+
+const EXCLUDE_BOARDS_MSG = 'must be an array of non-empty strings';
+
+/** Stage two: what `ingest` has to say once it is known to be filled in. */
+const IngestBlock = z.object({
+  adapter: z.enum(ADAPTERS, msg(`must be one of: ${ADAPTERS.join(', ')}`)),
+  path: z.string(msg('must be a string')),
+  site: NonEmptyString('must be a non-empty string')
+    .nullish()
+    .transform((v) => v ?? '4chan'),
+  // Boards this archive carries that are not boards of `site` -- the
+  // archive's own discussion board, another imageboard the crawl caught, or
+  // a name that was never a board at all. Enforced by the adapters (see
+  // boards.ts for why it cannot be a central whitelist).
+  'exclude-boards': z
+    .array(NonEmptyString(EXCLUDE_BOARDS_MSG), msg(EXCLUDE_BOARDS_MSG))
+    .nullish()
+    .transform((v) => v ?? []),
+});
+
+const DOWNLOAD_EXCLUDE_MSG = 'must be an array of regexes';
+
+/** A download-exclude pattern, compiled as it is validated. */
+const RegexFromString = z
+  .string(msg(DOWNLOAD_EXCLUDE_MSG))
+  .transform((pattern, ctx) => {
+    try {
+      return new RegExp(pattern, 'i');
+    } catch (e) {
+      ctx.issues.push({
+        code: 'custom',
+        input: pattern,
+        message: `not a valid regex: ${(e as Error).message}`,
+      });
+      return z.NEVER;
+    }
+  });
+
+/**
+ * The provenance + staging half, which `download` and `prepare` read without
+ * requiring an ingest block: a source that has not been downloaded yet
+ * necessarily has an unfilled one.
+ *
+ * `link` is `unknown` and coerced rather than validated, unlike in
+ * SourceBlock above. That asymmetry is inherited, not designed: a non-string
+ * link fails `readManifest` and is silently dropped here.
+ */
+const SourceInfoDoc = z.object({
+  dir: NonEmptyString(
+    'must be a non-empty string (the dataset directory, project-root relative)'
+  ),
+  prepareOutput: z.string(msg('must be a string')).nullish(),
+  'dead-end': z.boolean(msg('must be a boolean')).nullish(),
+  // Several items ship image/thumbnail tarballs that dwarf the text:
+  // rbt-asia is 1.5TB of which ~39GB is the actual dumps. Patterns here keep
+  // those out of the download rather than making every ingest wait on them.
+  download: z
+    .object({
+      exclude: z
+        .array(RegexFromString, msg(DOWNLOAD_EXCLUDE_MSG))
+        .nullish()
+        .transform((v) => v ?? []),
+    })
+    .nullish(),
+  source: z.object(
+    {
+      name: NonEmptyString('must be a non-empty string'),
+      // .optional() is load-bearing: z.unknown() alone still requires the
+      // KEY to be present in zod 4, and most manifests carry no link.
+      link: z.unknown().optional(),
+    },
+    msg('missing block')
+  ),
+});
+
+// ---- readers -------------------------------------------------------------
 
 /**
  * Reads one `sources/<id>.json`. The `source` block carries provenance
@@ -105,47 +257,24 @@ export const readManifest = (
   file: string,
   projectRoot: string
 ): Result<Manifest, ManifestError> => {
-  if (!existsSync(file)) {
-    return bad(file, 'no such manifest');
+  const json = readJson(file);
+  if (json.isErr) {
+    return Result.err(json.error);
   }
 
-  let raw: unknown;
-  try {
-    raw = JSON.parse(readFileSync(file, 'utf8'));
-  } catch (e) {
-    return bad(file, `invalid JSON: ${(e as Error).message}`);
+  const blocks = ManifestBlocks.safeParse(json.value);
+  if (!blocks.success) {
+    return fromZod(file, blocks.error);
   }
-  if (typeof raw !== 'object' || raw === null) {
-    return bad(file, 'expected a JSON object');
-  }
+  const { source, ingest } = blocks.data;
 
-  const doc = raw as {
-    source?: Record<string, unknown>;
-    ingest?: Record<string, unknown>;
-  };
-  const { source } = doc;
-  const { ingest } = doc;
-  if (!source) {
-    return bad(file, 'missing "source" block');
-  }
-  if (!ingest) {
-    return bad(file, 'missing "ingest" block');
-  }
-
-  const { name } = source;
-  if (typeof name !== 'string' || name === '') {
-    return bad(file, 'source.name is required');
-  }
-
-  const { link } = source;
-  if (link != null && typeof link !== 'string') {
-    return bad(file, 'source.link must be a string');
-  }
-
-  // Scaffolded-but-unfinished manifests are an expected state, not corruption:
-  // the prepare pipeline hasn't produced this source's data yet.
-  const { adapter } = ingest;
-  const { path } = ingest;
+  // Scaffolded-but-unfinished manifests are an expected state, not
+  // corruption: the prepare pipeline hasn't produced this source's data yet.
+  //
+  // Only null and "" mean that. A MISSING adapter falls through to the
+  // schema below and is invalid, because a manifest that never had the key
+  // was not scaffolded by the tooling that writes it.
+  const { adapter, path } = ingest;
   if (adapter === null || path === null || adapter === '' || path === '') {
     return pending(
       `${file}: ingest.adapter/ingest.path not filled in yet — run this source's` +
@@ -153,45 +282,22 @@ export const readManifest = (
     );
   }
 
-  if (
-    typeof adapter !== 'string' ||
-    !(ADAPTERS as readonly string[]).includes(adapter)
-  ) {
-    return bad(file, `ingest.adapter must be one of: ${ADAPTERS.join(', ')}`);
-  }
-  if (typeof path !== 'string') {
-    return bad(file, 'ingest.path must be a string');
-  }
-
-  const site = ingest.site ?? '4chan';
-  if (typeof site !== 'string' || site === '') {
-    return bad(file, 'ingest.site must be a non-empty string');
-  }
-
-  // Boards this archive carries that are not boards of `site` -- the archive's
-  // own discussion board, another imageboard the crawl caught, or a name that
-  // was never a board at all. Enforced by the adapters (see boards.ts for why
-  // it cannot be a central whitelist).
-  const excludeBoards = ingest['exclude-boards'] ?? [];
-  if (
-    !Array.isArray(excludeBoards) ||
-    excludeBoards.some((b) => typeof b !== 'string' || b === '')
-  ) {
-    return bad(
-      file,
-      'ingest.exclude-boards must be an array of non-empty strings'
-    );
+  const parsed = IngestBlock.safeParse(ingest);
+  if (!parsed.success) {
+    // Parsed against the block, not the document, so paths need the prefix
+    // back: `ingest.exclude-boards.1`, not `exclude-boards.1`.
+    return fromZod(file, parsed.error, 'ingest');
   }
 
   return Result.ok({
     id: manifestId(file),
     file,
-    name,
-    link: link ?? undefined,
-    adapter: adapter as Adapter,
-    path: resolve(projectRoot, path),
-    site,
-    excludeBoards: excludeBoards as string[],
+    name: source.name,
+    link: source.link ?? undefined,
+    adapter: parsed.data.adapter,
+    path: resolve(projectRoot, parsed.data.path),
+    site: parsed.data.site,
+    excludeBoards: parsed.data['exclude-boards'],
   });
 };
 
@@ -204,77 +310,24 @@ export const readManifest = (
 export const readSourceInfo = (
   file: string
 ): Result<SourceInfo, ManifestError> => {
-  if (!existsSync(file)) {
-    return bad(file, 'no such manifest');
+  const json = readJson(file);
+  if (json.isErr) {
+    return Result.err(json.error);
   }
-  let raw: unknown;
-  try {
-    raw = JSON.parse(readFileSync(file, 'utf8'));
-  } catch (e) {
-    return bad(file, `invalid JSON: ${(e as Error).message}`);
+
+  const parsed = SourceInfoDoc.safeParse(json.value);
+  if (!parsed.success) {
+    return fromZod(file, parsed.error);
   }
-  const doc = raw as {
-    source?: Record<string, unknown>;
-    files?: { source?: unknown };
-  };
-  if (!doc.source) {
-    return bad(file, 'missing "source" block');
-  }
-  const { name } = doc.source;
-  if (typeof name !== 'string' || name === '') {
-    return bad(file, 'source.name is required');
-  }
+  const doc = parsed.data;
+
+  const clean = doc.dir.replace(/\/$/, '');
   const { link } = doc.source;
 
-  const id = manifestId(file);
-  const { dir } = doc as { dir?: unknown };
-  if (typeof dir !== 'string' || dir === '') {
-    return bad(
-      file,
-      '"dir" (the dataset directory, project-root relative) is required'
-    );
-  }
-
-  const clean = dir.replace(/\/$/, '');
-
-  const output = (doc as { prepareOutput?: unknown }).prepareOutput;
-  if (output != null && typeof output !== 'string') {
-    return bad(file, '"prepareOutput" must be a string');
-  }
-
-  const dead = (doc as { 'dead-end'?: unknown })['dead-end'];
-  if (dead != null && typeof dead !== 'boolean') {
-    return bad(file, '"dead-end" must be a boolean');
-  }
-
-  // Several items ship image/thumbnail tarballs that dwarf the text: rbt-asia
-  // is 1.5TB of which ~39GB is the actual dumps. Patterns here keep those out
-  // of the download rather than making every ingest wait on them.
-  const dl = (doc as { download?: { exclude?: unknown } }).download;
-  const downloadExclude: RegExp[] = [];
-  if (dl?.exclude != null) {
-    if (!Array.isArray(dl.exclude)) {
-      return bad(file, '"download.exclude" must be an array of regexes');
-    }
-    for (const [i, pat] of dl.exclude.entries()) {
-      if (typeof pat !== 'string') {
-        return bad(file, `download.exclude[${i}] must be a string`);
-      }
-      try {
-        downloadExclude.push(new RegExp(pat, 'i'));
-      } catch (e) {
-        return bad(
-          file,
-          `download.exclude[${i}] is not a valid regex: ${(e as Error).message}`
-        );
-      }
-    }
-  }
-
   return Result.ok({
-    id,
+    id: manifestId(file),
     file,
-    name,
+    name: doc.source.name,
     link: typeof link === 'string' && link !== '' ? link : undefined,
     // Downloads land in <dir>/source, the first stage of the
     // source -> extracted -> out pipeline.
@@ -284,9 +337,9 @@ export const readSourceInfo = (
     stageDirFromDatasets: `${basename(clean)}/source`,
     dir: clean,
     dirFromDatasets: basename(clean),
-    prepareOutput: output ?? 'out',
-    downloadExclude,
-    deadEnd: dead === true,
+    prepareOutput: doc.prepareOutput ?? 'out',
+    downloadExclude: doc.download?.exclude ?? [],
+    deadEnd: doc['dead-end'] === true,
   });
 };
 
