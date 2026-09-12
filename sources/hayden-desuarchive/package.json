@@ -1,0 +1,26 @@
+{
+  "name": "hayden-desuarchive",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "private": true,
+  "devDependencies": {
+    "tsdown": "^0.22.14"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsdown"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "chan": {
+    "manifest": "./hayden-desuarchive.json",
+    "prepare": "./dist/prepare.mjs"
+  },
+  "dependencies": {
+    "staging-json": "^1.0.0",
+    "staging-core": "^1.0.0"
+  }
+}

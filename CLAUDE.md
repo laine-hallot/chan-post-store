@@ -169,7 +169,7 @@ source's bundle never pulls in an HTML parser:
 | `staging-core` | `readLines`, `cleanBodyText`/`stripHtml`, `nyWallToUtc`, the `NdjsonPost` record and `NdjsonWriter`, and the `sh`/`linkInto`/`expectFiles` helpers |
 | `staging-sql` | mysqldump tuple parsing, `sqlNormalize`, `postsThreadsToNdjson` |
 | `staging-html` | the fybertech markup generations, `htmlToNdjson`, `stageNativeHtml`, `reconcileBoards`, WARC extraction, the HTML tree walker |
-| `staging-json` | `threadsJsonToNdjson`, `asagiExportToNdjson` |
+| `staging-json` | `threadsJsonToNdjson`, `asagiExportToNdjson`, `haydenToNdjson` |
 
 `site-config-4chan` publishes the board timeline and `boardSlugs()`.
 

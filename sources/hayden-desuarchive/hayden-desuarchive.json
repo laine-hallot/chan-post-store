@@ -1,0 +1,25 @@
+{
+  "dir": "nas-data/Datasets/4chan/hayden-desuarchive",
+  "source": {
+    "type": "scrape",
+    "name": "Hayden scrape of Desuarchive /g/ (2019-2026)",
+    "short-desc": "Our own scrape of Desuarchive's /g/ via Hayden, to fill the 2019-2026 gap no public dump covers. Not yet published anywhere, so no download step.",
+    "capture": "OUR OWN SCRAPE, not a published item, so there is no link and no download step: source/ is filled by hand until the data has a public home. Scraped with Hayden (https://github.com/bbepis/Hayden) against Desuarchive's FoolFuuka API -- every record carries a doc_id and desu-usergeneratedcontent.xyz media links, so the upstream is Desuarchive, not 4chan itself. Goal is every text post on /g/ 2019-2026, which no public dump covers: desuarchive_db_201909 ends in 2019 and nothing in the registry picks /g/ up after that.\n\nARRIVES AS TARBALLS of Hayden's download root, copied into source/ by hand: source/my-archive-1.tar.gz (440MB gz, 2.8GB unpacked) wraps the tree in a my-archive-1/ directory. The prepare script extracts each source/*.tar.gz into extracted/ (stamped, so a re-run skips archives already unpacked), locates every Hayden root under it wherever the wrapper directory put it, and converts to out/<board>/posts.ndjson (staging-json's hayden-to-ndjson). A loose tree in source/ is accepted too. LAYOUT inside is Hayden's: <board>/<threadno>/thread.json plus a thumbs/ directory per thread, and a hayden/ directory holding imagequeue.db, which is the scraper's own state and not a board.\n\nFORMAT: thread.json is Hayden's envelope, {Thread: {ThreadId, IsArchived, Posts[], OriginalObject: {posts}, AdditionalMetadata: {Deleted, Sticky, Locked}}, ThreadDeleted, DeletedPostIds}. Each post carries Hayden's normalised fields (PostNumber, TimePosted, Author, Tripcode, ContentRaw, ContentType, IsDeleted, Media[]) and the upstream FoolFuuka record verbatim in OriginalObject: doc_id, num, subnum, thread_num, timestamp, name, trip, title, comment_sanitized, poster_country_name, capcode, sticky, locked, deleted, media {media, media_filename, media_hash, media_link, thumb_link, media_size, exif}. THE CONVERTER READS OriginalObject, NOT HAYDEN'S FIELDS: the envelope has no Subject at all (15,010 of the sample's posts had a title, and only the upstream record carried it), and ContentRaw trims trailing whitespace (8 posts differed from comment_sanitized by exactly that). ContentType is 1 on every post.\n\nTIMESTAMP IS TRUE UTC, so the converter copies it untouched. Measured against 4chan's own tim upload time (UTC milliseconds, preserved in media.exif): for all 377,508 media posts in the sample, tim/1e6 - timestamp was 0 or 1 second. New York wall time would have been off by 4-5 hours. Hayden's TimePosted (ISO 8601, +00:00) equals it exactly on every post, but is derived from it rather than independent evidence.\n\nCOMMENT is comment_sanitized, which is Asagi plain text: '>' is literal, [code] and [spoiler] are Asagi's own tags (6,966 and 5 posts), the same convention the SQL sources stage. The 24 comments containing '<span', '<a href', '&gt;' etc. are users typing markup literally. There is no `comment` field -- Desuarchive's API returns only the sanitized variant. Empty comments are '' in the record (51,306 in the sample) and Hayden omits ContentRaw for them.\n\nSAMPLE (data/my-archive-1, 2.8GB, surveyed 2026-09-11): 38,044 threads, 2,029,716 posts, all 2026-01-01 to 2026-09-11 UTC. 37,859 /g/ threads (2,026,407 posts) and 185 /his/ threads (3,309 posts) -- /his/ is staged too; a partial capture never blocks a fuller one. 32,312 posts flagged deleted (kept, as the SQL sources keep their _deleted companions); 5,045 threads with AdditionalMetadata.Deleted. No ghost posts (subnum always 0), capcode N on all but 68 (M). Every thread's first post is its OP, every record's thread_num matches its directory, no post number repeats within a thread. poster_country_name is the string 'False' throughout. Media posts have exactly one media entry; Hayden's Media[0] agrees with OriginalObject.media on filename and hash in every case.\n\nSTAGED ON THE NAS 2026-09-11 from that tarball; the converter's counts and a `survey --distinct` over out/ both reconcile with the local survey exactly: 2,029,716 posts, 38,044 OPs = threads, 0 undated, 0 repeats.\n\nRE-STAGING the conversion is a full pass: the scrape grows and Hayden rewrites thread.json as a thread updates, and the converter has no notion of what it wrote last time. `prepare --force` re-runs the converter over everything in extracted/ (extraction itself is skipped unless a tarball is newer than its stamp). Later tarballs are simply more roots; a thread present in two of them is emitted twice and ingest's UNIQUE constraint keeps the first."
+  },
+  "ingest": {
+    "adapter": "json",
+    "path": "nas-data/Datasets/4chan/hayden-desuarchive/out",
+    "site": "4chan"
+  },
+  "files": {
+    "source": "./source",
+    "extract": {
+      "path": "./extracted",
+      "script": "tar -xf source/*.tar.gz -C extracted"
+    },
+    "out": {
+      "path": "./out",
+      "script": ""
+    }
+  }
+}
