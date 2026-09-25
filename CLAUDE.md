@@ -136,7 +136,8 @@ works under both.
 
 **Building is npm's job, not the CLI's.** Each source package has a `build`
 script and the root has `build:sources` (`npm run build --workspaces
---if-present`; only source packages define `build`). `chan.prepare` names the
+--if-present`; source packages define `build`, and so does `analysis`, whose
+`post-dates` ships a scan bundle to the archive host the same way). `chan.prepare` names the
 BUILT artifact, so the CLI never compiles anything — it copies the bundle to
 wherever the archives are and runs it. `dist/` is gitignored, so a fresh
 clone must run `npm run build:sources` before any `prepare`; the CLI says

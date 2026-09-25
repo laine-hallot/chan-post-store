@@ -1,6 +1,6 @@
 import type { Pool } from 'pg';
 
-import type { BoardTotals } from '../database/ingest.ts';
+import type { BoardTotals, PostRow } from '../database/ingest.ts';
 
 import { parse, type HTMLElement } from 'node-html-parser';
 import { readFileSync } from 'node:fs';
@@ -177,6 +177,8 @@ export const ingestHtml = async (
     countOnly?: boolean;
     /** Also count DISTINCT post numbers per board. Costs 4 bytes a row. */
     distinct?: boolean;
+    /** Called with every row read; count-only runs only. See PostInserter. */
+    observe?: (p: PostRow) => void;
   }
 ): Promise<IngestStats> => {
   const boardFilter = makeBoardFilter(opts.excludeBoards);
@@ -184,7 +186,8 @@ export const ingestHtml = async (
     db,
     opts.sourceId,
     opts.countOnly,
-    opts.distinct
+    opts.distinct,
+    opts.observe
   );
   const stats: IngestStats = {
     files: 0,

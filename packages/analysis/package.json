@@ -6,11 +6,14 @@
   "devDependencies": {
     "@types/node": "^24.0.0",
     "@types/pg": "^8.11.0",
-    "typescript": "^6.0.0"
+    "typescript": "^6.0.0",
+    "tsdown": "^0.22.14"
   },
   "scripts": {
     "coverage": "node src/coverage/coverage.ts",
-    "timeline": "node src/timeline/timeline.ts"
+    "timeline": "node src/timeline/timeline.ts",
+    "post-dates": "node src/post-dates/post-dates.ts",
+    "build": "tsdown"
   },
   "keywords": [],
   "author": "",

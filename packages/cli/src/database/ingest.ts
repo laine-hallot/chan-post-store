@@ -194,17 +194,25 @@ export class PostInserter {
   /** Per-board post numbers, when --distinct is on; empty otherwise. */
   #seen = new Map<string, PostNumbers>();
   #distinct: boolean;
+  /**
+   * Sees every row a count-only run reads, for callers that need more than
+   * the per-board totals -- the analysis tools run the readers on the archive
+   * host and summarise the rows there, rather than reimplementing them.
+   */
+  #observe: ((p: PostRow) => void) | undefined;
 
   constructor(
     pool: Pool | null,
     sourceId: number,
     countOnly = false,
-    distinct = false
+    distinct = false,
+    observe?: (p: PostRow) => void
   ) {
     this.#pool = pool;
     this.#sourceId = sourceId;
     this.#countOnly = countOnly;
     this.#distinct = distinct;
+    this.#observe = observe;
   }
 
   /** Per-board totals accumulated so far, board order. */
@@ -305,6 +313,7 @@ export class PostInserter {
     if (this.#countOnly) {
       for (let i = 0; i < batch.length; i++) {
         this.#tally(batch[i]!);
+        this.#observe?.(batch[i]!);
         waiters[i]!(true);
       }
       return;
