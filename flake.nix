@@ -14,7 +14,7 @@
       {
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
-            nodejs_24
+            nodejs_26
             # for staging/extracting the raw archives
             p7zip
             zstd
