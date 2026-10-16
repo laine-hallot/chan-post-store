@@ -2,7 +2,7 @@ import { fail } from '../utils/console.ts';
 
 /** Parse a date bound; returns epoch seconds. End bounds are advanced by one
  * unit of their precision so they can be used as an exclusive upper bound. */
-const parseBound = (s: string, end: boolean): number => {
+export const parseBound = (s: string, end: boolean): number => {
   const m = /^(\d{4})(?:-(\d{2}))?(?:-(\d{2}))?$/.exec(s);
   if (!m) {
     fail(`invalid date: ${s}`);
@@ -12,6 +12,13 @@ const parseBound = (s: string, end: boolean): number => {
     m[2] ? Number(m[2]) : null,
     m[3] ? Number(m[3]) : null,
   ];
+  // Date.UTC normalises rather than rejects -- month 13 is next January, day
+  // 31 of April is May 1st -- so a typo would silently move the bound. A
+  // valid date survives the round trip unchanged.
+  const d = new Date(Date.UTC(year, (month ?? 1) - 1, day ?? 1));
+  if (d.getUTCMonth() + 1 !== (month ?? 1) || d.getUTCDate() !== (day ?? 1)) {
+    fail(`invalid date: ${s}`);
+  }
   if (end) {
     if (day != null) {
       day++;

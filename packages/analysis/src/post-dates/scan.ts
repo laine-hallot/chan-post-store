@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 // Deep imports, not '@chan-post-store/cli': the package index pulls in
@@ -33,12 +33,19 @@ export interface ScanConfig {
   board: string;
   excludeBoards: string[];
   buckets: number;
+  /** A fixed bucket width in seconds, instead of choosing one to fit. */
+  width?: number;
+  /** Only posts in [start, end), Unix seconds. Either may be absent. */
+  start?: number;
+  end?: number;
   /** Where to write the ScanResult, relative to cwd. */
   out: string;
 }
 
 const cfg = JSON.parse(process.argv[2] ?? '') as ScanConfig;
-const hist = new PostDateHistogram(cfg.buckets);
+const ranged = cfg.start !== undefined || cfg.end !== undefined;
+const hist = new PostDateHistogram(cfg.buckets, cfg.start ?? 0, cfg.width);
+let undated = 0;
 const observe = (p: {
   board: string;
   postNo: number;
@@ -46,9 +53,25 @@ const observe = (p: {
 }): void => {
   // The readers already honour `boards`, but a board filter that silently
   // stopped working would chart the whole source as this board.
-  if (p.board === cfg.board) {
-    hist.add(p.postNo, p.tsUtc);
+  if (p.board !== cfg.board) {
+    return;
   }
+  if (p.tsUtc === null) {
+    undated++;
+    // At the epoch over the whole board; nowhere in a range. See
+    // ScanResult.undated.
+    if (!ranged) {
+      hist.add(p.postNo, 0);
+    }
+    return;
+  }
+  if (
+    (cfg.start !== undefined && p.tsUtc < cfg.start) ||
+    (cfg.end !== undefined && p.tsUtc >= cfg.end)
+  ) {
+    return;
+  }
+  hist.add(p.postNo, p.tsUtc);
 };
 const common = {
   sourceId: 0,
@@ -60,16 +83,14 @@ const common = {
 };
 
 if (cfg.adapter === 'sql') {
-  // The staged layout is one `<board>.sql` holding the board and its
-  // `_deleted` companion, so when that file exists it is all there is to
-  // read. Otherwise every file is read and the reader filters by table.
-  const own = join(cfg.path, `${cfg.board}.sql`);
-  const files = existsSync(own)
-    ? [own]
-    : readdirSync(cfg.path)
-        .filter((f) => f.toLowerCase().endsWith('.sql'))
-        .sort()
-        .map((f) => join(cfg.path, f));
+  // The staged layout is one `<board>.sql` per board, holding the board and
+  // its `_deleted` companion, so a staged directory without that file does
+  // not have the board. Reading every other board's dump to confirm it would
+  // cost the whole source -- ~70GB for a warosu backup, to find no /g/. Only
+  // an ingest.path naming a single file is read whole.
+  const files = statSync(cfg.path).isDirectory()
+    ? [join(cfg.path, `${cfg.board}.sql`)].filter((f) => existsSync(f))
+    : [cfg.path];
   for (const file of files) {
     await ingestSql(null, { ...common, file, fileSize: statSync(file).size });
   }
@@ -84,6 +105,8 @@ const result: ScanResult = {
   site: cfg.site,
   board: cfg.board,
   width: hist.width,
+  origin: hist.origin,
   buckets: hist.buckets(),
+  undated,
 };
 writeFileSync(cfg.out, JSON.stringify(result));
