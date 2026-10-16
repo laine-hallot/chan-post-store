@@ -1,0 +1,20 @@
+{
+  "name": "@chan-post-store/4chan-post-ocr",
+  "version": "1.0.0",
+  "description": "Reads post numbers and timestamps out of screenshots of 4chan's desktop site.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "bench": "node src/bench.ts"
+  },
+  "dependencies": {
+    "@chan-post-store/cli": "1.0.0",
+    "@optique/core": "^1.2.0",
+    "@optique/run": "^1.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^6.0.0"
+  },
+  "license": "ISC"
+}

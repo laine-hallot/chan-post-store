@@ -23,6 +23,7 @@
   "workspaces": [
     "packages/cli",
     "packages/analysis",
+    "packages/4chan-post-ocr",
     "packages/site-config-4chan",
     "packages/staging-json",
     "packages/staging-html",

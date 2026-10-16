@@ -8,6 +8,9 @@
       "path": "packages/analysis"
     },
     {
+      "path": "packages/4chan-post-ocr"
+    },
+    {
       "path": "packages/site-config-4chan"
     },
     {
