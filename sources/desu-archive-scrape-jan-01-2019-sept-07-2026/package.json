@@ -1,5 +1,5 @@
 {
-  "name": "hayden-desuarchive",
+  "name": "desu-archive-scrape-jan-01-2019-sept-07-2026",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -16,7 +16,7 @@
   "license": "ISC",
   "type": "module",
   "chan": {
-    "manifest": "./hayden-desuarchive.json",
+    "manifest": "./desu-archive-scrape-jan-01-2019-sept-07-2026.json",
     "prepare": "./dist/prepare.mjs"
   },
   "dependencies": {
