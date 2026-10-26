@@ -18,11 +18,14 @@ export interface PostBitset {
   bits: Uint8Array;
 }
 
-/** Bumped whenever the encoding changes, so a stale cache is not misread. */
-export const BITSET_FORMAT = 1;
+/**
+ * Bumped whenever the encoding changes, so a stale cache is not misread.
+ * 2: one scan holds every board it read, not just one.
+ */
+export const BITSET_FORMAT = 2;
 
 export class BitsetBuilder {
-  #bits = new Uint8Array(1 << 20);
+  #bits = new Uint8Array(1 << 10);
   rows = 0;
   maxNo = -1;
 
@@ -53,34 +56,49 @@ export class BitsetBuilder {
 }
 
 /**
- * A length-prefixed JSON header and the raw bits, gzipped together. Post
- * numbers are dense enough that gzip is not the point; the runs of zeroes
- * before a capture starts and across its outages are.
+ * Every board of one scan, gzipped together: a count, then for each board a
+ * length-prefixed JSON header and its raw bits. Post numbers are dense enough
+ * that gzip is not the point; the runs of zeroes before a capture starts and
+ * across its outages are.
  */
-export const encodeBitset = (b: PostBitset): Buffer => {
-  const { bits, ...meta } = b;
-  const header = Buffer.from(
-    JSON.stringify({ format: BITSET_FORMAT, ...meta })
-  );
-  const len = Buffer.alloc(4);
-  len.writeUInt32LE(header.length);
-  return gzipSync(Buffer.concat([len, header, bits]), { level: 6 });
+export const encodeScan = (boards: PostBitset[]): Buffer => {
+  const parts: Uint8Array[] = [u32(boards.length)];
+  for (const { bits, ...meta } of boards) {
+    const header = Buffer.from(
+      JSON.stringify({ format: BITSET_FORMAT, bytes: bits.length, ...meta })
+    );
+    parts.push(u32(header.length), header, bits);
+  }
+  return gzipSync(Buffer.concat(parts), { level: 6 });
 };
 
-export const decodeBitset = (buf: Buffer): PostBitset => {
+export const decodeScan = (buf: Buffer): PostBitset[] => {
   const raw = gunzipSync(buf);
-  const len = raw.readUInt32LE(0);
-  const meta = JSON.parse(raw.subarray(4, 4 + len).toString('utf8')) as Omit<
-    PostBitset,
-    'bits'
-  > & { format: number };
-  if (meta.format !== BITSET_FORMAT) {
-    throw new Error(
-      `bitset format ${meta.format}, expected ${BITSET_FORMAT}; rescan`
-    );
+  const count = raw.readUInt32LE(0);
+  let at = 4;
+  const out: PostBitset[] = [];
+  for (let i = 0; i < count; i++) {
+    const len = raw.readUInt32LE(at);
+    const meta = JSON.parse(
+      raw.subarray(at + 4, at + 4 + len).toString('utf8')
+    ) as Omit<PostBitset, 'bits'> & { format: number; bytes: number };
+    if (meta.format !== BITSET_FORMAT) {
+      throw new Error(
+        `bitset format ${meta.format}, expected ${BITSET_FORMAT}; rescan`
+      );
+    }
+    at += 4 + len;
+    const { format: _, bytes, ...rest } = meta;
+    out.push({ ...rest, bits: new Uint8Array(raw.subarray(at, at + bytes)) });
+    at += bytes;
   }
-  const { format: _, ...rest } = meta;
-  return { ...rest, bits: new Uint8Array(raw.subarray(4 + len)) };
+  return out;
+};
+
+const u32 = (n: number): Buffer => {
+  const b = Buffer.alloc(4);
+  b.writeUInt32LE(n);
+  return b;
 };
 
 export const hasPost = (bits: Uint8Array, n: number): boolean =>

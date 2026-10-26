@@ -1,3 +1,4 @@
+import type { Manifest } from '@chan-post-store/cli/src/manifest.ts';
 import type { Runner } from '@chan-post-store/cli/src/utils/exec/runner.ts';
 
 import type { ScanConfig } from './scan.ts';
@@ -13,6 +14,7 @@ import express from 'express';
 import {
   existsSync,
   mkdirSync,
+  readdirSync,
   readFileSync,
   rmSync,
   writeFileSync,
@@ -32,13 +34,25 @@ import {
   shQuote,
 } from '@chan-post-store/cli';
 
-import { BITSET_FORMAT, decodeBitset, hasPost } from './bitset.ts';
-import { encodeIndexedPng, type PaletteEntry } from './png.ts';
+import { BITSET_FORMAT, decodeScan } from './bitset.ts';
+import {
+  boardViews,
+  BY_BOARD,
+  renderBoardIndex,
+  renderBoardPage,
+  renderHub,
+  renderMapPage,
+  type HubEntry,
+  type MapInfo,
+} from './page.ts';
+import { blankTile, layout, NATIVE_ZOOM, renderMap } from './render.ts';
 
 /**
- * Which post numbers one source holds for one board, as a grid with a cell
- * per post number: filled where the source has the post, empty where it
- * doesn't. Numbers run left to right and wrap, like text.
+ * Which post numbers a source holds for a board, as a grid with a cell per
+ * post number: filled where the source has the post, empty where it
+ * doesn't. Numbers run left to right and wrap, like text. One map per
+ * (source, board), for every source and board asked for -- by default every
+ * board of every source in chan.config.json.
  *
  * Post numbers on a board only count up, so every number between the first
  * and the last was once a post somewhere. A gap is a post the archive never
@@ -57,7 +71,12 @@ import { encodeIndexedPng, type PaletteEntry } from './png.ts';
  * viewer uses the nearest rendered level at or below the current zoom and
  * scales it up for the levels between.
  *
- * Reads the source's staged files on the archive host, as post-dates does,
+ * Every map of one board shares one range -- up to the highest post any
+ * source in the run holds there -- and so one grid, so the same post number
+ * is in the same place on each and two archives can be compared by flipping
+ * between them.
+ *
+ * Reads the sources' staged files on the archive host, as post-dates does,
  * never the store: the store attributes each post to whichever archive got
  * there first and so cannot say what any one archive holds.
  */
@@ -66,74 +85,36 @@ const SCAN_BUNDLE = fileURLToPath(
   new URL('../../dist/post-map-scan.mjs', import.meta.url)
 );
 
-const TILE = 256;
-const NATIVE_ZOOM = 20;
-
 /** Zoom levels rendered besides the native one when --zoom is not given. */
 const DEFAULT_ZOOMS = [1, 2, 5, 13, 15, 17, 18];
-
-const MISSING_HEX = '#f0e0d6';
-const PRESENT_HEX = '#789922';
-
-/**
- * Tile pixel values, indexing PALETTE: OUTSIDE is past either end of the
- * range and transparent; 1..255 run from none of a pixel's post numbers
- * present to all of them. A native-level pixel is one post, so it is only
- * ever one end or the other.
- */
-const OUTSIDE = 0;
-const MISSING = 1;
-const PRESENT = 255;
-
-const lerpHex = (a: string, b: string, t: number): string => {
-  const ca = parseInt(a.slice(1), 16);
-  const cb = parseInt(b.slice(1), 16);
-  let out = 0;
-  for (const shift of [16, 8, 0]) {
-    const x = (ca >> shift) & 0xff;
-    const y = (cb >> shift) & 0xff;
-    out |= Math.round(x + (y - x) * t) << shift;
-  }
-  return `#${out.toString(16).padStart(6, '0')}`;
-};
-
-const PALETTE: PaletteEntry[] = [
-  { hex: '#000000', alpha: 0 },
-  ...Array.from({ length: PRESENT - MISSING + 1 }, (_, i) => ({
-    hex: lerpHex(MISSING_HEX, PRESENT_HEX, i / (PRESENT - MISSING)),
-    alpha: 255,
-  })),
-];
-
-/** The palette index for a block with `present` of its `of` posts held. */
-const shade = (present: number, of: number): number =>
-  of === 0
-    ? OUTSIDE
-    : MISSING + Math.round((present / of) * (PRESENT - MISSING));
 
 const program = defineProgram({
   parser: merge(
     object({
-      source: option('--source', string(), {
-        description: message`Source id, as named under sources/.`,
-      }),
-      board: option('--board', string(), {
-        description: message`Board slug, without slashes.`,
-      }),
+      sources: multiple(
+        option('--source', string(), {
+          description: message`Source id, as named under sources/. Repeatable. Defaults to every source in chan.config.json.`,
+        })
+      ),
+      board: optional(
+        option('--board', string(), {
+          description: message`Board slug, without slashes. Defaults to every board each source holds.`,
+        })
+      ),
       first: withDefault(
         option('--first', integer({ min: 0 }), {
-          description: message`The post number in the grid's first cell.`,
+          description: message`The post number in every grid's first cell.`,
         }),
         0
       ),
       last: optional(
         option('--last', integer({ min: 0 }), {
-          description: message`The post number in the grid's last cell. Defaults to the highest post the source holds for the board.`,
+          description: message`The post number in every grid's last cell. Defaults, per board, to the highest post any of the sources holds there.`,
         })
       ),
       'row-width': optional(
         option('--row-width', integer({ min: 1 }), {
-          description: message`Post numbers per row of the grid. Defaults to whole tiles making the grid roughly square.`,
+          description: message`Post numbers per row of the grid. Defaults to whole tiles making each board's grid roughly square.`,
         })
       ),
       zoom: multiple(
@@ -143,19 +124,25 @@ const program = defineProgram({
       ),
       'reuse-scan': withDefault(
         flag('--reuse-scan', {
-          description: message`Map the scan cached by an earlier run instead of scanning again. NOT invalidated when the source is re-staged.`,
+          description: message`Map the scans cached by an earlier run instead of scanning again, for any source that has one. NOT invalidated when a source is re-staged.`,
+        }),
+        false
+      ),
+      'serve-only': withDefault(
+        flag('--serve-only', {
+          description: message`Serve the maps already drawn under the output root, without scanning or drawing any.`,
         }),
         false
       ),
       'no-serve': withDefault(
         flag('--no-serve', {
-          description: message`Write the tiles and page and exit, instead of serving them.`,
+          description: message`Write the tiles and pages and exit, instead of serving them.`,
         }),
         false
       ),
       host: withDefault(
         option('--host', string(), {
-          description: message`Address to serve on. The default listens on every interface, so the map can be opened from another machine on the network.`,
+          description: message`Address to serve on. The default listens on every interface, so the maps can be opened from another machine on the network.`,
         }),
         '0.0.0.0'
       ),
@@ -167,7 +154,7 @@ const program = defineProgram({
       ),
       out: optional(
         option('--out', string(), {
-          description: message`Output directory, resolved against the repo root. Defaults to artifacts/post-map-<board>-<source>. Its tiles/ directory is replaced.`,
+          description: message`Output root, resolved against the repo root. Defaults to artifacts/post-map. Each map is <source>/<board>/ under it, replaced whole when redrawn; index.html lists every map there.`,
         })
       ),
     }),
@@ -175,8 +162,8 @@ const program = defineProgram({
   ),
   metadata: {
     name: 'post-map.ts',
-    brief: message`Map which post numbers one source holds for one board.`,
-    description: message`Reads the source's staged files with the ingest readers, on the machine holding the archives, and records every post number it holds for the board. Renders that as map tiles with one pixel per post number, plus an index.html that views them in Leaflet. Needs no database. Run \`npm run build:sources\` first: it bundles the scan.`,
+    brief: message`Map which post numbers each source holds for each board.`,
+    description: message`Reads each source's staged files with the ingest readers, on the machine holding the archives, and records every post number it holds for each board. Renders each (source, board) as map tiles with one pixel per post number, with a page that views them in Leaflet and an index of every map. Needs no database. Run \`npm run build:sources\` first: it bundles the scan.`,
   },
 });
 
@@ -188,356 +175,307 @@ const fail: (msg: string) => never = (msg) => {
 };
 
 const fmt = (n: number): string => n.toLocaleString('en-US');
+const secs = (t0: number): string =>
+  `${((Date.now() - t0) / 1000).toFixed(1)}s`;
 
-const { source, board } = values;
+const configured = (): string[] => {
+  const file = join(PROJECT_ROOT, 'chan.config.json');
+  const cfg = JSON.parse(readFileSync(file, 'utf8')) as { sources?: string[] };
+  if (!cfg.sources || cfg.sources.length === 0) {
+    fail(`${file} lists no sources; name them with --source`);
+  }
+  return cfg.sources;
+};
+// --serve-only maps nothing: both passes below then do nothing, and the run
+// goes straight to the index and the server.
+const serveOnly = values['serve-only'];
+const sources = serveOnly
+  ? []
+  : [...new Set(values.sources.length > 0 ? values.sources : configured())];
+
+if (!serveOnly && !existsSync(SCAN_BUNDLE)) {
+  fail(`${SCAN_BUNDLE} does not exist\n  run: npm run build:sources`);
+}
 
 const CACHE_DIR = join(PROJECT_ROOT, '.cache', 'post-map');
-const cachePath = join(
-  CACHE_DIR,
-  sanitize(`${source}-${board}-v${BITSET_FORMAT}.bin.gz`)
-);
+const cacheFor = (source: string, board: string | undefined): string =>
+  join(
+    CACHE_DIR,
+    sanitize(`${source}-${board ?? 'all'}-v${BITSET_FORMAT}.bin.gz`)
+  );
 
-const scan = async (): Promise<Buffer> => {
-  if (!existsSync(SCAN_BUNDLE)) {
-    fail(`${SCAN_BUNDLE} does not exist\n  run: npm run build:sources`);
+/**
+ * The cached scan that answers for this source, if any. A whole-source scan
+ * answers for a single board too, so it is the fallback for one.
+ */
+const cachedScan = (source: string): string | undefined =>
+  [cacheFor(source, values.board), cacheFor(source, undefined)].find((f) =>
+    existsSync(f)
+  );
+
+type Readable = Manifest & { adapter: ScanConfig['adapter'] };
+
+/**
+ * The manifest when the scan can read this source; otherwise why not. A
+ * pending or dead-end source, or one whose adapter scan.ts does not know, is
+ * reported and skipped: across the whole corpus that is an answer, not an
+ * error.
+ */
+const plan = (source: string): Readable | string => {
+  const r = readManifest(manifestPath(source, PROJECT_ROOT), PROJECT_ROOT);
+  if (r.isErr) {
+    return r.error.message.split('\n')[0]!;
   }
-  const file = manifestPath(source, PROJECT_ROOT);
-  const manifestR = readManifest(file, PROJECT_ROOT);
-  if (manifestR.isErr) {
-    fail(manifestR.error.message);
-  }
-  const manifest = manifestR.unwrap();
-  const { adapter } = manifest;
+  const m = r.unwrap();
   // Positively, as in post-dates: a new adapter is refused until scan.ts
   // learns it.
-  if (adapter !== 'sql' && adapter !== 'json' && adapter !== 'html') {
-    fail(`${source}: post-map cannot read the ${adapter} adapter`);
+  if (m.adapter !== 'sql' && m.adapter !== 'json' && m.adapter !== 'html') {
+    return `post-map cannot read the ${m.adapter} adapter`;
   }
-  const info = readSourceInfo(file).unwrap();
-
-  const runnerR = await makeRunner({
-    projectRoot: PROJECT_ROOT,
-    host: values.remote,
-    forceLocal: values.local,
-    key: values.key,
-  });
-  if (runnerR.isErr) {
-    fail(runnerR.error.message);
-  }
-  const runner: Runner = runnerR.unwrap();
-  try {
-    const dir = runner.path(
-      runner.rootIsDatasets ? info.dirFromDatasets : info.dir
-    );
-    const storageRoot = runner.rootIsDatasets
-      ? runner.path('.')
-      : join(PROJECT_ROOT, info.dir, '..');
-    const node = await ensureNodeRuntime(runner, storageRoot, PROJECT_ROOT);
-    if (node.isErr) {
-      throw node.error;
-    }
-
-    const script = `${dir}/.post-map-scan.mjs`;
-    const resultFile = `.post-map-${sanitize(board)}.bin.gz`;
-    const w = await runner.writeFile(script, readFileSync(SCAN_BUNDLE));
-    if (w.isErr) {
-      throw w.error;
-    }
-    const cfg: ScanConfig = {
-      source,
-      adapter,
-      // Project-root relative in the manifest; the scan's cwd is the
-      // dataset dir.
-      path: relative(resolve(PROJECT_ROOT, info.dir), manifest.path),
-      site: manifest.site,
-      board,
-      excludeBoards: manifest.excludeBoards,
-      out: resultFile,
-    };
-    console.log(`scanning ${source} /${board}/ in ${dir} (${runner.where})`);
-    const t0 = Date.now();
-    const r = await runner.exec(
-      `${shQuote(node.unwrap())} ${shQuote(script)} ${shQuote(JSON.stringify(cfg))}`,
-      { cwd: dir, inherit: true }
-    );
-    await runner.exec(`rm -f ${shQuote(script)}`, { cwd: dir });
-    if (r.code !== 0) {
-      throw new Error(`${source}: scan exited ${r.code}`);
-    }
-    const read = await runner.readFile(`${dir}/${resultFile}`);
-    await runner.exec(`rm -f ${shQuote(resultFile)}`, { cwd: dir });
-    if (read.isErr) {
-      throw read.error;
-    }
-    console.log(`scanned in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
-    return read.unwrap();
-  } catch (e) {
-    fail((e as Error).message);
-  } finally {
-    await runner.close();
-  }
+  return m as Readable;
 };
 
-let raw: Buffer;
-if (values['reuse-scan'] && existsSync(cachePath)) {
-  console.log(`reusing the cached scan of ${source} /${board}/`);
-  raw = readFileSync(cachePath);
-} else {
-  raw = await scan();
-  mkdirSync(CACHE_DIR, { recursive: true });
-  writeFileSync(cachePath, raw);
-}
-const { bits, maxNo, rows } = decodeBitset(raw);
+let runner: Runner | undefined;
+/** Connected on first use, so a fully cached run works with the host down. */
+const connect = async (): Promise<Runner> => {
+  if (runner === undefined) {
+    const r = await makeRunner({
+      projectRoot: PROJECT_ROOT,
+      host: values.remote,
+      forceLocal: values.local,
+      key: values.key,
+    });
+    if (r.isErr) {
+      fail(r.error.message);
+    }
+    runner = r.unwrap();
+  }
+  return runner;
+};
 
-if (maxNo < 0) {
-  fail(
-    `${source} holds no posts for /${board}/` +
-      ` (check the board slug, and that it is not in ingest.exclude-boards)`
+/** Scans one source on the archive host and returns the encoded result. */
+const scan = async (source: string, manifest: Readable): Promise<Buffer> => {
+  const r = await connect();
+  const info = readSourceInfo(manifestPath(source, PROJECT_ROOT)).unwrap();
+  const dir = r.path(r.rootIsDatasets ? info.dirFromDatasets : info.dir);
+  const storageRoot = r.rootIsDatasets
+    ? r.path('.')
+    : join(PROJECT_ROOT, info.dir, '..');
+  const node = await ensureNodeRuntime(r, storageRoot, PROJECT_ROOT);
+  if (node.isErr) {
+    throw node.error;
+  }
+
+  const script = `${dir}/.post-map-scan.mjs`;
+  const resultFile = `.post-map-${sanitize(values.board ?? 'all')}.bin.gz`;
+  const w = await r.writeFile(script, readFileSync(SCAN_BUNDLE));
+  if (w.isErr) {
+    throw w.error;
+  }
+  const cfg: ScanConfig = {
+    source,
+    adapter: manifest.adapter,
+    // Project-root relative in the manifest; the scan's cwd is the dataset
+    // dir.
+    path: relative(resolve(PROJECT_ROOT, info.dir), manifest.path),
+    site: manifest.site,
+    board: values.board,
+    excludeBoards: manifest.excludeBoards,
+    out: resultFile,
+  };
+  const res = await r.exec(
+    `${shQuote(node.unwrap())} ${shQuote(script)} ${shQuote(JSON.stringify(cfg))}`,
+    { cwd: dir, inherit: true }
   );
-}
-
-const { first } = values;
-const last = values.last ?? maxNo;
-if (last < first) {
-  fail(`--last ${fmt(last)} is before --first ${fmt(first)}`);
-}
-const cells = last - first + 1;
-const rowWidth =
-  values['row-width'] ?? Math.ceil(Math.sqrt(cells) / TILE) * TILE;
-const gridRows = Math.ceil(cells / rowWidth);
-const lowZooms = [
-  ...new Set(values.zoom.length > 0 ? values.zoom : DEFAULT_ZOOMS),
-].sort((a, b) => b - a);
-
-console.log(
-  `/${board}/ ${fmt(first)}..${fmt(last)}: ${fmt(rowWidth)} x ${fmt(gridRows)} cells,` +
-    ` zoom levels ${[...lowZooms].reverse().join(', ')} and ${NATIVE_ZOOM}`
-);
-
-const base = values.out
-  ? resolve(PROJECT_ROOT, values.out)
-  : join(PROJECT_ROOT, 'artifacts', sanitize(`post-map-${board}-${source}`));
-// Replaced whole: a different --row-width moves every post to another tile,
-// and a leftover tile from the last layout would be drawn as if current.
-rmSync(join(base, 'tiles'), { recursive: true, force: true });
-
-/**
- * Writes one zoom level's tiles for a level `w` x `h` pixels across, asking
- * `pixel` for each palette index. Returns how many tiles it wrote.
- */
-const writeLevel = (
-  zoom: number,
-  w: number,
-  h: number,
-  pixel: (x: number, y: number) => number
-): number => {
-  const tilesX = Math.ceil(w / TILE);
-  const tilesY = Math.ceil(h / TILE);
-  const dir = join(base, 'tiles', String(zoom));
-  for (let tx = 0; tx < tilesX; tx++) {
-    mkdirSync(join(dir, String(tx)), { recursive: true });
+  await r.exec(`rm -f ${shQuote(script)}`, { cwd: dir });
+  if (res.code !== 0) {
+    throw new Error(`scan exited ${res.code}`);
   }
-  const px = new Uint8Array(TILE * TILE);
-  for (let ty = 0; ty < tilesY; ty++) {
-    for (let tx = 0; tx < tilesX; tx++) {
-      for (let y = 0; y < TILE; y++) {
-        const py = ty * TILE + y;
-        for (let x = 0; x < TILE; x++) {
-          const pxX = tx * TILE + x;
-          px[y * TILE + x] = pxX < w && py < h ? pixel(pxX, py) : OUTSIDE;
-        }
-      }
-      writeFileSync(
-        join(dir, String(tx), `${ty}.png`),
-        encodeIndexedPng(TILE, TILE, px, PALETTE)
-      );
-    }
-    process.stdout.write(`\rzoom ${zoom}: tile row ${ty + 1}/${tilesY}`);
+  const read = await r.readFile(`${dir}/${resultFile}`);
+  await r.exec(`rm -f ${shQuote(resultFile)}`, { cwd: dir });
+  if (read.isErr) {
+    throw read.error;
   }
-  process.stdout.write('\n');
-  return tilesX * tilesY;
+  return read.unwrap();
 };
 
-const t0 = Date.now();
+// Pass 1: every source scanned or found in the cache, keeping only each
+// board's highest post. The bits stay on disk until pass 2, one source at a
+// time -- a whole corpus of bitsets is gigabytes.
+interface Scanned {
+  source: string;
+  cache: string;
+  maxNo: Map<string, number>;
+}
+const scanned: Scanned[] = [];
+const skipped: [string, string][] = [];
+const failed: [string, string][] = [];
 
-let present = 0;
-let tiles = writeLevel(NATIVE_ZOOM, rowWidth, gridRows, (col, row) => {
-  const cell = row * rowWidth + col;
-  if (cell >= cells) {
-    return OUTSIDE;
+mkdirSync(CACHE_DIR, { recursive: true });
+for (const [i, source] of sources.entries()) {
+  const tag = `[${i + 1}/${sources.length}] ${source}`;
+  const manifest = plan(source);
+  if (typeof manifest === 'string') {
+    console.log(`${tag}: skipped -- ${manifest}`);
+    skipped.push([source, manifest]);
+    continue;
   }
-  if (hasPost(bits, first + cell)) {
-    present++;
-    return PRESENT;
-  }
-  return MISSING;
-});
-
-/**
- * How many in-range post numbers the k x k block at (bx, by) covers. Worked
- * out from the grid's shape rather than counted: every row is full but the
- * last, which holds `tail` cells.
- */
-const fullRows = Math.floor(cells / rowWidth);
-const tail = cells - fullRows * rowWidth;
-const clamp = (n: number, k: number): number => Math.max(0, Math.min(k, n));
-const inRange = (bx: number, by: number, k: number): number => {
-  const r0 = by * k;
-  const full = Math.max(0, Math.min(r0 + k, fullRows) - r0);
-  let n = clamp(rowWidth - bx * k, k) * full;
-  if (fullRows >= r0 && fullRows < r0 + k) {
-    n += clamp(tail - bx * k, k);
-  }
-  return n;
-};
-
-if (lowZooms.length > 0) {
-  // Present posts per block at the finest low level, counted from the set
-  // bits directly; each coarser level is then 2x2 sums of the one above.
-  let zoom = lowZooms[0]!;
-  let k = 2 ** (NATIVE_ZOOM - zoom);
-  let w = Math.ceil(rowWidth / k);
-  let h = Math.ceil(gridRows / k);
-  let counts = new Uint32Array(w * h);
-  const lastByte = Math.min(last >> 3, bits.length - 1);
-  for (let b = first >> 3; b <= lastByte; b++) {
-    const byte = bits[b]!;
-    if (byte === 0) {
+  let cache = values['reuse-scan'] ? cachedScan(source) : undefined;
+  if (cache !== undefined) {
+    console.log(`${tag}: reusing ${relative(PROJECT_ROOT, cache)}`);
+  } else {
+    console.log(
+      `${tag}: scanning ${values.board === undefined ? 'every board' : `/${values.board}/`}`
+    );
+    const t0 = Date.now();
+    try {
+      const buf = await scan(source, manifest);
+      cache = cacheFor(source, values.board);
+      writeFileSync(cache, buf);
+      console.log(`${tag}: scanned in ${secs(t0)}`);
+    } catch (e) {
+      const msg = (e as Error).message;
+      console.error(`${tag}: FAILED -- ${msg}`);
+      failed.push([source, msg]);
       continue;
     }
-    for (let i = 0; i < 8; i++) {
-      const n = b * 8 + i;
-      if ((byte & (1 << i)) === 0 || n < first || n > last) {
-        continue;
-      }
-      const cell = n - first;
-      const row = Math.floor(cell / rowWidth);
-      const col = cell - row * rowWidth;
-      counts[Math.floor(row / k) * w + Math.floor(col / k)]!++;
-    }
   }
+  const boards = decodeScan(readFileSync(cache)).filter(
+    (b) =>
+      b.maxNo >= 0 && (values.board === undefined || b.board === values.board)
+  );
+  if (boards.length === 0) {
+    const what = values.board === undefined ? 'any board' : `/${values.board}/`;
+    console.log(`${tag}: holds no posts for ${what}`);
+    skipped.push([source, `no posts for ${what}`]);
+    continue;
+  }
+  scanned.push({
+    source,
+    cache,
+    maxNo: new Map(boards.map((b) => [b.board, b.maxNo])),
+  });
+}
+await runner?.close();
 
-  for (;;) {
-    if (lowZooms.includes(zoom)) {
-      const [c, cw, kk] = [counts, w, k];
-      tiles += writeLevel(zoom, w, h, (x, y) =>
-        shade(c[y * cw + x]!, inRange(x, y, kk))
-      );
-    }
-    if (zoom === lowZooms[lowZooms.length - 1]) {
-      break;
-    }
-    const w2 = Math.ceil(w / 2);
-    const h2 = Math.ceil(h / 2);
-    const halved = new Uint32Array(w2 * h2);
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        halved[(y >> 1) * w2 + (x >> 1)]! += counts[y * w + x]!;
-      }
-    }
-    [counts, w, h, k, zoom] = [halved, w2, h2, k * 2, zoom - 1];
+/** Each board's range end: --last, or the highest post any source holds. */
+const boardLast = new Map<string, number>();
+for (const s of scanned) {
+  for (const [board, max] of s.maxNo) {
+    boardLast.set(board, Math.max(boardLast.get(board) ?? -1, max));
   }
 }
+
+// Pass 2: the maps, one source's bitsets in memory at a time.
+const root = values.out
+  ? resolve(PROJECT_ROOT, values.out)
+  : join(PROJECT_ROOT, 'artifacts', 'post-map');
+const mapDir = (source: string, board: string): string =>
+  join(root, sanitize(source), sanitize(board) || '_');
+const zooms = values.zoom.length > 0 ? values.zoom : DEFAULT_ZOOMS;
+const { first } = values;
+
+let drawn = 0;
+for (const s of scanned) {
+  for (const b of decodeScan(readFileSync(s.cache))) {
+    if (!s.maxNo.has(b.board)) {
+      continue;
+    }
+    const last = values.last ?? boardLast.get(b.board)!;
+    const tag = `${s.source} /${b.board}/`;
+    if (last < first) {
+      console.log(`${tag}: nothing at or after --first ${fmt(first)}`);
+      continue;
+    }
+    const grid = layout(first, last, values['row-width']);
+    const dir = mapDir(s.source, b.board);
+    // Replaced whole: a different range or --row-width moves every post to
+    // another tile, and a leftover tile from the last layout would be drawn
+    // as if current.
+    rmSync(dir, { recursive: true, force: true });
+    mkdirSync(dir, { recursive: true });
+    const t0 = Date.now();
+    const r = renderMap(b.bits, grid, zooms, dir);
+    const map: MapInfo = {
+      source: s.source,
+      board: b.board,
+      ...grid,
+      zooms: [...new Set(zooms)].sort((x, y) => x - y).concat(NATIVE_ZOOM),
+      present: r.present,
+      cells: last - first + 1,
+      rows: b.rows,
+      layers: ['base', 'present'],
+    };
+    writeFileSync(join(dir, 'map.json'), JSON.stringify(map));
+    writeFileSync(join(dir, 'index.html'), renderMapPage(map));
+    drawn++;
+    console.log(
+      `${tag}: ${fmt(r.present)} of ${fmt(map.cells)} present,` +
+        ` ${fmt(r.written.base)}/${fmt(r.written.present)} of ${fmt(r.tiles)}` +
+        ` base/present tiles written in ${secs(t0)}`
+    );
+  }
+}
+
+/** Every map under the root, including ones drawn by earlier runs. */
+const allMaps = (): HubEntry[] =>
+  readdirSync(root, { withFileTypes: true })
+    .filter((e) => e.isDirectory())
+    .flatMap((src) =>
+      readdirSync(join(root, src.name), { withFileTypes: true })
+        .filter(
+          (e) =>
+            e.isDirectory() &&
+            existsSync(join(root, src.name, e.name, 'map.json'))
+        )
+        .map((e) => ({
+          ...(JSON.parse(
+            readFileSync(join(root, src.name, e.name, 'map.json'), 'utf8')
+          ) as MapInfo),
+          href: `${encodeURIComponent(src.name)}/${encodeURIComponent(e.name)}/`,
+        }))
+    );
+
+mkdirSync(root, { recursive: true });
+const maps = allMaps();
+writeFileSync(join(root, 'index.html'), renderHub(maps));
+// Rebuilt whole, like the hub: a board page names the maps it layers, and
+// any of them may have been redrawn or removed since.
+const boardRoot = join(root, BY_BOARD);
+rmSync(boardRoot, { recursive: true, force: true });
+mkdirSync(boardRoot, { recursive: true });
+const views = boardViews(maps);
+writeFileSync(join(boardRoot, 'index.html'), renderBoardIndex(views));
+for (const v of views.filter((v) => v.layers.length > 0)) {
+  mkdirSync(join(boardRoot, v.dir), { recursive: true });
+  writeFileSync(join(boardRoot, v.dir, 'index.html'), renderBoardPage(v));
+}
+
 console.log(
-  `rendered ${fmt(tiles)} tiles in ${((Date.now() - t0) / 1000).toFixed(1)}s`
+  `\ndrew ${fmt(drawn)} maps from ${fmt(scanned.length)} sources;` +
+    ` ${fmt(maps.length)} maps in ${join(root, 'index.html')}`
 );
+for (const [source, why] of skipped) {
+  console.log(`  skipped ${source}: ${why}`);
+}
+for (const [source, why] of failed) {
+  console.log(`  FAILED  ${source}: ${why}`);
+}
 
-const pct = ((100 * present) / cells).toFixed(2);
-const summary =
-  `${fmt(present)} of ${fmt(cells)} post numbers present (${pct}%)` +
-  ` from ${fmt(rows)} rows read`;
-console.log(summary);
-
-const page = {
-  title: `/${board}/ in ${source}`,
-  summary,
-  first,
-  rowWidth,
-  gridRows,
-  nativeZoom: NATIVE_ZOOM,
-  zooms: [...lowZooms].reverse().concat(NATIVE_ZOOM),
-  missing: MISSING_HEX,
-  present: PRESENT_HEX,
-};
-const renderPage = (p: typeof page): string => {
-  const esc = (s: string): string =>
-    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  return `<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Post map: ${esc(p.title)}</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<style>
-  html, body { margin: 0; height: 100%; font: 14px system-ui, sans-serif; }
-  body { display: flex; flex-direction: column; background: #ffffee; color: #800000; }
-  header { padding: 8px 16px; background: #F0C0B0; border-bottom: 1px solid #D99F91; }
-  header h1 { font-size: 16px; margin: 0 0 2px; }
-  .key { display: inline-block; width: 10px; height: 10px; border: 1px solid #64748b; vertical-align: middle; }
-  #map { flex: 1; background: #ffffee; }
-  /* Over-zoomed tiles are scaled up by CSS; without this each post is a blur. */
-  .leaflet-tile { image-rendering: pixelated; }
-  .readout { font-size: 14px; background: #fff; padding: 4px 8px; border-radius: 4px; font-variant-numeric: tabular-nums; }
-</style>
-</head>
-<body>
-<header>
-  <h1>${esc(p.title)}</h1>
-  <div>${esc(p.summary)}.
-    <span class="key" style="background:${p.present}"></span> present
-    <span class="key" style="background:${p.missing}"></span> missing.
-    ${fmt(p.rowWidth)} post numbers per row.</div>
-</header>
-<div id="map"></div>
-<script>
-const P = ${JSON.stringify(p)};
-// Zoom NATIVE is one pixel per map unit, so lng is the column and lat the row
-// (rows run down the screen, hence the positive y coefficient).
-const s = Math.pow(2, -P.nativeZoom);
-const crs = L.extend({}, L.CRS.Simple, { transformation: new L.Transformation(s, 0, s, 0) });
-const bounds = L.latLngBounds([0, 0], [P.gridRows, P.rowWidth]);
-const minZoom = P.zooms[0], maxZoom = P.nativeZoom + 6;
-const map = L.map('map', { crs, minZoom, maxZoom, maxBounds: bounds.pad(0.5) });
-// Only some levels are rendered. Leaflet's native-zoom clamp assumes one
-// contiguous range, so it is replaced: tiles come from the nearest rendered
-// level at or below the view's zoom, scaled up -- never a finer one, which
-// would load 4x the tiles for every level it is away.
-const Sparse = L.TileLayer.extend({
-  _clampZoom(zoom) {
-    let best = P.zooms[0];
-    for (const z of P.zooms) if (z <= zoom) best = z;
-    return best;
-  },
-});
-new Sparse('tiles/{z}/{x}/{y}.png', { tileSize: 256, minZoom, maxZoom, bounds, noWrap: true }).addTo(map);
-map.fitBounds(bounds);
-
-const Readout = L.Control.extend({
-  onAdd() { this.el = L.DomUtil.create('div', 'readout'); this.el.textContent = 'hover for a post number'; return this.el; },
-});
-const readout = new Readout({ position: 'bottomleft' }).addTo(map);
-map.on('mousemove', (e) => {
-  const row = Math.floor(e.latlng.lat), col = Math.floor(e.latlng.lng);
-  readout.el.textContent = row < 0 || col < 0 || col >= P.rowWidth || row >= P.gridRows
-    ? ''
-    : 'No.' + (P.first + row * P.rowWidth + col).toLocaleString('en-US');
-});
-</script>
-</body>
-</html>
-`;
-};
-
-writeFileSync(join(base, 'index.html'), renderPage(page));
-console.log(`wrote ${join(base, 'index.html')}`);
-
-if (!values['no-serve']) {
-  // Static files only: the page and its tiles are already on disk, so the
-  // server is just what lets a browser on another machine reach them.
+if (serveOnly || !values['no-serve']) {
+  // Static files, plus the tile each layer leaves unwritten: inside a grid,
+  // a base tile with no file is wholly in range and a present one holds no
+  // post. The page never asks for a tile outside its grid. `tiles/` is the
+  // single layer maps drawn before the split still ask for, whose unwritten
+  // tile was the base's.
   const app = express();
-  app.use(express.static(base));
+  app.use(express.static(root));
+  app.get(/\/(base|tiles)\/\d+\/\d+\/\d+\.png$/, (_req, res) => {
+    res.type('png').send(blankTile.base);
+  });
+  app.get(/\/present\/\d+\/\d+\/\d+\.png$/, (_req, res) => {
+    res.type('png').send(blankTile.present);
+  });
   const server = app.listen(values.port, values.host, (err?: Error) => {
     if (err) {
       fail(`could not listen on ${values.host}:${values.port}: ${err.message}`);
@@ -546,4 +484,8 @@ if (!values['no-serve']) {
     console.log(`serving at http://${shown}:${values.port}/ (ctrl-c to stop)`);
   });
   process.on('SIGINT', () => server.close(() => process.exit(0)));
+}
+
+if (failed.length > 0) {
+  process.exitCode = 1;
 }
