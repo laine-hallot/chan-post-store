@@ -1,0 +1,29 @@
+{
+  "id": "l",
+  "events": [
+    {
+      "type": "created",
+      "name": "Lolikon",
+      "datetime": "2003-11-08",
+      "citations": ["primary-4channet-news", "c021", "c022"]
+    },
+    {
+      "type": "removed",
+      "datetime": "2003-12-29",
+      "confidence": "A",
+      "citations": ["c025", "c026", "c027", "c028"]
+    },
+    {
+      "type": "created",
+      "name": "Lolikon",
+      "datetime": "2004-01-08",
+      "citations": ["wiki-2004"]
+    },
+    {
+      "type": "removed",
+      "datetime": "2004-10-31",
+      "note": "legal threats; moved off-site to not4chan.org",
+      "citations": ["wiki-2004"]
+    }
+  ]
+}

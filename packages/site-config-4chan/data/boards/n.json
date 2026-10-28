@@ -1,0 +1,47 @@
+{
+  "id": "n",
+  "events": [
+    {
+      "type": "created",
+      "name": "Trains",
+      "datetime": "2004-08",
+      "citations": ["wiki-2004"]
+    },
+    {
+      "type": "removed",
+      "name": "Trains",
+      "datetime": "2004-10-09",
+      "citations": ["c038"]
+    },
+    {
+      "type": "created",
+      "name": "Nature & Wildlife",
+      "datetime": "2005-01-19",
+      "citations": ["wiki-2005"]
+    },
+    {
+      "type": "removed",
+      "name": "Nature & Wildlife",
+      "datetime": "2006-04-08",
+      "citations": ["wiki-2006"]
+    },
+    {
+      "type": "created",
+      "name": "News",
+      "datetime": "2006-04-08",
+      "citations": ["wiki-2006"]
+    },
+    {
+      "type": "removed",
+      "name": "News",
+      "datetime": "2008-02-19",
+      "citations": ["wiki-2008"]
+    },
+    {
+      "type": "created",
+      "name": "Transportation",
+      "datetime": "2008-02-19",
+      "citations": ["wiki-2008"]
+    }
+  ]
+}

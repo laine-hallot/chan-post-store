@@ -1,0 +1,16 @@
+{
+  "id": "outsoc",
+  "events": [
+    {
+      "type": "created",
+      "name": "Outdoor Socialization",
+      "datetime": "2017-04-01",
+      "citations": ["wiki-2017"]
+    },
+    {
+      "type": "removed",
+      "datetime": "2017-04-02",
+      "citations": ["wiki-2017"]
+    }
+  ]
+}

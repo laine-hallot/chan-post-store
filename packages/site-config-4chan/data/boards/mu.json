@@ -1,0 +1,11 @@
+{
+  "id": "mu",
+  "events": [
+    {
+      "type": "created",
+      "name": "Music",
+      "datetime": "2006-04-08",
+      "citations": ["wiki-2006"]
+    }
+  ]
+}

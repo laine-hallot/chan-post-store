@@ -1,0 +1,1332 @@
+{
+  "citations": [
+    {
+      "id": "primary-sa-moot",
+      "type": "url",
+      "description": "moot post on Something Awful forums, displayed 2003-10-02 02:43 GMT (viewing-account timezone confirmed GMT): '/w/ - Wallpapers is also live now!' + '[NPH] made us an AWSOME mainpage. Should be up within the next few hours.' Screenshot provided by user.",
+      "url": "https://forums.somethingawful.com/showthread.php?threadid=724028&userid=32422&perpage=40&pagenumber=1#post280741205",
+      "domain": "forums.somethingawful.com"
+    },
+    {
+      "id": "primary-4channet-news",
+      "type": "url",
+      "description": "Wayback Machine capture of the original 4chan.net news page carrying all news posts 2003-10-01 through 2003-11-08 (TEST, WELCOME, /h/, BANNERS, UPDATES, MORE UPDATES, WAHO, HOORAY, PRUNED, UPDATE...). HTML provided by user.",
+      "url": "https://web.archive.org/web/20031122004728/http://www.4chan.net/",
+      "domain": "web.archive.org"
+    },
+    {
+      "id": "primary-wayback-oekaki",
+      "type": "url",
+      "description": "Wayback Machine captures of oekaki.4chan.net/index.php (4 captures, 2003-10-14 to 2005-01-02) showing a standalone PaintBBS installation. Screenshot provided by user.",
+      "url": "https://web.archive.org/web/20031014033321/http://oekaki.4chan.net/index.php",
+      "domain": "web.archive.org"
+    },
+    {
+      "id": "c001",
+      "type": "url",
+      "url": "https://web.archive.org/web/20031021144905/http://apisnetworks.com/",
+      "domain": "web.archive.org"
+    },
+    {
+      "id": "c002",
+      "type": "url",
+      "url": "https://www.4chan.org/4channews.php?all#1",
+      "domain": "4chan.org"
+    },
+    {
+      "id": "c003",
+      "type": "url",
+      "url": "https://archive.today/3iVup#1",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c004",
+      "type": "url",
+      "url": "https://www.4chan.org/4channews.php?all#2",
+      "domain": "4chan.org"
+    },
+    {
+      "id": "c005",
+      "type": "url",
+      "url": "https://archive.today/3iVup#2",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c006",
+      "type": "url",
+      "url": "https://www.4chan.org/4channews.php?all#3",
+      "domain": "4chan.org"
+    },
+    {
+      "id": "c007",
+      "type": "url",
+      "url": "https://web.archive.org/web/20200314123218/http://world2ch.org/dramabomb.html",
+      "domain": "web.archive.org"
+    },
+    {
+      "id": "c008",
+      "type": "url",
+      "url": "https://web.archive.org/web/20111220124733/http://ww5.merchantguild.net/forums/index.php?act=ST&f=12&t=7315&s=",
+      "domain": "web.archive.org"
+    },
+    {
+      "id": "c009",
+      "type": "url",
+      "url": "https://www.4chan.org/4channews.php?all#4",
+      "domain": "4chan.org"
+    },
+    {
+      "id": "c010",
+      "type": "url",
+      "url": "https://archive.today/3iVup#4",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c011",
+      "type": "url",
+      "url": "https://www.4chan.org/4channews.php?all#5",
+      "domain": "4chan.org"
+    },
+    {
+      "id": "c012",
+      "type": "url",
+      "url": "https://archive.today/3iVup#5",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c013",
+      "type": "url",
+      "url": "https://web.archive.org/web/20021015003207/http://hp.vector.co.jp/authors/VA016309/",
+      "domain": "web.archive.org"
+    },
+    {
+      "id": "c014",
+      "type": "url",
+      "url": "https://badluck.livejournal.com/127300.html",
+      "domain": "badluck.livejournal.com"
+    },
+    {
+      "id": "c015",
+      "type": "url",
+      "url": "https://yaoi.livejournal.com/753839.html",
+      "domain": "yaoi.livejournal.com"
+    },
+    {
+      "id": "c016",
+      "type": "url",
+      "url": "https://www.4chan.org/4channews.php?all#8",
+      "domain": "4chan.org"
+    },
+    {
+      "id": "c017",
+      "type": "url",
+      "url": "https://archive.today/3iVup#8",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c018",
+      "type": "url",
+      "url": "https://www.4chan.org/4channews.php?all#9",
+      "domain": "4chan.org"
+    },
+    {
+      "id": "c019",
+      "type": "url",
+      "url": "https://www.4chan.org/4channews.php?all#11",
+      "domain": "4chan.org"
+    },
+    {
+      "id": "c020",
+      "type": "url",
+      "url": "https://archive.today/3iVup#11",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c021",
+      "type": "url",
+      "url": "https://www.4chan.org/4channews.php?all#20",
+      "domain": "4chan.org"
+    },
+    {
+      "id": "c022",
+      "type": "url",
+      "url": "https://archive.today/3iVup#20",
+      "domain": "archive.today"
+    },
+    {
+      "id": "wiki-2003",
+      "type": "url",
+      "description": "Bibliotheca Anonoma 4chan/History wiki, 2003 section (event stated in timeline; no external link captured for this specific entry)",
+      "url": "https://wiki.bibanon.org/4chan/History"
+    },
+    {
+      "id": "c023",
+      "type": "url",
+      "url": "https://www.4chan.org/4channews.php?all#21",
+      "domain": "4chan.org"
+    },
+    {
+      "id": "c024",
+      "type": "url",
+      "url": "https://archive.today/3iVup#21",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c025",
+      "type": "url",
+      "url": "https://www.4chan.org/4channews.php?all#29",
+      "domain": "4chan.org"
+    },
+    {
+      "id": "c026",
+      "type": "url",
+      "url": "https://archive.today/3iVup#29",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c027",
+      "type": "url",
+      "url": "https://www.4chan.org/4channews.php?all#30",
+      "domain": "4chan.org"
+    },
+    {
+      "id": "c028",
+      "type": "url",
+      "url": "https://archive.today/3iVup#30",
+      "domain": "archive.today"
+    },
+    {
+      "id": "wiki-2004",
+      "type": "url",
+      "description": "Bibliotheca Anonoma 4chan/History wiki, 2004 section (event stated in timeline; no external link captured for this specific entry)",
+      "url": "https://wiki.bibanon.org/4chan/History"
+    },
+    {
+      "id": "c029",
+      "type": "url",
+      "url": "https://archive.today/3iVup#34",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c030",
+      "type": "url",
+      "url": "https://archive.today/3iVup#33",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c031",
+      "type": "url",
+      "url": "https://archive.today/3iVup#35",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c032",
+      "type": "url",
+      "url": "https://archive.today/3iVup#41",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c033",
+      "type": "url",
+      "url": "https://vyrd.bibanon.org/rx/penfifteen/hentai.html",
+      "domain": "vyrd.bibanon.org"
+    },
+    {
+      "id": "c034",
+      "type": "url",
+      "url": "https://vyrd.bibanon.org/rx/penfifteen/dime_.html",
+      "domain": "vyrd.bibanon.org"
+    },
+    {
+      "id": "c035",
+      "type": "url",
+      "url": "https://archive.today/3iVup#44",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c036",
+      "type": "url",
+      "url": "https://archive.today/3iVup#45",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c037",
+      "type": "url",
+      "url": "https://vyrd.bibanon.org/rx/penfifteen/owned.html",
+      "domain": "vyrd.bibanon.org"
+    },
+    {
+      "id": "c038",
+      "type": "url",
+      "url": "https://archive.today/3iVup#63",
+      "domain": "archive.today"
+    },
+    {
+      "id": "wiki-2005",
+      "description": "Bibliotheca Anonoma 4chan/History wiki, 2005 section (event stated in timeline; no external link captured for this specific entry)",
+      "url": "https://wiki.bibanon.org/4chan/History"
+    },
+    {
+      "id": "c039",
+      "type": "url",
+      "url": "https://archive.org/download/4chanCaps2005/4chan-caps-2005.zip/4chan-caps-2005%2Fdata.4chan.org%2Fb%2Fsrc%2F1118029064543.jpg",
+      "domain": "archive.org"
+    },
+    {
+      "id": "wiki-2006",
+      "description": "Bibliotheca Anonoma 4chan/History wiki, 2006 section (event stated in timeline; no external link captured for this specific entry)",
+      "url": "https://wiki.bibanon.org/4chan/History"
+    },
+    {
+      "id": "c040",
+      "type": "url",
+      "url": "https://en.wikipedia.org/wiki/Adam_Walsh_Child_Protection_and_Safety_Act",
+      "domain": "en.wikipedia.org"
+    },
+    {
+      "id": "c041",
+      "type": "url",
+      "url": "https://old.sage.moe/b/thread/11487192/#11488107",
+      "domain": "old.sage.moe"
+    },
+    {
+      "id": "c042",
+      "type": "url",
+      "url": "https://archive.ph/44KBs#http://www.4chan.org/contests",
+      "domain": "archive.ph"
+    },
+    {
+      "id": "c043",
+      "type": "url",
+      "url": "https://archive.ph/lIaJE",
+      "domain": "archive.ph"
+    },
+    {
+      "id": "wiki-2007",
+      "description": "Bibliotheca Anonoma 4chan/History wiki, 2007 section (event stated in timeline; no external link captured for this specific entry)",
+      "url": "https://wiki.bibanon.org/4chan/History"
+    },
+    {
+      "id": "wiki-2008",
+      "description": "Bibliotheca Anonoma 4chan/History wiki, 2008 section (event stated in timeline; no external link captured for this specific entry)",
+      "url": "https://wiki.bibanon.org/4chan/History"
+    },
+    {
+      "id": "wiki-2009",
+      "description": "Bibliotheca Anonoma 4chan/History wiki, 2009 section (event stated in timeline; no external link captured for this specific entry)",
+      "url": "https://wiki.bibanon.org/4chan/History"
+    },
+    {
+      "id": "wiki-2010",
+      "description": "Bibliotheca Anonoma 4chan/History wiki, 2010 section (event stated in timeline; no external link captured for this specific entry)",
+      "url": "https://wiki.bibanon.org/4chan/History"
+    },
+    {
+      "id": "wiki-2011",
+      "description": "Bibliotheca Anonoma 4chan/History wiki, 2011 section (event stated in timeline; no external link captured for this specific entry)",
+      "url": "https://wiki.bibanon.org/4chan/History"
+    },
+    {
+      "id": "c044",
+      "type": "url",
+      "url": "https://web.archive.org/web/20111219041049/http://chanarchive.org/4chan/hc/25437/in-this-itt-we-will-be-of-posting-blowjobs",
+      "domain": "web.archive.org"
+    },
+    {
+      "id": "c045",
+      "type": "url",
+      "url": "https://desuarchive.org/mlp/thread/3914432/#3914990",
+      "domain": "desuarchive.org"
+    },
+    {
+      "id": "c046",
+      "type": "url",
+      "url": "https://megalodon.jp/2026-0627-2012-10/https://pastebin.com:443/wL6G0fcg",
+      "domain": "megalodon.jp"
+    },
+    {
+      "id": "c047",
+      "type": "url",
+      "url": "https://archived.moe/v/thread/129777358/",
+      "domain": "archived.moe"
+    },
+    {
+      "id": "c048",
+      "type": "url",
+      "url": "https://pastebin.com/wL6G0fcg",
+      "domain": "pastebin.com"
+    },
+    {
+      "id": "c049",
+      "type": "url",
+      "url": "https://archive.ph/B1qQF",
+      "domain": "archive.ph"
+    },
+    {
+      "id": "wiki-2012",
+      "description": "Bibliotheca Anonoma 4chan/History wiki, 2012 section (event stated in timeline; no external link captured for this specific entry)",
+      "url": "https://wiki.bibanon.org/4chan/History"
+    },
+    {
+      "id": "wiki-2013",
+      "description": "Bibliotheca Anonoma 4chan/History wiki, 2013 section (event stated in timeline; no external link captured for this specific entry)",
+      "url": "https://wiki.bibanon.org/4chan/History"
+    },
+    {
+      "id": "c050",
+      "type": "url",
+      "url": "https://warosu.org/3/thread/S340309#p340313",
+      "domain": "warosu.org"
+    },
+    {
+      "id": "c051",
+      "type": "url",
+      "url": "https://archive.today/Wq8ph",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c052",
+      "type": "url",
+      "url": "https://www.4chan.org/news#114",
+      "domain": "4chan.org"
+    },
+    {
+      "id": "c053",
+      "type": "url",
+      "url": "https://www.4chan.org/4channews.php?all#oldnews",
+      "domain": "4chan.org"
+    },
+    {
+      "id": "c054",
+      "type": "url",
+      "url": "https://4chan.org/feedback",
+      "domain": "4chan.org"
+    },
+    {
+      "id": "c055",
+      "type": "url",
+      "url": "https://4chan.org/bans",
+      "domain": "4chan.org"
+    },
+    {
+      "id": "wiki-2014",
+      "description": "Bibliotheca Anonoma 4chan/History wiki, 2014 section (event stated in timeline; no external link captured for this specific entry)",
+      "url": "https://wiki.bibanon.org/4chan/History"
+    },
+    {
+      "id": "c056",
+      "type": "url",
+      "url": "https://archive.is/CL0tD#http://chrishateswriting.com/post/84931829578/when-a-bad-day-gets-worse-getting-hacked-twice-in-one",
+      "domain": "archive.is"
+    },
+    {
+      "id": "c057",
+      "type": "url",
+      "url": "https://archive.is/ycBaC",
+      "domain": "archive.is"
+    },
+    {
+      "id": "c058",
+      "type": "url",
+      "url": "https://archive.is/BZzhB",
+      "domain": "archive.is"
+    },
+    {
+      "id": "c059",
+      "type": "url",
+      "url": "https://desuarchive.org/qa/thread/1/",
+      "domain": "desuarchive.org"
+    },
+    {
+      "id": "c060",
+      "type": "url",
+      "url": "https://www.youtube.com/watch?v=XYUKJBZuUig",
+      "domain": "youtube.com"
+    },
+    {
+      "id": "c061",
+      "type": "url",
+      "url": "https://plus.google.com/events/cdniiul8iq8ps7bk217j3hnkdbs",
+      "domain": "plus.google.com"
+    },
+    {
+      "id": "c062",
+      "type": "url",
+      "url": "https://youtu.be/XYUKJBZuUig?t=41s",
+      "domain": "youtu.be"
+    },
+    {
+      "id": "c063",
+      "type": "url",
+      "url": "https://github.com/bibanon/bibanon/wiki/Moot%27s-Final-4chan-Q&A-Transcript",
+      "domain": "github.com"
+    },
+    {
+      "id": "c064",
+      "type": "url",
+      "url": "https://preservetube.com/watch?v=WKnVaDwUg5s",
+      "domain": "preservetube.com"
+    },
+    {
+      "id": "c065",
+      "type": "url",
+      "url": "https://desuarchive.org/aco/thread/86/#86",
+      "domain": "desuarchive.org"
+    },
+    {
+      "id": "c066",
+      "type": "url",
+      "url": "https://github.com/floens/ChanTracking/commit/79ecb19a9bb67a9ebe1b81c872b18db7f1b8c614",
+      "domain": "github.com"
+    },
+    {
+      "id": "c067",
+      "type": "url",
+      "url": "https://archive.ph/LJvLQ",
+      "domain": "archive.ph"
+    },
+    {
+      "id": "c068",
+      "type": "url",
+      "url": "https://github.com/floens/ChanTracking/commit/2849f87fc828499b8e748f74a117726c9bb906c8",
+      "domain": "github.com"
+    },
+    {
+      "id": "c069",
+      "type": "url",
+      "url": "https://github.com/floens/ChanTracking/commit/45ed7a9eabd59f7184c3c2083568bdcbc63e3f15",
+      "domain": "github.com"
+    },
+    {
+      "id": "c070",
+      "type": "url",
+      "url": "https://megalodon.jp/2026-0513-0708-17/https://desu-usergeneratedcontent.xyz:443/trash/image/1446/94/1446943430594.png",
+      "domain": "megalodon.jp"
+    },
+    {
+      "id": "c071",
+      "type": "url",
+      "url": "https://desuarchive.org/trash/thread/6803/",
+      "domain": "desuarchive.org"
+    },
+    {
+      "id": "c072",
+      "type": "url",
+      "url": "https://github.com/floens/ChanTracking/commit/bef1da3cb153b507f59b44f163a9531471315f34",
+      "domain": "github.com"
+    },
+    {
+      "id": "c073",
+      "type": "url",
+      "url": "https://github.com/floens/ChanTracking/commit/43722c43593be3d92f5f424a4ed03ce2426fe699",
+      "domain": "github.com"
+    },
+    {
+      "id": "c074",
+      "type": "url",
+      "url": "https://github.com/floens/ChanTracking/commit/16561605096b4290d0e01a2bc42baeb9d7b3a23f",
+      "domain": "github.com"
+    },
+    {
+      "id": "c075",
+      "type": "url",
+      "url": "https://archive.ph/e0ers#selection-143.0-149.25",
+      "domain": "archive.ph"
+    },
+    {
+      "id": "c076",
+      "type": "url",
+      "url": "https://github.com/floens/ChanTracking/commit/9dc9bdcb9dec2275f431fc8a32bdd63759e78881",
+      "domain": "github.com"
+    },
+    {
+      "id": "c077",
+      "type": "url",
+      "url": "https://github.com/floens/ChanTracking/commit/7a8fa41722ee4d8844ed526f78d9910c5a2e64c5",
+      "domain": "github.com"
+    },
+    {
+      "id": "c078",
+      "type": "url",
+      "url": "https://github.com/floens/ChanTracking/commit/7d23d8b953e48237b5acffa57d9fe501b0c79b40",
+      "domain": "github.com"
+    },
+    {
+      "id": "c079",
+      "type": "url",
+      "url": "https://github.com/floens/ChanTracking/commit/e73f2df0cd3a6e34843aed93f9742e8f104bbaa9",
+      "domain": "github.com"
+    },
+    {
+      "id": "c080",
+      "type": "url",
+      "url": "https://archive.ph/5CgoJ",
+      "domain": "archive.ph"
+    },
+    {
+      "id": "c081",
+      "type": "url",
+      "url": "https://github.com/floens/ChanTracking/commit/43ea6282d56db5297a8d614ee7622d090f943205",
+      "domain": "github.com"
+    },
+    {
+      "id": "c082",
+      "type": "url",
+      "url": "https://desuarchive.org/qa/thread/505919/#505919",
+      "domain": "desuarchive.org"
+    },
+    {
+      "id": "c083",
+      "type": "url",
+      "url": "https://github.com/floens/ChanTracking/commit/8b285ad87a31734629a49bdee5b782ea7854812c",
+      "domain": "github.com"
+    },
+    {
+      "id": "c084",
+      "type": "url",
+      "url": "https://desuarchive.org/qa/thread/506155/#506155",
+      "domain": "desuarchive.org"
+    },
+    {
+      "id": "c085",
+      "type": "url",
+      "url": "https://archive.today/pviHX",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c086",
+      "type": "url",
+      "url": "https://web.archive.org/web/20221207043749/http://darksquid.org/titmouse/",
+      "domain": "web.archive.org"
+    },
+    {
+      "id": "c087",
+      "type": "url",
+      "url": "https://github.com/floens/ChanTracking/commit/b5fa4eaaa17bc2aacc62be3b0db119e4e16520b0",
+      "domain": "github.com"
+    },
+    {
+      "id": "c088",
+      "type": "url",
+      "url": "https://github.com/floens/ChanTracking/commit/f13b590253b82505c19315ce3d67d8edd3033ac7",
+      "domain": "github.com"
+    },
+    {
+      "id": "c089",
+      "type": "url",
+      "url": "https://archive.ph/e0ers",
+      "domain": "archive.ph"
+    },
+    {
+      "id": "c090",
+      "type": "url",
+      "url": "https://github.com/floens/ChanTracking/commit/b81e5e8f7904980661183aca0f90fa54d13cac07",
+      "domain": "github.com"
+    },
+    {
+      "id": "c091",
+      "type": "url",
+      "url": "https://github.com/floens/ChanTracking/commit/c860c097287de9f59d2f5f7af6d5934874cb8eec",
+      "domain": "github.com"
+    },
+    {
+      "id": "c092",
+      "type": "url",
+      "url": "https://github.com/floens/ChanTracking/commit/056b31518efadeb75d58fd869e6d8255c71da746",
+      "domain": "github.com"
+    },
+    {
+      "id": "wiki-2017",
+      "description": "Bibliotheca Anonoma 4chan/History wiki, 2017 section (event stated in timeline; no external link captured for this specific entry)",
+      "url": "https://wiki.bibanon.org/4chan/History"
+    },
+    {
+      "id": "c093",
+      "type": "url",
+      "url": "https://archived.moe/s4s/thread/5268144/official-s4s-foreth-birthday-discussion",
+      "domain": "archived.moe"
+    },
+    {
+      "id": "c094",
+      "type": "url",
+      "url": "https://archived.moe/s4s/thread/5273416#p5273416",
+      "domain": "archived.moe"
+    },
+    {
+      "id": "c095",
+      "type": "url",
+      "url": "https://desuarchive.org/qa/thread/1194185/#1195824",
+      "domain": "desuarchive.org"
+    },
+    {
+      "id": "c096",
+      "type": "url",
+      "url": "https://archived.moe/cock/thread/22398",
+      "domain": "archived.moe"
+    },
+    {
+      "id": "c097",
+      "type": "url",
+      "url": "https://my.mixtape.moe/vqziez.png",
+      "domain": "my.mixtape.moe"
+    },
+    {
+      "id": "c098",
+      "type": "url",
+      "url": "https://archived.moe/spa/thread/55359/",
+      "domain": "archived.moe"
+    },
+    {
+      "id": "c099",
+      "type": "url",
+      "url": "https://archive.ph/U5wnQ",
+      "domain": "archive.ph"
+    },
+    {
+      "id": "c100",
+      "type": "url",
+      "url": "https://github.com/floens/ChanTracking/commit/bf104d16689e458d52b8a81d0654aead76a31a1b",
+      "domain": "github.com"
+    },
+    {
+      "id": "c101",
+      "type": "url",
+      "url": "https://github.com/floens/ChanTracking/commit/b2f9d623a3504f37879341127984c1a947cf2072",
+      "domain": "github.com"
+    },
+    {
+      "id": "c102",
+      "type": "url",
+      "url": "https://archive.ph/6pgBJ",
+      "domain": "archive.ph"
+    },
+    {
+      "id": "c103",
+      "type": "url",
+      "url": "https://archive.today/dfEa2",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c104",
+      "type": "url",
+      "url": "https://archive.today/mg99O#selection-4113.0-4117.6",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c105",
+      "type": "url",
+      "url": "https://archive.ph/GXBol",
+      "domain": "archive.ph"
+    },
+    {
+      "id": "c106",
+      "type": "url",
+      "url": "https://archive.ph/dfEa2",
+      "domain": "archive.ph"
+    },
+    {
+      "id": "c107",
+      "type": "url",
+      "url": "https://archive.today/4ap89",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c108",
+      "type": "url",
+      "url": "https://archive.ph/HJLlN",
+      "domain": "archive.ph"
+    },
+    {
+      "id": "c109",
+      "type": "url",
+      "url": "https://mahjongsoul.fandom.com/wiki/Ichihime",
+      "domain": "mahjongsoul.fandom.com"
+    },
+    {
+      "id": "c110",
+      "type": "url",
+      "url": "https://arch.b4k.dev/vmg/thread/4684/",
+      "domain": "arch.b4k.dev"
+    },
+    {
+      "id": "c111",
+      "type": "url",
+      "url": "https://archive.is/x5ASE",
+      "domain": "archive.is"
+    },
+    {
+      "id": "c112",
+      "type": "url",
+      "url": "https://archive.ph/x5ASE",
+      "domain": "archive.ph"
+    },
+    {
+      "id": "c113",
+      "type": "url",
+      "url": "https://arch.b4k.dev/vmg/thread/1",
+      "domain": "arch.b4k.dev"
+    },
+    {
+      "id": "c114",
+      "type": "url",
+      "url": "https://arch.b4k.dev/vst/thread/1",
+      "domain": "arch.b4k.dev"
+    },
+    {
+      "id": "c115",
+      "type": "url",
+      "url": "https://archive.ph/iv3SX",
+      "domain": "archive.ph"
+    },
+    {
+      "id": "c116",
+      "type": "url",
+      "url": "https://archive.ph/U4J5H",
+      "domain": "archive.ph"
+    },
+    {
+      "id": "c117",
+      "type": "url",
+      "url": "https://arch.b4k.dev/vst/thread/8170/#8651",
+      "domain": "arch.b4k.dev"
+    },
+    {
+      "id": "c118",
+      "type": "url",
+      "url": "https://arch.b4k.dev/vst/search/text/starsector/type/op/order/asc/",
+      "domain": "arch.b4k.dev"
+    },
+    {
+      "id": "c119",
+      "type": "url",
+      "url": "https://archive.today/U4J5H",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c120",
+      "type": "url",
+      "url": "https://archive.today/LBfHt",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c121",
+      "type": "url",
+      "url": "https://archive.today/Ass7i",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c122",
+      "type": "url",
+      "url": "https://archive.ph/ks7Ja",
+      "domain": "archive.ph"
+    },
+    {
+      "id": "c123",
+      "type": "url",
+      "url": "https://archive.ph/fWxtS",
+      "domain": "archive.ph"
+    },
+    {
+      "id": "c124",
+      "type": "url",
+      "url": "https://archive.ph/LBfHt",
+      "domain": "archive.ph"
+    },
+    {
+      "id": "c125",
+      "type": "url",
+      "url": "https://desuarchive.org/qa/thread/3394551",
+      "domain": "desuarchive.org"
+    },
+    {
+      "id": "c126",
+      "type": "url",
+      "url": "https://github.com/floens/ChanTracking/commit/c7fec0e53c707df0993e98ff27524a16080a32e9",
+      "domain": "github.com"
+    },
+    {
+      "id": "c127",
+      "type": "url",
+      "url": "https://github.com/floens/ChanTracking/commit/a092a46f812802b1d8381773fb67f45ea706b431",
+      "domain": "github.com"
+    },
+    {
+      "id": "c128",
+      "type": "url",
+      "url": "https://archived.moe/asp/thread/12946854/#q12971596",
+      "domain": "archived.moe"
+    },
+    {
+      "id": "c129",
+      "type": "url",
+      "url": "https://github.com/floens/ChanTracking/commit/da88b1dd287fb9271985af0a9367f32e0f196def",
+      "domain": "github.com"
+    },
+    {
+      "id": "c130",
+      "type": "url",
+      "url": "https://github.com/floens/ChanTracking/commit/7ddb0f6ae706eb8f376194c6624b9b263b43604d",
+      "domain": "github.com"
+    },
+    {
+      "id": "c131",
+      "type": "url",
+      "url": "https://github.com/floens/ChanTracking/commit/970d7fb2ba3f061917ef2e61ebebc9b9051d39ab",
+      "domain": "github.com"
+    },
+    {
+      "id": "c132",
+      "type": "url",
+      "url": "https://github.com/floens/ChanTracking/commit/62d64c171a51224549390d21f92be5588d29552b",
+      "domain": "github.com"
+    },
+    {
+      "id": "c133",
+      "type": "url",
+      "url": "https://github.com/floens/ChanTracking/commit/ec553c0ff43adb8fc00e1404eb2d964bfe8aad4b",
+      "domain": "github.com"
+    },
+    {
+      "id": "c134",
+      "type": "url",
+      "url": "https://archive.today/N67VU",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c135",
+      "type": "url",
+      "url": "https://archived.moe/lgbt/search/deleted/deleted/type/op/start/2021-11-2/end/2021-11-4/",
+      "domain": "archived.moe"
+    },
+    {
+      "id": "c136",
+      "type": "url",
+      "url": "https://desuarchive.org/qa/thread/5366311/#5366336",
+      "domain": "desuarchive.org"
+    },
+    {
+      "id": "c137",
+      "type": "url",
+      "url": "https://archive.today/HAuqr",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c138",
+      "type": "url",
+      "url": "https://desuarchive.org/qa/search/deleted/deleted/start/2021-11-3/end/2021-11-4/",
+      "domain": "desuarchive.org"
+    },
+    {
+      "id": "c139",
+      "type": "url",
+      "url": "https://archive.today/OIKHY",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c140",
+      "type": "url",
+      "url": "https://desuarchive.org/trash/thread/42889476",
+      "domain": "desuarchive.org"
+    },
+    {
+      "id": "c141",
+      "type": "url",
+      "url": "https://x.com/GrapeApe9k/status/1915797981040902218",
+      "domain": "x.com"
+    },
+    {
+      "id": "c142",
+      "type": "url",
+      "url": "https://archive.today/MKfjv",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c143",
+      "type": "url",
+      "url": "https://archive.today/gnYuU",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c144",
+      "type": "url",
+      "url": "https://archive.today/CloFF",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c145",
+      "type": "url",
+      "url": "https://archive.today/HWnEV",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c146",
+      "type": "url",
+      "url": "https://archive.today/xeNWJ",
+      "domain": "archive.today"
+    },
+    {
+      "id": "c147",
+      "type": "url",
+      "url": "https://github.com/floens/ChanTracking/commit/75bf51b050460ad00becff1ae1b27df17f0adbaa",
+      "domain": "github.com"
+    },
+    {
+      "id": "c148",
+      "type": "url",
+      "url": "https://github.com/floens/ChanTracking/commit/89811d4e4563684e5284637de9260159553a2dbf",
+      "domain": "github.com"
+    },
+    {
+      "id": "c149",
+      "type": "url",
+      "url": "https://archive.nyafuu.org/vt/",
+      "domain": "archive.nyafuu.org"
+    },
+    {
+      "id": "c150",
+      "type": "url",
+      "url": "https://warosu.org/vt/",
+      "domain": "warosu.org"
+    },
+    {
+      "file": "100000_b.png",
+      "id": "c151",
+      "type": "screenshot"
+    },
+    {
+      "file": "888888_b.jpg",
+      "id": "c152",
+      "type": "screenshot"
+    },
+    {
+      "file": "999999_b.png",
+      "id": "c153",
+      "type": "screenshot"
+    },
+    {
+      "file": "1000000_b.jpeg",
+      "id": "c154",
+      "type": "screenshot"
+    },
+    {
+      "file": "1600000_b.jpg",
+      "id": "c155",
+      "type": "screenshot"
+    },
+    {
+      "file": "1800000_b.jpg",
+      "id": "c156",
+      "type": "screenshot"
+    },
+    {
+      "file": "6200000_b.jpg",
+      "id": "c157",
+      "type": "screenshot"
+    },
+    {
+      "file": "6400000_b.jpg",
+      "id": "c158",
+      "type": "screenshot"
+    },
+    {
+      "file": "10900000_b.jpg",
+      "id": "c159",
+      "type": "screenshot"
+    },
+    {
+      "file": "23456789_b.png",
+      "id": "c160",
+      "type": "screenshot"
+    },
+    {
+      "file": "23800000_b.gif",
+      "id": "c161",
+      "type": "screenshot"
+    },
+    {
+      "file": "24000000_b.png",
+      "id": "c162",
+      "type": "screenshot"
+    },
+    {
+      "file": "24000003_b.jpg",
+      "id": "c163",
+      "type": "screenshot"
+    },
+    {
+      "file": "24400000_b.png",
+      "id": "c164",
+      "type": "screenshot"
+    },
+    {
+      "file": "25007374_b.jpg",
+      "id": "c165",
+      "type": "screenshot"
+    },
+    {
+      "file": "26000001_b.png",
+      "id": "c166",
+      "type": "screenshot"
+    },
+    {
+      "file": "28500000_b.png",
+      "id": "c167",
+      "type": "screenshot"
+    },
+    {
+      "file": "28800000_b.png",
+      "id": "c168",
+      "type": "screenshot"
+    },
+    {
+      "file": "37500000_b.png",
+      "id": "c169",
+      "type": "screenshot"
+    },
+    {
+      "file": "100000000_b.jpg",
+      "id": "c170",
+      "type": "screenshot"
+    },
+    {
+      "file": "123456789_b.jpg",
+      "id": "c171",
+      "type": "screenshot"
+    },
+    {
+      "file": "400000000_b.png",
+      "id": "c172",
+      "type": "screenshot"
+    },
+    {
+      "file": "440000000_b.png",
+      "id": "c173",
+      "type": "screenshot"
+    },
+    {
+      "file": "480000000_b.png",
+      "id": "c174",
+      "type": "screenshot"
+    },
+    {
+      "file": "510000000_b.jpg",
+      "id": "c175",
+      "type": "screenshot"
+    },
+    {
+      "file": "520000000_b.png",
+      "id": "c176",
+      "type": "screenshot"
+    },
+    {
+      "file": "530000000_b.png",
+      "id": "c177",
+      "type": "screenshot"
+    },
+    {
+      "file": "540000000_b.png",
+      "id": "c178",
+      "type": "screenshot"
+    },
+    {
+      "file": "550000000_b.png",
+      "id": "c179",
+      "type": "screenshot"
+    },
+    {
+      "file": "1000000_a.jpg",
+      "id": "c180",
+      "type": "screenshot"
+    },
+    {
+      "file": "4040404_a.jpg",
+      "id": "c181",
+      "type": "screenshot"
+    },
+    {
+      "file": "4444444_a.png",
+      "id": "c182",
+      "type": "screenshot"
+    },
+    {
+      "file": "5800000_a.jpg",
+      "id": "c183",
+      "type": "screenshot"
+    },
+    {
+      "file": "10000000_a.png",
+      "id": "c184",
+      "type": "screenshot"
+    },
+    {
+      "file": "1000000_ck.jpg",
+      "id": "c185",
+      "type": "screenshot"
+    },
+    {
+      "file": "500000_co.jpg",
+      "id": "c186",
+      "type": "screenshot"
+    },
+    {
+      "file": "600000_co.png",
+      "id": "c187",
+      "type": "screenshot"
+    },
+    {
+      "file": "650000_co.png",
+      "id": "c188",
+      "type": "screenshot"
+    },
+    {
+      "file": "700000_co.jpg",
+      "id": "c189",
+      "type": "screenshot"
+    },
+    {
+      "file": "777777_co.png",
+      "id": "c190",
+      "type": "screenshot"
+    },
+    {
+      "file": "799999_co.jpg",
+      "id": "c191",
+      "type": "screenshot"
+    },
+    {
+      "file": "800000_co.jpg",
+      "id": "c192",
+      "type": "screenshot"
+    },
+    {
+      "file": "800001_co.jpg",
+      "id": "c193",
+      "type": "screenshot"
+    },
+    {
+      "file": "888888_co.png",
+      "id": "c194",
+      "type": "screenshot"
+    },
+    {
+      "file": "950000_co.png",
+      "id": "c195",
+      "type": "screenshot"
+    },
+    {
+      "file": "1000000_co.jpg",
+      "id": "c196",
+      "type": "screenshot"
+    },
+    {
+      "file": "1111111_co.png",
+      "id": "c197",
+      "type": "screenshot"
+    },
+    {
+      "file": "400000_g.png",
+      "id": "c198",
+      "type": "screenshot"
+    },
+    {
+      "file": "26666666_g.png",
+      "id": "c199",
+      "type": "screenshot"
+    },
+    {
+      "file": "47900000_g.png",
+      "id": "c200",
+      "type": "screenshot"
+    },
+    {
+      "file": "77777_i.png",
+      "id": "c201",
+      "type": "screenshot"
+    },
+    {
+      "file": "10_jp.jpg",
+      "id": "c202",
+      "type": "screenshot"
+    },
+    {
+      "file": "6969_jp.png",
+      "id": "c203",
+      "type": "screenshot"
+    },
+    {
+      "file": "6666_jp.jpg",
+      "id": "c204",
+      "type": "screenshot"
+    },
+    {
+      "file": "100000_jp.jpg",
+      "id": "c205",
+      "type": "screenshot"
+    },
+    {
+      "file": "1000000_k.gif",
+      "id": "c206",
+      "type": "screenshot"
+    },
+    {
+      "file": "1000000_s4s.png",
+      "id": "c207",
+      "type": "screenshot"
+    },
+    {
+      "file": "1111111_s4s.png",
+      "id": "c208",
+      "type": "screenshot"
+    },
+    {
+      "file": "2222222_s4s.png",
+      "id": "c209",
+      "type": "screenshot"
+    },
+    {
+      "file": "400000_tv.png",
+      "id": "c210",
+      "type": "screenshot"
+    },
+    {
+      "file": "137000_u.png",
+      "id": "c211",
+      "type": "screenshot"
+    },
+    {
+      "file": "3000000_v.jpg",
+      "id": "c212",
+      "type": "screenshot"
+    },
+    {
+      "file": "4000000_v.jpg",
+      "id": "c213",
+      "type": "screenshot"
+    },
+    {
+      "file": "4444444_v.jpg",
+      "id": "c214",
+      "type": "screenshot"
+    },
+    {
+      "id": "c214",
+      "type": "url",
+      "url": "https://4chan.org/4channews?all#70"
+    },
+    {
+      "id": "c215",
+      "type": "url",
+      "url": "https://archive.ph/3iVup#70"
+    },
+    {
+      "id": "c216",
+      "type": "url",
+      "url": "https://wiki.bibanon.org/File:2003-12-12-h-mootrei.jpg"
+    },
+    {
+      "id": "c218",
+      "type": "url",
+      "url": "https://forums.somethingawful.com/showthread.php?threadid=724028&userid=0&perpage=40&pagenumber=43#post292755475"
+    }
+  ]
+}

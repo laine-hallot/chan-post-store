@@ -1,0 +1,27 @@
+{
+  "id": "q",
+  "events": [
+    {
+      "type": "created",
+      "name": "EMERGENCY DISCUSSION",
+      "datetime": "2004-03-01",
+      "citations": ["c034", "c035"]
+    },
+    {
+      "type": "removed",
+      "datetime": "2004-03-08",
+      "citations": ["c036"]
+    },
+    {
+      "type": "created",
+      "name": "4chan Discussion",
+      "datetime": "2012-08-08",
+      "citations": ["wiki-2012"]
+    },
+    {
+      "type": "removed",
+      "datetime": "2013-09-18",
+      "citations": ["c052", "c053", "c054", "c055"]
+    }
+  ]
+}

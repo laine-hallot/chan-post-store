@@ -1,0 +1,11 @@
+{
+  "id": "fit",
+  "events": [
+    {
+      "type": "created",
+      "name": "Health & Fitness",
+      "datetime": "2008-02-19",
+      "citations": ["wiki-2008"]
+    }
+  ]
+}

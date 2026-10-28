@@ -1,0 +1,11 @@
+{
+  "id": "ic",
+  "events": [
+    {
+      "type": "created",
+      "name": "Artwork/Critique",
+      "datetime": "2005-01-27",
+      "citations": ["wiki-2005"]
+    }
+  ]
+}

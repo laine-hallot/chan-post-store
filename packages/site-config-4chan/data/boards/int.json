@@ -1,0 +1,11 @@
+{
+  "id": "int",
+  "events": [
+    {
+      "type": "created",
+      "name": "International",
+      "datetime": "2010-01-25",
+      "citations": ["wiki-2010"]
+    }
+  ]
+}

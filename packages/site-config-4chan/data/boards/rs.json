@@ -1,0 +1,17 @@
+{
+  "id": "rs",
+  "events": [
+    {
+      "type": "created",
+      "name": "Rapidshare",
+      "datetime": "2007-09-05",
+      "citations": ["wiki-2007"]
+    },
+    {
+      "type": "removed",
+      "name": "Rapidshare",
+      "datetime": "2014-04",
+      "citations": ["wiki-2014"]
+    }
+  ]
+}

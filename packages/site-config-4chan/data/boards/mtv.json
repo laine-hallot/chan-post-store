@@ -1,0 +1,16 @@
+{
+  "id": "mtv",
+  "events": [
+    {
+      "type": "created",
+      "name": "Video Killed The Radio Star",
+      "datetime": "2017-04-01",
+      "citations": ["wiki-2017"]
+    },
+    {
+      "type": "removed",
+      "datetime": "2017-04-02",
+      "citations": ["wiki-2017"]
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "id": "spa",
+  "events": [
+    {
+      "type": "created",
+      "name": "Tanoshii Sports",
+      "datetime": "2017-04-01",
+      "citations": ["wiki-2017"]
+    },
+    {
+      "type": "removed",
+      "datetime": "2017-04-02",
+      "citations": ["wiki-2017"]
+    }
+  ]
+}

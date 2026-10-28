@@ -1,0 +1,16 @@
+{
+  "id": "sp",
+  "events": [
+    {
+      "type": "created",
+      "name": "Sports",
+      "datetime": "2006-04-06",
+      "citations": ["wiki-2006"]
+    },
+    {
+      "type": "removed",
+      "datetime": "2006-12-09",
+      "citations": ["wiki-2006"]
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "id": "bant",
+  "events": [
+    {
+      "type": "created",
+      "name": "International/Random",
+      "datetime": "2017-05-04",
+      "citations": ["c099", "c089", "c100", "c101"]
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "id": "sci",
+  "events": [
+    {
+      "type": "created",
+      "name": "Science & Math",
+      "datetime": "2010-01-25",
+      "citations": ["wiki-2010"]
+    }
+  ]
+}

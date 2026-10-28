@@ -1,0 +1,11 @@
+{
+  "id": "gif",
+  "events": [
+    {
+      "type": "created",
+      "name": "Animated GIF",
+      "datetime": "2005-02-26",
+      "citations": ["wiki-2005"]
+    }
+  ]
+}

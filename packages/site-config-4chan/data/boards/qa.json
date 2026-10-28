@@ -1,0 +1,17 @@
+{
+  "id": "qa",
+  "events": [
+    {
+      "type": "created",
+      "name": "Question & Answer",
+      "datetime": "2015-01-23",
+      "citations": ["c059", "c060", "c061", "c062", "c063", "c064"]
+    },
+    {
+      "type": "removed",
+      "name": "Question & Answer",
+      "datetime": "2021-11-03",
+      "citations": ["c135", "c136", "c137", "c138", "c139", "c140"]
+    }
+  ]
+}

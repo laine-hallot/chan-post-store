@@ -1,0 +1,11 @@
+{
+  "id": "vip",
+  "events": [
+    {
+      "type": "created",
+      "slug": "/vip/",
+      "datetime": "2016-10-04",
+      "citations": ["c089", "c090", "c091", "c092"]
+    }
+  ]
+}

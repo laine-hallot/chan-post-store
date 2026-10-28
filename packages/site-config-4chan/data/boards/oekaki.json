@@ -1,0 +1,18 @@
+{
+  "id": "oekaki",
+  "events": [
+    {
+      "type": "created",
+      "name": "4chan Oekaki BBS",
+      "datetime": "2003-10-06",
+      "citations": ["primary-4channet-news", "primary-wayback-oekaki"]
+    },
+    {
+      "type": "removed",
+      "name": "4chan Oekaki BBS",
+      "datetime": "2004-10-09",
+      "note": "wiki claims 'the oekaki BBS board, /i/' was deleted this day to make way for /ib/ + /ip/, but slug attribution is wrong (see created entry)",
+      "citations": ["primary-wayback-oekaki"]
+    }
+  ]
+}

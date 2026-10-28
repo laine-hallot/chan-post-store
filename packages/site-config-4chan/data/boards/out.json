@@ -1,0 +1,11 @@
+{
+  "id": "out",
+  "events": [
+    {
+      "type": "created",
+      "name": "Outdoors",
+      "datetime": "2013-03-18",
+      "citations": ["wiki-2013"]
+    }
+  ]
+}

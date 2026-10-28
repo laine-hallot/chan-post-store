@@ -1,0 +1,21 @@
+{
+  "id": "asp",
+  "events": [
+    {
+      "type": "created",
+      "name": "Alternative Sports",
+      "datetime": "2013-03-18",
+      "citations": ["wiki-2013"]
+    },
+    {
+      "type": "rename",
+      "datetime": "2015-11-12",
+      "name": "Alternative Sports & Wrestling"
+    },
+    {
+      "type": "removed",
+      "datetime": "2021-02-12",
+      "citations": ["c126", "c127", "c128"]
+    }
+  ]
+}

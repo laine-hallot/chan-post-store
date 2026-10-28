@@ -1,0 +1,11 @@
+{
+  "id": "his",
+  "events": [
+    {
+      "type": "created",
+      "name": "History & Humanities",
+      "datetime": "2015-10-31",
+      "citations": ["c068", "c069"]
+    }
+  ]
+}

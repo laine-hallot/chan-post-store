@@ -1,0 +1,11 @@
+{
+  "id": "test",
+  "events": [
+    {
+      "type": "created",
+      "name": "Testing",
+      "datetime": "2014-04-18",
+      "citations": ["wiki-2014"]
+    }
+  ]
+}

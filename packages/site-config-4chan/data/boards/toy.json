@@ -1,0 +1,11 @@
+{
+  "id": "toy",
+  "events": [
+    {
+      "type": "created",
+      "name": "Toys",
+      "datetime": "2008-02-19",
+      "citations": ["wiki-2008"]
+    }
+  ]
+}

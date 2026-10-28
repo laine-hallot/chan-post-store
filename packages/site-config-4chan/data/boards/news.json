@@ -1,0 +1,11 @@
+{
+  "id": "news",
+  "events": [
+    {
+      "type": "created",
+      "name": "Current News",
+      "datetime": "2015-11-14",
+      "citations": ["c074"]
+    }
+  ]
+}

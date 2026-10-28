@@ -1,0 +1,11 @@
+{
+  "id": "wsg",
+  "events": [
+    {
+      "type": "created",
+      "name": "Worksafe GIF",
+      "datetime": "2012-06-05",
+      "citations": ["wiki-2012"]
+    }
+  ]
+}

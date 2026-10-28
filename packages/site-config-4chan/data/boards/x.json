@@ -1,0 +1,22 @@
+{
+  "id": "x",
+  "events": [
+    {
+      "type": "created",
+      "name": "General Photo",
+      "datetime": "2005-01-27",
+      "citations": ["wiki-2005"]
+    },
+    {
+      "type": "removed",
+      "datetime": "2005-02-26",
+      "citations": ["wiki-2005"]
+    },
+    {
+      "type": "created",
+      "name": "Paranormal",
+      "datetime": "2007-02-15",
+      "citations": ["c042", "c043"]
+    }
+  ]
+}

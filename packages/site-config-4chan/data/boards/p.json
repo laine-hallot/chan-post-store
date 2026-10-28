@@ -1,0 +1,27 @@
+{
+  "id": "p",
+  "events": [
+    {
+      "type": "created",
+      "name": "Photo",
+      "datetime": "2004-02-28",
+      "citations": ["c033"]
+    },
+    {
+      "type": "removed",
+      "slug": "/p/",
+      "name": "Photo",
+      "datetime": "2005-01-27",
+      "note": "superseded by /p/ Photography the same day; exact mechanics unclear",
+      "confidence": "B",
+      "citations": ["wiki-2005"]
+    },
+    {
+      "type": "created",
+      "name": "Photography",
+      "datetime": "2005-01-27",
+      "note": "replacement for 2004 /p/ Photo; continuity unclear",
+      "citations": ["wiki-2005"]
+    }
+  ]
+}

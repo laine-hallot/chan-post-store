@@ -1,0 +1,11 @@
+{
+  "id": "vst",
+  "events": [
+    {
+      "type": "created",
+      "name": "Video Games/Strategy",
+      "datetime": "2020-08-14",
+      "citations": ["c114", "c115", "c116", "c117", "c118", "c119"]
+    }
+  ]
+}

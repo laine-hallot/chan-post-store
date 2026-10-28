@@ -1,0 +1,11 @@
+{
+  "id": "adv",
+  "events": [
+    {
+      "type": "created",
+      "name": "Advice",
+      "datetime": "2010-01-25",
+      "citations": ["wiki-2010"]
+    }
+  ]
+}

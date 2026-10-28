@@ -1,0 +1,11 @@
+{
+  "id": "m",
+  "events": [
+    {
+      "type": "created",
+      "name": "Mecha",
+      "datetime": "2004-08",
+      "citations": ["wiki-2004"]
+    }
+  ]
+}

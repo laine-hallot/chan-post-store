@@ -1,0 +1,10 @@
+{
+  "id": "fk",
+  "events": [
+    {
+      "type": "removed",
+      "datetime": "2014-05-06",
+      "citations": ["c056", "c057", "c058"]
+    }
+  ]
+}

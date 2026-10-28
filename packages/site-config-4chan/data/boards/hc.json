@@ -1,0 +1,23 @@
+{
+  "id": "hc",
+  "events": [
+    {
+      "type": "created",
+      "name": "Hardcore",
+      "datetime": "2008-02-19",
+      "citations": ["wiki-2008"]
+    },
+    {
+      "type": "removed",
+      "name": "Hardcore",
+      "datetime": "2009-11-22",
+      "citations": ["wiki-2009"]
+    },
+    {
+      "type": "created",
+      "name": "Hardcore",
+      "datetime": "2011-10-23",
+      "citations": ["c044"]
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "id": "y",
+  "events": [
+    {
+      "type": "created",
+      "name": "Yaoi",
+      "datetime": "2003-10-06",
+      "citations": [
+        "primary-4channet-news",
+        "c013",
+        "c014",
+        "c015",
+        "c016",
+        "c017",
+        "c018"
+      ]
+    }
+  ]
+}

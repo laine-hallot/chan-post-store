@@ -1,0 +1,11 @@
+{
+  "id": "hr",
+  "events": [
+    {
+      "type": "created",
+      "name": "High Resolution",
+      "datetime": "2005-02-26",
+      "citations": ["wiki-2005"]
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "site_outages": [
+    {
+      "start": "2003-10-20",
+      "end": "2003-10-29",
+      "note": "server migration outage; start fuzzy (~10-16 crash then move to United Colo ~10-21), end from HOORAY news post 10/29 ('went back up a few hours ago')",
+      "citations": []
+    },
+    {
+      "start": "2004-06-20",
+      "end": "2004-08-07",
+      "note": "entire site offline ~6 weeks",
+      "citations": []
+    },
+    {
+      "start": "2006-08-23",
+      "end": "2006-08-25",
+      "note": "img.4chan.org down; /b/ /an/ /c/ /cm/ /g/ /k/ /m/ /o/ /p/ /r/ /s/ /t/ /v/ /w/ inaccessible",
+      "citations": []
+    },
+    {
+      "start": "2008-08-07",
+      "end": "2008-08-11",
+      "note": "DNS outage",
+      "citations": []
+    },
+    {
+      "start": "2025-04-01",
+      "end": "2025-04-02",
+      "note": "April Fools 2025 'Department of 4chan Efficiency': posting progressively blocked on most boards through the day (only /b/ /bant/ /f/ /r9k/ /s4s/ /trash/ /vip/ left open); partial, not a full outage",
+      "citations": []
+    },
+    {
+      "start": "2025-04-14",
+      "end": "2025-04-25",
+      "note": "post-hack outage, '10 days and 15 hours', site back 2025-04-25 1PM EDT; ~800GB of content pruned",
+      "citations": []
+    }
+  ]
+}

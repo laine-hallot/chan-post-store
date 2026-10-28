@@ -1,0 +1,22 @@
+{
+  "id": "3",
+  "events": [
+    {
+      "type": "created",
+      "name": "3DCG",
+      "datetime": "2005-01-19",
+      "citations": ["wiki-2005"]
+    },
+    {
+      "type": "removed",
+      "datetime": "2005-06",
+      "citations": ["wiki-2005"]
+    },
+    {
+      "type": "created",
+      "name": "3DCG",
+      "datetime": "2010-01-25",
+      "citations": ["wiki-2010"]
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "id": "aco",
+  "events": [
+    {
+      "type": "created",
+      "name": "Adult Cartoons",
+      "datetime": "2015-10-01",
+      "citations": ["c065", "c066", "c067"]
+    }
+  ]
+}

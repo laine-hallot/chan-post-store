@@ -1,0 +1,27 @@
+{
+  "id": "r",
+  "events": [
+    {
+      "type": "created",
+      "name": "Trains",
+      "datetime": "2003-11-10",
+      "citations": ["wiki-2003"]
+    },
+    {
+      "type": "removed",
+      "datetime": "2003-11-22",
+      "citations": ["c023", "c024"]
+    },
+    {
+      "type": "created",
+      "name": "Request",
+      "datetime": "2004-01-08",
+      "citations": ["c029", "c030"]
+    },
+    {
+      "type": "renamed",
+      "datetime": "2015-12-20",
+      "name": "Adult Requests"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "id": "pw",
+  "events": [
+    {
+      "type": "created",
+      "name": "Professional Wrestling",
+      "datetime": "2021-02-12",
+      "citations": ["c126", "c127", "c128"]
+    }
+  ]
+}

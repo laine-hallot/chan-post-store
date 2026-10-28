@@ -1,0 +1,12 @@
+{
+  "id": "yg",
+  "events": [
+    {
+      "type": "created",
+      "name": "Yogurt",
+      "datetime": "2006-04-08",
+      "note": "mystery board, short-lived; removal date unknown",
+      "citations": ["wiki-2006"]
+    }
+  ]
+}

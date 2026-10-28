@@ -1,0 +1,18 @@
+{
+  "id": "z",
+  "events": [
+    {
+      "type": "created",
+      "name": "ZOMG NONE!!1",
+      "datetime": "2004-10-24",
+      "note": "according to Bibliotheca Anonoma the board was likely created early october but the earliest surviving evidence of its existence is a reply to moot's 4chan thread on SA",
+      "citations": ["wiki-2004", "c218"]
+    },
+    {
+      "type": "removed",
+      "datetime": "2004-11-01",
+      "note": "'shortly after this time'",
+      "citations": ["wiki-2004"]
+    }
+  ]
+}

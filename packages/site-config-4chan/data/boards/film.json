@@ -1,0 +1,17 @@
+{
+  "id": "film",
+  "events": [
+    {
+      "type": "created",
+      "name": "Film & Movies",
+      "datetime": "2016-04-24",
+      "citations": ["c080", "c081", "c082", "c083", "c084"]
+    },
+    {
+      "type": "removed",
+      "name": "Film & Movies",
+      "datetime": "2016-04-24",
+      "citations": ["c080", "c081", "c082", "c083", "c084"]
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "id": "vr",
+  "events": [
+    {
+      "type": "created",
+      "name": "Retro Games",
+      "datetime": "2013-03-18",
+      "citations": ["wiki-2013"]
+    }
+  ]
+}

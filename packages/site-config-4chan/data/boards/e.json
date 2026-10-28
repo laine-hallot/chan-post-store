@@ -1,0 +1,11 @@
+{
+  "id": "e",
+  "events": [
+    {
+      "type": "created",
+      "name": "Ecchi",
+      "datetime": "2005-01-19",
+      "citations": ["wiki-2005"]
+    }
+  ]
+}

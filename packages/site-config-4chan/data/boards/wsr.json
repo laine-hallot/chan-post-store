@@ -1,0 +1,11 @@
+{
+  "id": "wsr",
+  "events": [
+    {
+      "type": "created",
+      "name": "Worksafe Requests",
+      "datetime": "2015-12-20",
+      "citations": ["c075", "c076", "c077", "c078", "c079"]
+    }
+  ]
+}

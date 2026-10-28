@@ -1,0 +1,16 @@
+{
+  "id": "qb",
+  "events": [
+    {
+      "type": "created",
+      "name": "Quebec",
+      "datetime": "2021-04-01",
+      "citations": ["c131", "c132", "c133"]
+    },
+    {
+      "type": "removed",
+      "datetime": "2021-04-02",
+      "citations": ["c134"]
+    }
+  ]
+}

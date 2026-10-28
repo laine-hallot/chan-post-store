@@ -1,0 +1,11 @@
+{
+  "id": "w",
+  "board-name": "Anime/Wallpapers",
+  "events": [
+    {
+      "type": "created",
+      "datetime": "2003-10-01",
+      "citations": ["primary-sa-moot", "primary-4channet-news"]
+    }
+  ]
+}

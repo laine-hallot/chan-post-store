@@ -1,0 +1,11 @@
+{
+  "id": "trash",
+  "events": [
+    {
+      "type": "created",
+      "name": "Off-Topic",
+      "datetime": "2015-11-07",
+      "citations": ["c070", "c071", "c072", "c073"]
+    }
+  ]
+}

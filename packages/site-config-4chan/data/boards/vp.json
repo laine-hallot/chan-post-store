@@ -1,0 +1,11 @@
+{
+  "id": "vp",
+  "events": [
+    {
+      "type": "created",
+      "name": "Pokemon",
+      "datetime": "2010-07-14",
+      "citations": ["wiki-2010"]
+    }
+  ]
+}

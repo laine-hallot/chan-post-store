@@ -1,0 +1,11 @@
+{
+  "id": "vt",
+  "events": [
+    {
+      "type": "created",
+      "name": "Virtual YouTubers",
+      "datetime": "2021-01-29",
+      "citations": ["c147", "c148", "c149", "c150"]
+    }
+  ]
+}

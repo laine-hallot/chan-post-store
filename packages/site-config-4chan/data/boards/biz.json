@@ -1,0 +1,11 @@
+{
+  "id": "biz",
+  "events": [
+    {
+      "type": "created",
+      "name": "Business & Finance",
+      "datetime": "2014-02-13",
+      "citations": ["wiki-2014"]
+    }
+  ]
+}

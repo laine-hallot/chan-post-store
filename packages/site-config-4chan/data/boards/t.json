@@ -1,0 +1,22 @@
+{
+  "id": "t",
+  "events": [
+    {
+      "type": "created",
+      "name": "Torrents",
+      "datetime": "2003-12-16",
+      "citations": ["wiki-2003"]
+    },
+    {
+      "type": "removed",
+      "datetime": "2004-01-25",
+      "citations": ["c031"]
+    },
+    {
+      "type": "created",
+      "name": "Torrents",
+      "datetime": "2004-02-19",
+      "citations": ["c032"]
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "id": "vmg",
+  "events": [
+    {
+      "type": "created",
+      "name": "Video Games/Mobile",
+      "datetime": "2020-08-07",
+      "citations": ["c108", "c109", "c110", "c111", "c112", "c113"]
+    }
+  ]
+}

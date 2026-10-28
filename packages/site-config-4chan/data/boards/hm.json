@@ -1,0 +1,11 @@
+{
+  "id": "hm",
+  "events": [
+    {
+      "type": "created",
+      "name": "Handsome Men",
+      "datetime": "2012-02-16",
+      "citations": ["wiki-2012"]
+    }
+  ]
+}

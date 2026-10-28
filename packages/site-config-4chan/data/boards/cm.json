@@ -1,0 +1,11 @@
+{
+  "id": "cm",
+  "events": [
+    {
+      "type": "created",
+      "name": "Cute/Male",
+      "datetime": "2004-03-31",
+      "citations": ["c037"]
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "id": "lit",
+  "events": [
+    {
+      "type": "created",
+      "name": "Literature",
+      "datetime": "2010-01-25",
+      "citations": ["wiki-2010"]
+    }
+  ]
+}

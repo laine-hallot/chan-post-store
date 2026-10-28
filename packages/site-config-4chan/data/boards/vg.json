@@ -1,0 +1,11 @@
+{
+  "id": "vg",
+  "events": [
+    {
+      "type": "created",
+      "name": "Video Game Generals",
+      "datetime": "2012-02-16",
+      "citations": ["c045", "c046", "c047", "c048", "c049"]
+    }
+  ]
+}

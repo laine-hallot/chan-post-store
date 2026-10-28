@@ -1,0 +1,11 @@
+{
+  "id": "o",
+  "events": [
+    {
+      "type": "created",
+      "name": "Auto",
+      "datetime": "2004-09-08",
+      "citations": ["wiki-2004"]
+    }
+  ]
+}

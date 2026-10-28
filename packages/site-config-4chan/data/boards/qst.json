@@ -1,0 +1,11 @@
+{
+  "id": "qst",
+  "events": [
+    {
+      "type": "created",
+      "name": "Quests",
+      "datetime": "2016-04-27",
+      "citations": ["c085", "c086", "c087", "c088"]
+    }
+  ]
+}
