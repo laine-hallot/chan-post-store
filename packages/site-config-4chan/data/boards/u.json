@@ -1,0 +1,35 @@
+{
+  "id": "u",
+  "events": [
+    {
+      "type": "created",
+      "name": "Yuri",
+      "datetime": "2004-08",
+      "citations": ["wiki-2004"]
+    },
+    {
+      "type": "post",
+      "post-number": "137000",
+      "datetime": "2007-04-08T01:14-04:00",
+      "citations": ["c211"]
+    },
+    {
+      "type": "post",
+      "post-number": "137003",
+      "datetime": "2007-04-08T01:28-04:00",
+      "citations": ["c211"]
+    },
+    {
+      "type": "post",
+      "post-number": "137004",
+      "datetime": "2007-04-08T01:38-04:00",
+      "citations": ["c211"]
+    },
+    {
+      "type": "post",
+      "post-number": "137007",
+      "datetime": "2007-04-08T01:53-04:00",
+      "citations": ["c211"]
+    }
+  ]
+}

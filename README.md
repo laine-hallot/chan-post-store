@@ -21,7 +21,7 @@
 After you've cloned the project and have a terminal open at its root:
 
 1. `cp .env.example .env`
-1. `nix develop`
+1. `nix develop` or `nix develop #.cuda` if your gpu supports it
 1. `npm install`
 
 This setups up the absolute bare minimum for the cli to run. You'll need to set your storage location and env vars

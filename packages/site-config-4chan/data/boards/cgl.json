@@ -1,0 +1,11 @@
+{
+  "id": "cgl",
+  "events": [
+    {
+      "type": "created",
+      "name": "Cosplay & EGL",
+      "datetime": "2006-04-08T00:00:00-04:00",
+      "citations": ["wiki-2006"]
+    }
+  ]
+}

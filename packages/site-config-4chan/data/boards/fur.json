@@ -1,0 +1,17 @@
+{
+  "id": "fur",
+  "events": [
+    {
+      "type": "created",
+      "name": "Furry",
+      "datetime": "2005-04-01T00:00:00-05:00",
+      "citations": ["c039"]
+    },
+    {
+      "type": "removed",
+      "name": "Furry",
+      "datetime": "2005-04-03T00:00:00-04:00",
+      "citations": ["wiki-2005"]
+    }
+  ]
+}

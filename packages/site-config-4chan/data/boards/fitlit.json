@@ -1,0 +1,16 @@
+{
+  "id": "fitlit",
+  "events": [
+    {
+      "type": "created",
+      "name": "Well-Rounded Citizens",
+      "datetime": "2017-04-01T00:00:00-04:00",
+      "citations": ["wiki-2017"]
+    },
+    {
+      "type": "removed",
+      "datetime": "2017-04-02T00:00:00-04:00",
+      "citations": ["wiki-2017"]
+    }
+  ]
+}

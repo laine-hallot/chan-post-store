@@ -1,0 +1,17 @@
+{
+  "id": "f",
+  "events": [
+    {
+      "type": "created",
+      "name": "Flash",
+      "datetime": "2004-02-19T00:00:00-05:00",
+      "citations": ["c032"]
+    },
+    {
+      "type": "removed",
+      "slug": "/f/",
+      "datetime": "2025-04-25T00:00:00-04:00",
+      "citations": ["c141", "c142", "c143", "c144", "c145", "c146"]
+    }
+  ]
+}

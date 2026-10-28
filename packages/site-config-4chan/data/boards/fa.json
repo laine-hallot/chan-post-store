@@ -1,0 +1,11 @@
+{
+  "id": "fa",
+  "events": [
+    {
+      "type": "created",
+      "name": "Fashion",
+      "datetime": "2008-02-19T00:00:00-05:00",
+      "citations": ["wiki-2008"]
+    }
+  ]
+}

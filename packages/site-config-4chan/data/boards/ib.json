@@ -1,0 +1,17 @@
+{
+  "id": "ib",
+  "events": [
+    {
+      "type": "created",
+      "name": "Oekaki Random",
+      "datetime": "2004-10-09T00:00:00-04:00",
+      "citations": ["wiki-2004"]
+    },
+    {
+      "type": "removed",
+      "datetime": "2006-04-08T00:00:00-04:00",
+      "note": "merged into /i/",
+      "citations": ["wiki-2006"]
+    }
+  ]
+}

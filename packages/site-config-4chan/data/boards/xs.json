@@ -1,0 +1,11 @@
+{
+  "id": "xs",
+  "events": [
+    {
+      "type": "created",
+      "name": "Extreme Sports",
+      "datetime": "2021-02-19T00:00:00-05:00",
+      "citations": ["c129", "c130"]
+    }
+  ]
+}

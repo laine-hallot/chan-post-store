@@ -1,0 +1,31 @@
+{
+  "id": "con",
+  "events": [
+    {
+      "type": "created",
+      "slug": "/con/",
+      "name": "Conventions",
+      "datetime": "2006-08-04T00:00:00-04:00",
+      "citations": ["c040", "c041"]
+    },
+    {
+      "type": "removed",
+      "slug": "/con/",
+      "name": "Conventions",
+      "datetime": "2006-08-06T00:00:00-04:00",
+      "citations": ["wiki-2006"]
+    },
+    {
+      "type": "created",
+      "name": "Conventions",
+      "datetime": "2013-09-29T00:00:00-04:00",
+      "citations": ["wiki-2013"]
+    },
+    {
+      "type": "removed",
+      "name": "Conventions",
+      "datetime": "2013-10-08T00:00:00-04:00",
+      "citations": ["wiki-2013"]
+    }
+  ]
+}

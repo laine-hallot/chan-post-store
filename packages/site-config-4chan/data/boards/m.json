@@ -1,0 +1,12 @@
+{
+  "id": "m",
+  "events": [
+    {
+      "type": "created",
+      "name": "Mecha",
+      "datetime": "2004-08-12T00:00:00-04:00",
+      "note": "Biblotheca Anonoma claims /m/ was created around the 14th and the earliest mention of the board's existence is an exchange between an SA user and Man of Wax in moot's 4chan anouncement thread on the 12th",
+      "citations": ["wiki-2004", "c219"]
+    }
+  ]
+}

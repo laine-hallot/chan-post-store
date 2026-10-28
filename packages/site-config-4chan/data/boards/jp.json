@@ -1,0 +1,161 @@
+{
+  "id": "jp",
+  "events": [
+    {
+      "type": "created",
+      "name": "Japan/General",
+      "datetime": "2008-02-20T00:00:00-05:00",
+      "citations": ["wiki-2008"]
+    },
+    {
+      "type": "post",
+      "post-number": "10",
+      "datetime": "2008-02-19T23:40-05:00",
+      "citations": ["c202"]
+    },
+    {
+      "type": "post",
+      "post-number": "15",
+      "datetime": "2008-02-19T23:42-05:00",
+      "citations": ["c202"]
+    },
+    {
+      "type": "post",
+      "post-number": "18",
+      "datetime": "2008-02-19T23:42-05:00",
+      "citations": ["c202"]
+    },
+    {
+      "type": "post",
+      "post-number": "20",
+      "datetime": "2008-02-19T23:43-05:00",
+      "citations": ["c202"]
+    },
+    {
+      "type": "post",
+      "post-number": "25",
+      "datetime": "2008-02-19T23:45-05:00",
+      "citations": ["c202"]
+    },
+    {
+      "type": "post",
+      "post-number": "6661",
+      "datetime": "2008-02-20T06:01-05:00",
+      "citations": ["c203"]
+    },
+    {
+      "type": "post",
+      "post-number": "6666",
+      "datetime": "2008-02-20T06:02-05:00",
+      "citations": ["c204"]
+    },
+    {
+      "type": "post",
+      "post-number": "6667",
+      "datetime": "2008-02-20T06:02-05:00",
+      "citations": ["c203"]
+    },
+    {
+      "type": "post",
+      "post-number": "6672",
+      "datetime": "2008-02-20T06:02-05:00",
+      "citations": ["c204"]
+    },
+    {
+      "type": "post",
+      "post-number": "6673",
+      "datetime": "2008-02-20T06:02-05:00",
+      "citations": ["c203"]
+    },
+    {
+      "type": "post",
+      "post-number": "6674",
+      "datetime": "2008-02-20T06:02-05:00",
+      "citations": ["c204"]
+    },
+    {
+      "type": "post",
+      "post-number": "6676",
+      "datetime": "2008-02-20T06:02-05:00",
+      "citations": ["c204"]
+    },
+    {
+      "type": "post",
+      "post-number": "6677",
+      "datetime": "2008-02-20T06:02-05:00",
+      "citations": ["c204"]
+    },
+    {
+      "type": "post",
+      "post-number": "6684",
+      "datetime": "2008-02-20T06:03-05:00",
+      "citations": ["c203"]
+    },
+    {
+      "type": "post",
+      "post-number": "6969",
+      "datetime": "2008-02-20T06:24-05:00",
+      "citations": ["c203"]
+    },
+    {
+      "type": "post",
+      "post-number": "99999",
+      "datetime": "2008-02-28T12:38-05:00",
+      "citations": ["c205"]
+    },
+    {
+      "type": "post",
+      "post-number": "100000",
+      "datetime": "2008-02-28T12:38-05:00",
+      "citations": ["c205"]
+    },
+    {
+      "type": "post",
+      "post-number": "100013",
+      "datetime": "2008-02-28T12:38-05:00",
+      "citations": ["c205"]
+    },
+    {
+      "type": "post",
+      "post-number": "100016",
+      "datetime": "2008-02-28T12:38-05:00",
+      "citations": ["c205"]
+    },
+    {
+      "type": "post",
+      "post-number": "100017",
+      "datetime": "2008-02-28T12:38-05:00",
+      "citations": ["c205"]
+    },
+    {
+      "type": "post",
+      "post-number": "100021",
+      "datetime": "2008-02-28T12:38-05:00",
+      "citations": ["c205"]
+    },
+    {
+      "type": "post",
+      "post-number": "100024",
+      "datetime": "2008-02-28T12:39-05:00",
+      "citations": ["c205"]
+    },
+    {
+      "type": "post",
+      "post-number": "100025",
+      "datetime": "2008-02-28T12:39-05:00",
+      "citations": ["c205"]
+    },
+    {
+      "type": "post",
+      "post-number": "100027",
+      "datetime": "2008-02-28T12:39-05:00",
+      "citations": ["c205"]
+    },
+    {
+      "type": "renamed",
+      "name": "Otaku Culture",
+      "datetime": "2010-02-20T00:00:00-05:00",
+      "citations": ["wiki-2010"]
+    }
+  ]
+}

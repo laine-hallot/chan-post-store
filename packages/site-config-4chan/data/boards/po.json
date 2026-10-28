@@ -1,0 +1,11 @@
+{
+  "id": "po",
+  "events": [
+    {
+      "type": "created",
+      "name": "Papercraft & Origami",
+      "datetime": "2006-04-06T00:00:00-04:00",
+      "citations": ["wiki-2006"]
+    }
+  ]
+}

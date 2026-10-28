@@ -1,0 +1,11 @@
+{
+  "id": "pol",
+  "events": [
+    {
+      "type": "created",
+      "name": "Politically Incorrect",
+      "datetime": "2011-10-23T00:00:00-04:00",
+      "citations": ["c044"]
+    }
+  ]
+}

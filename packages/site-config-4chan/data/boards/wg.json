@@ -1,0 +1,11 @@
+{
+  "id": "wg",
+  "events": [
+    {
+      "type": "created",
+      "name": "Wallpapers/General",
+      "datetime": "2005-02-26T00:00:00-05:00",
+      "citations": ["wiki-2005"]
+    }
+  ]
+}

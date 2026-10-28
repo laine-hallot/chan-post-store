@@ -20,6 +20,7 @@
  */
 
 import { boardSlugs } from 'site-config-4chan';
+import siteConfig from 'site-config-4chan/site-config.json' with { type: 'json' };
 import { sh } from 'staging-core';
 import { htmlToNdjson, reconcileBoards } from 'staging-html';
 
@@ -35,7 +36,10 @@ sh(
 // A guard, not the authority: the board is decided by each page's own links,
 // and the timeline only stops this acting on something no board has ever
 // been called.
-const r = reconcileBoards({ root: 'out/4chan', knownBoards: boardSlugs() });
+const r = reconcileBoards({
+  root: 'out/4chan',
+  knownBoards: boardSlugs(siteConfig),
+});
 console.log(
   `    scanned ${r.scanned}, relocated ${r.relocated + r.relocatedSnapshot}, ` +
     `removed ${r.duplicateRemoved} identical duplicate(s)\n` +

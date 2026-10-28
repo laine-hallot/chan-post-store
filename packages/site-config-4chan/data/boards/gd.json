@@ -1,0 +1,11 @@
+{
+  "id": "gd",
+  "events": [
+    {
+      "type": "created",
+      "name": "Graphic Design",
+      "datetime": "2013-03-18T00:00:00-04:00",
+      "citations": ["c050", "c051"]
+    }
+  ]
+}

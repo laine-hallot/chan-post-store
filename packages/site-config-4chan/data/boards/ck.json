@@ -1,0 +1,54 @@
+{
+  "id": "ck",
+  "board-name": "Food & Cooking",
+  "events": [
+    {
+      "type": "created",
+      "name": "Food & Cooking",
+      "datetime": "2006-04-08T00:00:00-04:00",
+      "citations": ["wiki-2006"]
+    },
+    {
+      "type": "post",
+      "post-number": "1000000",
+      "datetime": "2009-06-01T09:46-04:00",
+      "citations": ["c185"]
+    },
+    {
+      "type": "post",
+      "post-number": "1000011",
+      "datetime": "2009-06-01T09:46-04:00",
+      "citations": ["c185"]
+    },
+    {
+      "type": "post",
+      "post-number": "1000017",
+      "datetime": "2009-06-01T09:46-04:00",
+      "citations": ["c185"]
+    },
+    {
+      "type": "post",
+      "post-number": "1000018",
+      "datetime": "2009-06-01T09:46-04:00",
+      "citations": ["c185"]
+    },
+    {
+      "type": "post",
+      "post-number": "1000021",
+      "datetime": "2009-06-01T09:46-04:00",
+      "citations": ["c185"]
+    },
+    {
+      "type": "post",
+      "post-number": "1000025",
+      "datetime": "2009-06-01T09:46-04:00",
+      "citations": ["c185"]
+    },
+    {
+      "type": "post",
+      "post-number": "1000026",
+      "datetime": "2009-06-01T09:46-04:00",
+      "citations": ["c185"]
+    }
+  ]
+}

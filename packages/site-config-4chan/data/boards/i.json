@@ -1,0 +1,18 @@
+{
+  "id": "i",
+  "events": [
+    {
+      "type": "created",
+      "name": "Oekaki",
+      "datetime": "2006-04-08T00:00:00-04:00",
+      "note": "merger of /ib/ + /ip/; post counts possibly merged",
+      "citations": ["wiki-2006"]
+    },
+    {
+      "type": "post",
+      "post-number": "77777",
+      "datetime": "2007-07-12T17:12-04:00",
+      "citations": ["c201"]
+    }
+  ]
+}

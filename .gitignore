@@ -1,6 +1,6 @@
 node_modules/
 Memetic Sociology
-data/
+/data/
 .env
 *.tsbuildinfo
 *.db

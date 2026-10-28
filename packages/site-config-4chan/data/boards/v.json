@@ -1,0 +1,108 @@
+{
+  "id": "v",
+  "board-name": "Video Games",
+  "events": [
+    {
+      "type": "created",
+      "name": "Video Games",
+      "datetime": "2004-10-09T00:00:00-04:00",
+      "citations": ["wiki-2004"]
+    },
+    {
+      "type": "post",
+      "post-number": "3000000",
+      "datetime": "2007-04-10T22:12-04:00",
+      "citations": ["c212"]
+    },
+    {
+      "type": "post",
+      "post-number": "3000072",
+      "datetime": "2007-04-10T22:12-04:00",
+      "citations": ["c212"]
+    },
+    {
+      "type": "post",
+      "post-number": "3000079",
+      "datetime": "2007-04-10T22:12-04:00",
+      "citations": ["c212"]
+    },
+    {
+      "type": "post",
+      "post-number": "3000081",
+      "datetime": "2007-04-10T22:12-04:00",
+      "citations": ["c212"]
+    },
+    {
+      "type": "post",
+      "post-number": "3000082",
+      "datetime": "2007-04-10T22:12-04:00",
+      "citations": ["c212"]
+    },
+    {
+      "type": "post",
+      "post-number": "3000089",
+      "datetime": "2007-04-10T22:12-04:00",
+      "citations": ["c212"]
+    },
+    {
+      "type": "post",
+      "post-number": "3000090",
+      "datetime": "2007-04-10T22:12-04:00",
+      "citations": ["c212"]
+    },
+    {
+      "type": "post",
+      "post-number": "3000092",
+      "datetime": "2007-04-10T22:12-04:00",
+      "citations": ["c212"]
+    },
+    {
+      "type": "post",
+      "post-number": "3999891",
+      "datetime": "2007-06-13T23:27-04:00",
+      "citations": ["c213"]
+    },
+    {
+      "type": "post",
+      "post-number": "4000000",
+      "datetime": "2007-06-13T23:28-04:00",
+      "citations": ["c213"]
+    },
+    {
+      "type": "post",
+      "post-number": "4444444",
+      "datetime": "2007-07-06T16:58-04:00",
+      "citations": ["c214"]
+    },
+    {
+      "type": "post",
+      "post-number": "4444489",
+      "datetime": "2007-07-06T16:59-04:00",
+      "citations": ["c214"]
+    },
+    {
+      "type": "post",
+      "post-number": "4444491",
+      "datetime": "2007-07-06T16:59-04:00",
+      "citations": ["c214"]
+    },
+    {
+      "type": "post",
+      "post-number": "4444493",
+      "datetime": "2007-07-06T16:59-04:00",
+      "citations": ["c214"]
+    },
+    {
+      "type": "post",
+      "post-number": "4444495",
+      "datetime": "2007-07-06T16:59-04:00",
+      "citations": ["c214"]
+    },
+    {
+      "type": "post",
+      "post-number": "4444496",
+      "datetime": "2007-07-06T16:59-04:00",
+      "citations": ["c214"]
+    }
+  ]
+}
